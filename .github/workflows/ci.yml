@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    env:
+      # The only variable CI needs. It is a safe local placeholder, not a
+      # credential. Never add real secrets to this workflow.
+      APP_URL: http://localhost:3000
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Enable pnpm via Corepack
+        # The pnpm version comes from the `packageManager` field in
+        # package.json, so CI and local development stay on the same release.
+        run: corepack enable
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit and component tests
+        run: pnpm test
+
+      - name: Build
+        run: pnpm build
+# Playwright is deliberately NOT run in this workflow during Block 2.
+#
+# The end-to-end suite needs a browser download (`pnpm exec playwright install
+# chromium`) plus a production build and a running server, which together cost
+# far more than the checks above and would slow every pull request. The smoke
+# test is still maintained and runnable locally via `pnpm test:e2e`.
+#
+# A dedicated end-to-end workflow — with its own browser cache and a narrower
+# trigger — is planned for a later block.
