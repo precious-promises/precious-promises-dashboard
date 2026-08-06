@@ -48,7 +48,7 @@ The app runs at http://localhost:3000.
 | `pnpm build`        | Create a production build                 |
 | `pnpm start`        | Serve a production build                  |
 | `pnpm lint`         | Run ESLint                                |
-| `pnpm typecheck`    | Type-check with `tsc --noEmit`            |
+| `pnpm typecheck`    | `next typegen && tsc --noEmit`            |
 | `pnpm format`       | Format the repository with Prettier       |
 | `pnpm format:check` | Verify formatting without writing changes |
 
