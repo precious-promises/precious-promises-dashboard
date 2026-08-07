@@ -34,8 +34,10 @@ candidate.
 
 ## Why Supabase is separate from Genesis O.S
 
-**Decision.** This product uses its own Supabase project. It shares no database,
-no auth tenant and no credentials with Genesis O.S or Genesis Dominion.
+**Decision.** This product uses its own Supabase **project**,
+`precious-promises-dashboard` (ref `yrlnahnbwrtmljcbfjdg`). It shares no
+database, no auth tenant and no credentials with Genesis O.S or Genesis
+Dominion.
 
 **Reasoning.** These are different products with different owners, lifecycles and
 risk profiles. Sharing a data plane would mean a schema migration in one system
@@ -47,6 +49,32 @@ distinctly sensitive class of data. Keeping that blast radius small is worth far
 more than the modest convenience of a shared project.
 
 **Reopen if.** Never, on current information. Separation is the point.
+
+---
+
+## Why the project sits in the Genesis O.S organisation
+
+**Decision.** The project was created inside the existing Supabase organisation
+`Genesis O.S` (`opzfpwftfcggythyxvwc`), explicitly authorised by Dave as a
+billing and management container only.
+
+**Reasoning.** It was the only organisation on the account, and the Supabase API
+offers no way to create a new one — that is a dashboard-only action. Rather than
+block delivery, the distinction was made explicit: an organisation is a billing
+and membership boundary, not a data boundary.
+
+Everything the separation decision above actually cares about still holds. The
+project has its own database, auth tenant, API credentials, migrations and RLS
+policies. What is shared is the invoice and the member list. No Genesis project
+is accessed by this application, and none was opened or inspected during setup.
+
+This was a considered trade-off, not an oversight, and it is recorded here so
+nobody later reads it as a contradiction of the decision above.
+
+**Reopen if.** Billing or member separation becomes a requirement — for example
+if the product is ever sold, spun out, or given collaborators who should not see
+Genesis. Moving the project to a new organisation is a dashboard operation and
+requires no code change.
 
 ---
 

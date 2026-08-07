@@ -10,11 +10,11 @@ Owner: Dave — Founder & Creator.
 
 ## Status
 
-**Stage 0, Block 2 — testing, CI, environment and documentation foundation.**
+**Stage 0, Block 3 — Supabase authentication foundation.**
 
-This repository currently contains a Next.js application with a placeholder
-homepage, typed environment validation, a health endpoint, a test suite and a CI
-workflow. It has no database, no authentication and no working integrations.
+The application now has a Supabase project, email/password sign-in, a protected
+`/dashboard`, and a `profiles` table with Row Level Security enforced. It still
+has no content features and no working platform integrations.
 
 **It cannot publish content to any platform.** Nothing in it reaches YouTube,
 Instagram, TikTok, Google Drive or ElevenLabs.
@@ -27,6 +27,7 @@ Instagram, TikTok, Google Drive or ElevenLabs.
 | Language         | TypeScript (strict mode)         |
 | Styling          | Tailwind CSS v4                  |
 | Validation       | Zod                              |
+| Auth & database  | Supabase (`@supabase/ssr`)       |
 | Unit tests       | Vitest + Testing Library (jsdom) |
 | End-to-end tests | Playwright (Chromium)            |
 | Linting          | ESLint                           |
@@ -60,10 +61,20 @@ Real values belong in untracked `.env` files locally, and in the deployment
 platform's secret store in production. Every `.env*` file is git-ignored except
 `.env.example` itself.
 
-| Variable                                                                | Required now | Notes                       |
-| ----------------------------------------------------------------------- | ------------ | --------------------------- |
-| `APP_URL`                                                               | **Yes**      | Must be a valid http(s) URL |
-| Supabase, AI, Trigger, Meta, TikTok, Google and ElevenLabs placeholders | No           | Unused during Stage 0       |
+| Variable                                      | Required now        | Notes                       |
+| --------------------------------------------- | ------------------- | --------------------------- |
+| `APP_URL`                                     | **Yes**             | Must be a valid http(s) URL |
+| `NEXT_PUBLIC_SUPABASE_URL`                    | **Yes, to sign in** | Project API URL             |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`        | **Yes, to sign in** | Browser-safe key            |
+| AI, Trigger, Meta, TikTok, Google, ElevenLabs | No                  | Unused during Stage 0       |
+
+The two Supabase values are browser-safe by design; access is constrained by Row
+Level Security, not by keeping the key secret. `SUPABASE_SERVICE_ROLE_KEY` is
+**not** used anywhere and is not needed to run the app.
+
+The app builds and the test suite passes without any Supabase configuration —
+only signing in requires it. Setup details are in
+[docs/supabase-setup.md](./docs/supabase-setup.md).
 
 Validation lives in `src/lib/env/`:
 
@@ -129,6 +140,24 @@ PLAYWRIGHT_CHROMIUM_EXECUTABLE=/path/to/chromium pnpm test:e2e
 End-to-end tests are **not** part of the main CI workflow yet — see
 [docs/stage-0-decisions.md](./docs/stage-0-decisions.md).
 
+## Authentication
+
+| Route         | Access                                                         |
+| ------------- | -------------------------------------------------------------- |
+| `/`           | Public placeholder homepage                                    |
+| `/api/health` | Public, no session required                                    |
+| `/login`      | Private sign-in form; redirects to `/dashboard` when signed in |
+| `/dashboard`  | Requires a session; redirects to `/login` otherwise            |
+
+Email and password only, via Supabase Auth. **There is no public sign-up
+route** — this is a single-owner dashboard, and the owner account is created
+manually in Supabase. See
+[docs/supabase-setup.md](./docs/supabase-setup.md#create-the-owner-account).
+
+Sessions are refreshed by `src/proxy.ts` (Next.js 16 renamed `middleware` to
+`proxy`). `/dashboard` re-checks the session itself rather than trusting the
+proxy alone.
+
 ## Health endpoint
 
 ```
@@ -152,48 +181,65 @@ repository secrets.
 
 ## Current limitations
 
+**Implemented:** Supabase project, email/password sign-in and sign-out, a
+protected `/dashboard`, and the `profiles` table with RLS.
+
 Everything below is **planned, not built**:
 
-- **No database.** No Supabase project, no schema, no migrations.
-- **No authentication.** There are no accounts, sessions or sign-in.
+- **No content features.** No content items, media, scheduling or approval —
+  `profiles` is the only table that exists.
 - **No functional integrations.** No YouTube, Instagram, TikTok, Google Drive,
   ElevenLabs or AI provider. No adapter code exists.
-- **No premium dashboard interface.** The homepage is a placeholder; none of the
-  approved design system is implemented.
+- **No premium dashboard interface.** `/dashboard` is a Stage 0 placeholder
+  proving the auth foundation works; none of the approved design system is
+  implemented.
 - **No publishing.** There is no scheduling, approval, rendering or publishing
   capability of any kind.
+- **No user registration, password reset or email flows.**
 
 Integration variables appear in `.env.example` so the shape of future
 configuration is agreed. Their presence does not indicate a working integration.
 
 ## Documentation
 
-| Document                                            | Covers                                    |
-| --------------------------------------------------- | ----------------------------------------- |
-| [architecture.md](./docs/architecture.md)           | Modular monolith, planned data and worker |
-| [security.md](./docs/security.md)                   | Secrets, OAuth, access control, auditing  |
-| [state-machines.md](./docs/state-machines.md)       | Content and rendering lifecycles          |
-| [database-plan.md](./docs/database-plan.md)         | Planned models (none implemented)         |
-| [api-integrations.md](./docs/api-integrations.md)   | Planned adapters and research rules       |
-| [design-system.md](./docs/design-system.md)         | Approved visual direction                 |
-| [stage-0-decisions.md](./docs/stage-0-decisions.md) | Stage 0 decisions and reasoning           |
+| Document                                            | Covers                                       |
+| --------------------------------------------------- | -------------------------------------------- |
+| [architecture.md](./docs/architecture.md)           | Modular monolith, planned data and worker    |
+| [security.md](./docs/security.md)                   | Secrets, OAuth, access control, auditing     |
+| [state-machines.md](./docs/state-machines.md)       | Content and rendering lifecycles             |
+| [database-plan.md](./docs/database-plan.md)         | Data models — `profiles` built, rest planned |
+| [supabase-setup.md](./docs/supabase-setup.md)       | Project identity, RLS, owner account setup   |
+| [api-integrations.md](./docs/api-integrations.md)   | Planned adapters and research rules          |
+| [design-system.md](./docs/design-system.md)         | Approved visual direction                    |
+| [stage-0-decisions.md](./docs/stage-0-decisions.md) | Stage 0 decisions and reasoning              |
 
-These describe the approved **future** architecture. They do not claim that
-future features already work.
+Each document marks implemented and planned work explicitly. They do not claim
+that future features already work.
 
 ## Project structure
 
 ```
 src/
+  proxy.ts                Session refresh + route protection (Next 16)
   app/
     api/health/route.ts   Health endpoint
+    dashboard/            Protected dashboard + logout control
+    login/                Private sign-in page, form and server actions
     layout.tsx            Root layout
     page.tsx              Placeholder homepage
-    globals.css           Tailwind entry point and theme tokens
-  lib/env/
-    schema.ts             Schemas and pure parsers
-    public.ts             Client-safe values
-    server.ts             Server-only values
+  lib/
+    auth/
+      routes.ts           Pure redirect policy
+      login-schema.ts     Sign-in input validation
+      errors.ts           Safe auth error messages
+    env/                  Environment schemas, public and server values
+    supabase/
+      config.ts           Connection config validation
+      client.ts           Browser client
+      server.ts           Server client
+      proxy.ts            Session refresh
+supabase/
+  migrations/             SQL migration history
 tests/
   unit/                   Vitest suites
   e2e/                    Playwright specs

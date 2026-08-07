@@ -1,8 +1,9 @@
 # Architecture
 
-> **Status: planned.** This document records the approved architectural
-> direction. Apart from the Next.js application shell, none of what follows is
-> implemented. Sections describing future work are marked _(planned)_.
+> **Status: partly implemented.** The application shell, environment handling,
+> Supabase authentication and the `profiles` table are built. Everything else
+> records approved direction only. Sections describing future work are marked
+> _(planned)_; see [What exists today](#what-exists-today) for the summary.
 
 ## Shape: a modular monolith
 
@@ -46,22 +47,51 @@ barrel makes it trivially easy to pull a server secret into a client bundle.
 Access tokens for third-party platforms will be held server-side only and never
 sent to the browser _(planned)_.
 
-## Data and storage _(planned)_
+## Data and storage
 
-### Supabase — Auth, Postgres and metadata
+### Supabase — Auth, Postgres and metadata _(partly implemented)_
 
-Supabase is the planned provider for authentication, the Postgres database, and
-all structured metadata: content items, schedules, publish attempts, approval
+Supabase provides authentication and the Postgres database, and will hold all
+structured metadata: content items, schedules, publish attempts, approval
 actions and audit records.
 
-This is a **separate Supabase project** from anything belonging to Genesis O.S.
-See [stage-0-decisions.md](./stage-0-decisions.md).
+**Implemented in Block 3:**
 
-Row Level Security is planned as the enforcement layer for data access; see
-[security.md](./security.md).
+- A dedicated Supabase project, `precious-promises-dashboard`
+  (ref `yrlnahnbwrtmljcbfjdg`, region `eu-west-2`)
+- Email/password authentication with server-side session handling
+- The `profiles` table, with Row Level Security enabled and per-user policies
 
-The planned models are catalogued in [database-plan.md](./database-plan.md).
-None exist yet.
+**Still planned:** every other model in
+[database-plan.md](./database-plan.md).
+
+#### Separation from Genesis
+
+The project sits inside the Supabase **organisation** `Genesis O.S`, which is a
+billing and management container. The application project, database, auth
+tenant, credentials, migrations and RLS policies are entirely its own, and no
+Genesis project is ever accessed. The full breakdown is in
+[supabase-setup.md](./supabase-setup.md).
+
+#### Client architecture
+
+`@supabase/ssr` with the Next.js App Router:
+
+| Module                       | Runs in | Purpose                              |
+| ---------------------------- | ------- | ------------------------------------ |
+| `src/lib/supabase/config.ts` | Both    | Validates URL and publishable key    |
+| `src/lib/supabase/client.ts` | Browser | Client Component access              |
+| `src/lib/supabase/server.ts` | Server  | Server Components, Actions, handlers |
+| `src/lib/supabase/proxy.ts`  | Edge    | Session refresh and route protection |
+
+Clients are constructed lazily inside functions, never at module scope, so
+`next build` does not require runtime configuration.
+
+Next.js 16 renamed the `middleware` file convention to `proxy`; session refresh
+lives in `src/proxy.ts`.
+
+Only the publishable key is used. The service role key bypasses RLS and appears
+nowhere in the application — a test enforces this.
 
 ### Google Drive — large media
 
@@ -122,13 +152,18 @@ harder to change safely.
 
 ## What exists today
 
-| Piece                              | State           |
-| ---------------------------------- | --------------- |
-| Next.js App Router shell           | Implemented     |
-| TypeScript strict mode             | Implemented     |
-| Tailwind CSS styling               | Implemented     |
-| Typed environment validation       | Implemented     |
-| `GET /api/health`                  | Implemented     |
-| Unit, component and E2E test setup | Implemented     |
-| CI workflow                        | Implemented     |
-| Everything else on this page       | **Not started** |
+| Piece                                      | State           |
+| ------------------------------------------ | --------------- |
+| Next.js App Router shell                   | Implemented     |
+| TypeScript strict mode                     | Implemented     |
+| Tailwind CSS styling                       | Implemented     |
+| Typed environment validation               | Implemented     |
+| `GET /api/health`                          | Implemented     |
+| Unit, component and E2E test setup         | Implemented     |
+| CI workflow                                | Implemented     |
+| Supabase project and SSR clients           | Implemented     |
+| Email/password sign-in, sign-out           | Implemented     |
+| Protected `/dashboard`, private `/login`   | Implemented     |
+| `profiles` table with RLS                  | Implemented     |
+| Google Drive, worker, adapters, publishing | **Not started** |
+| Stage 1 dashboard interface                | **Not started** |
