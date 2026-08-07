@@ -1,32 +1,50 @@
 # Database plan
 
-> **Status: planned. Nothing in this document is implemented.**
+> **Status: mostly planned. One model is implemented.**
 >
-> There is no database, no schema, no migration and no Supabase project wired to
-> this repository. These models describe the approved future data design so the
-> block that implements them starts from an agreed shape. Field lists are
-> indicative, not final.
+> `Profile` exists as the `profiles` table with Row Level Security enforced.
+> Every other model below is still a design sketch — no table, no migration,
+> no data. Field lists for planned models are indicative, not final.
 
-The planned provider is Supabase Postgres — see
-[architecture.md](./architecture.md). Access control is planned to be enforced
-by both application-level ownership checks and Row Level Security; see
-[security.md](./security.md).
+The provider is Supabase Postgres, project `precious-promises-dashboard`
+(ref `yrlnahnbwrtmljcbfjdg`) — see [supabase-setup.md](./supabase-setup.md).
+Access control is enforced by Row Level Security, with application-level
+ownership checks planned alongside it; see [security.md](./security.md).
 
 ## Models
 
-### User _(planned)_
+### User _(implemented via Supabase Auth)_
 
-The authenticated account. Backed by Supabase Auth.
+The authenticated account, held in `auth.users` and managed by Supabase Auth.
+There is no application-owned user table, and none is needed — Supabase owns
+identity and credentials.
 
-Holds identity and authentication state only. The product starts as a
-single-owner founder edition, but modelling a user explicitly from the start
-avoids a painful retrofit if that ever changes.
+The product starts as a single-owner founder edition, but ownership is modelled
+explicitly from the start so adding tenancy later is an extension rather than a
+rewrite.
 
-### Profile _(planned)_
+### Profile — _implemented_
 
-Owner-facing profile information: display name, role label, preferences,
-timezone. Separated from `User` so authentication data and presentation data
-have distinct lifecycles.
+`public.profiles`, one row per authenticated user.
+
+| Column         | Type          | Notes                                                         |
+| -------------- | ------------- | ------------------------------------------------------------- |
+| `id`           | `uuid`        | Primary key, references `auth.users(id)` on delete cascade    |
+| `display_name` | `text`        | Nullable; 1–120 characters after trimming when present        |
+| `role`         | `text`        | `not null default 'owner'`, constrained to `owner` or `admin` |
+| `created_at`   | `timestamptz` | `not null default now()`                                      |
+| `updated_at`   | `timestamptz` | `not null default now()`, maintained by trigger               |
+
+`updated_at` is set by a `before update` trigger rather than trusted from the
+client. RLS is enabled with per-user SELECT, INSERT and UPDATE policies and no
+DELETE policy — see [supabase-setup.md](./supabase-setup.md).
+
+Kept separate from `auth.users` because authentication data and presentation
+data have different lifecycles, and because `auth` is Supabase's schema to
+change, not ours.
+
+Preferences and timezone are **not** implemented; they arrive with the features
+that need them.
 
 ### SocialAccount _(planned)_
 

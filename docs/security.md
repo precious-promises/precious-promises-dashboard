@@ -50,14 +50,39 @@ credentials in log lines, error messages, or telemetry.
   the upstream platform where the platform supports it, and deletes the stored
   credential either way. Disconnect must not leave usable credentials behind.
 
-## Access control _(planned)_
+## Authentication — _implemented_
 
-- **Ownership checks** on every read and write. A request may only touch records
-  belonging to the authenticated owner. This is enforced in application code
-  regardless of what the database allows.
-- **Row Level Security.** Supabase RLS policies enforce the same constraint at
-  the database level, so a bug in application code cannot widen access. Defence
-  in depth: both layers, not one.
+- **Email and password only**, through Supabase Auth. There is no public
+  registration route; the owner's account is created manually in Supabase.
+- **Sessions live in cookies handled server-side** by `@supabase/ssr`. The
+  proxy (`src/proxy.ts`) refreshes them on every matched request.
+- **Cache-control headers are propagated.** When Supabase sets auth cookies it
+  supplies `no-store` headers alongside them, and the proxy applies them. Without
+  that, a CDN could cache a response carrying one user's session cookie and
+  serve it to somebody else.
+- **Protected pages check the session themselves**, not only in the proxy.
+  `/dashboard` calls `auth.getUser()` and redirects if there is no user. Proxy
+  matchers are easy to misconfigure; a page rendering private content should not
+  depend on one for its access control.
+- **Sign-in failures are indistinguishable.** An unknown address and a wrong
+  password return exactly the same message, so the form cannot be used to
+  discover which addresses have accounts. Upstream error text is never shown —
+  it can carry request ids and hostnames.
+- **No password policy at sign-in.** Rejecting a short password client-side
+  would reveal it could not be the stored one.
+
+## Access control
+
+- **Row Level Security** — _implemented for `profiles`_. RLS is enabled and
+  three policies each permit one operation, for `authenticated` only, restricted
+  to the caller's own row. No catch-all policy; no `anon` policy, and the `anon`
+  grant is revoked. Details in [supabase-setup.md](./supabase-setup.md).
+- **No service role key.** The application uses the publishable key exclusively,
+  so every query it issues is subject to RLS. A test scans `src/` and fails if a
+  service role reference ever appears.
+- **Ownership checks in application code** _(planned)_ for models beyond
+  `profiles`, so a bug in one layer cannot widen access on its own. Defence in
+  depth: both layers, not one.
 
 ## Input and request handling _(planned)_
 
