@@ -1,10 +1,30 @@
+import {
+  CalendarClock,
+  CheckSquare,
+  Clapperboard,
+  FileText,
+  Camera,
+  Music2,
+  Send,
+  ScrollText,
+  Upload,
+  MonitorPlay,
+} from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
-import { LOGIN_PATH } from "@/lib/auth/routes";
+import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import { MetricCard } from "@/components/dashboard/metric-card";
+import { PlatformStatus } from "@/components/dashboard/platform-status";
+import { QuickAction } from "@/components/dashboard/quick-action";
+import { WorkflowPipeline } from "@/components/dashboard/workflow-pipeline";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SectionCard } from "@/components/ui/section-card";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { OWNER_NAME } from "@/config/owner";
+import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/routes";
+import { greetingFor } from "@/lib/greeting";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-
-import { LogoutButton } from "./logout-button";
 
 export const metadata: Metadata = {
   title: "Dashboard · Precious Promises",
@@ -12,15 +32,87 @@ export const metadata: Metadata = {
 };
 
 /**
- * Temporary private dashboard.
+ * Every metric is zero because no content tables exist yet — `profiles` is the
+ * only table in the database. These are real counts of nothing, not sample
+ * data, and each carries a note saying so.
  *
- * This is a Stage 0 placeholder that proves the authentication foundation
- * works end to end. The Stage 1 dashboard interface is not built yet.
- *
- * The session is checked here as well as in the proxy. That redundancy is
- * deliberate: proxy matchers are easy to misconfigure, and a page that renders
- * private content should not depend on one for its access control.
+ * Replacing them later is a change to this array's values, not to the markup.
  */
+const METRICS = [
+  {
+    label: "Content Ready",
+    value: 0,
+    icon: FileText,
+    note: "No content records yet",
+  },
+  {
+    label: "Awaiting Approval",
+    value: 0,
+    icon: CheckSquare,
+    note: "Approval workflow not built",
+  },
+  {
+    label: "Scheduled",
+    value: 0,
+    icon: CalendarClock,
+    note: "Scheduling not built",
+  },
+  {
+    label: "Published This Week",
+    value: 0,
+    icon: Send,
+    note: "Publishing not connected",
+  },
+] as const;
+
+const QUICK_ACTIONS = [
+  {
+    label: "Create Content",
+    description: "Start a new content item",
+    icon: FileText,
+  },
+  {
+    label: "Scripture Studio",
+    description: "Work with verified Scripture",
+    icon: ScrollText,
+  },
+  {
+    label: "Create Video",
+    description: "Assemble and render a video",
+    icon: Clapperboard,
+  },
+  {
+    label: "Upload Media",
+    description: "Add source media assets",
+    icon: Upload,
+  },
+  {
+    label: "Schedule Post",
+    description: "Queue approved content",
+    icon: CalendarClock,
+  },
+] as const;
+
+const PLATFORMS = [
+  { name: "YouTube", icon: MonitorPlay },
+  { name: "Instagram", icon: Camera },
+  { name: "TikTok", icon: Music2 },
+] as const;
+
+/**
+ * What the application genuinely has, described structurally.
+ *
+ * These say what is *configured in this codebase* — they deliberately do not
+ * claim any external service is currently reachable. Nothing here performs a
+ * health check, so nothing here should read like one.
+ */
+const FOUNDATION = [
+  { label: "Authentication foundation", state: "Configured" },
+  { label: "Database connection", state: "Configured" },
+  { label: "Profiles RLS", state: "Configured" },
+  { label: "Publishing", state: "Not configured" },
+] as const;
+
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient();
 
@@ -32,27 +124,115 @@ export default async function DashboardPage() {
     redirect(LOGIN_PATH);
   }
 
+  const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
+
   return (
-    <main className="flex flex-1 flex-col gap-8 px-6 py-12 sm:px-10">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-          Precious Promises Content Dashboard
-        </h1>
-        <LogoutButton />
-      </header>
+    <DashboardShell
+      title="Dashboard"
+      pathname={DASHBOARD_PATH}
+      email={user.email ?? null}
+    >
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <div>
+          <h2 className="text-2xl font-semibold tracking-tight text-ink-primary sm:text-3xl">
+            {greeting}
+          </h2>
+          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink-secondary">
+            Manage your Precious Promises content, production and growth from
+            one place.
+          </p>
+        </div>
 
-      <section className="flex flex-col gap-1">
-        <p className="text-lg font-medium">Dave</p>
-        <p className="text-sm text-zinc-500 dark:text-zinc-400">
-          Founder &amp; Creator
-        </p>
-      </section>
+        <section aria-label="Overview">
+          <h3 className="sr-only">Today</h3>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {METRICS.map((metric) => (
+              <MetricCard key={metric.label} {...metric} />
+            ))}
+          </div>
+        </section>
 
-      <p className="text-base">Foundation connected successfully.</p>
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <SectionCard
+            title="Upcoming content"
+            className="xl:col-span-2"
+            action={<StatusBadge>Coming soon</StatusBadge>}
+          >
+            <EmptyState
+              icon={CalendarClock}
+              title="No content scheduled yet."
+              description="Your approved publishing schedule will appear here once the content workflow is connected."
+              action={
+                <button
+                  type="button"
+                  disabled
+                  className="cursor-not-allowed rounded-lg border border-edge-strong/70 px-4 py-2 text-sm font-medium text-ink-muted opacity-70"
+                >
+                  View Calendar
+                  <span className="sr-only"> — coming soon</span>
+                </button>
+              }
+            />
+          </SectionCard>
 
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-        Signed in as <span className="font-medium">{user.email}</span>
-      </p>
-    </main>
+          <SectionCard
+            title="Connected platforms"
+            description="No publishing integration exists yet."
+          >
+            <ul className="flex flex-col gap-2.5">
+              {PLATFORMS.map((platform) => (
+                <PlatformStatus key={platform.name} {...platform} />
+              ))}
+            </ul>
+          </SectionCard>
+        </div>
+
+        <SectionCard
+          title="Production pipeline"
+          description="The approved content workflow."
+        >
+          <WorkflowPipeline />
+        </SectionCard>
+
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          <SectionCard title="Quick actions" className="xl:col-span-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {QUICK_ACTIONS.map((action) => (
+                <QuickAction key={action.label} {...action} />
+              ))}
+            </div>
+          </SectionCard>
+
+          <SectionCard
+            title="System foundation"
+            description="What is configured in this application."
+          >
+            <ul className="flex flex-col gap-2.5">
+              {FOUNDATION.map((entry) => (
+                <li
+                  key={entry.label}
+                  className="flex items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                >
+                  <span className="min-w-0 truncate text-sm text-ink-secondary">
+                    {entry.label}
+                  </span>
+                  <StatusBadge
+                    tone={
+                      entry.state === "Configured" ? "configured" : "inactive"
+                    }
+                  >
+                    {entry.state}
+                  </StatusBadge>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-xs leading-5 text-ink-muted">
+              These describe configuration in this codebase. They are not live
+              service health checks.
+            </p>
+          </SectionCard>
+        </div>
+      </div>
+    </DashboardShell>
   );
 }

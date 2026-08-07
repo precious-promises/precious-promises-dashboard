@@ -10,11 +10,15 @@ Owner: Dave — Founder & Creator.
 
 ## Status
 
-**Stage 0, Block 3 — Supabase authentication foundation.**
+**Stage 1 — premium dashboard shell.**
 
-The application now has a Supabase project, email/password sign-in, a protected
-`/dashboard`, and a `profiles` table with Row Level Security enforced. It still
-has no content features and no working platform integrations.
+Stage 0 is complete: Supabase project, email/password sign-in, a protected
+`/dashboard`, and a `profiles` table with Row Level Security enforced.
+
+Stage 1 added the premium interface — responsive shell, sidebar and mobile
+drawer navigation covering all 19 planned areas, an upgraded login page and a
+public landing page. It is **UI architecture only**: no content features and no
+working platform integrations were added.
 
 **It cannot publish content to any platform.** Nothing in it reaches YouTube,
 Instagram, TikTok, Google Drive or ElevenLabs.
@@ -33,6 +37,7 @@ Instagram, TikTok, Google Drive or ElevenLabs.
 | Linting          | ESLint                           |
 | Formatting       | Prettier                         |
 | CI               | GitHub Actions                   |
+| Icons            | lucide-react                     |
 | Package manager  | pnpm                             |
 
 ## Requirements
@@ -182,7 +187,8 @@ repository secrets.
 ## Current limitations
 
 **Implemented:** Supabase project, email/password sign-in and sign-out, a
-protected `/dashboard`, and the `profiles` table with RLS.
+protected `/dashboard`, the `profiles` table with RLS, and the premium
+responsive dashboard shell.
 
 Everything below is **planned, not built**:
 
@@ -190,11 +196,11 @@ Everything below is **planned, not built**:
   `profiles` is the only table that exists.
 - **No functional integrations.** No YouTube, Instagram, TikTok, Google Drive,
   ElevenLabs or AI provider. No adapter code exists.
-- **No premium dashboard interface.** `/dashboard` is a Stage 0 placeholder
-  proving the auth foundation works; none of the approved design system is
-  implemented.
 - **No publishing.** There is no scheduling, approval, rendering or publishing
   capability of any kind.
+- **No analytics.** Every metric on the dashboard is a real zero, labelled with
+  why. Nothing fabricates views, followers, revenue or engagement.
+- **18 of 19 navigation areas are unbuilt** and marked as such.
 - **No user registration, password reset or email flows.**
 
 Integration variables appear in `.env.example` so the shape of future
@@ -225,8 +231,15 @@ src/
     api/health/route.ts   Health endpoint
     dashboard/            Protected dashboard + logout control
     login/                Private sign-in page, form and server actions
-    layout.tsx            Root layout
-    page.tsx              Placeholder homepage
+    layout.tsx            Root layout + skip link
+    page.tsx              Public landing page
+    globals.css           Design tokens and surface treatments
+  components/
+    dashboard/            Shell, sidebar, top bar, cards
+    ui/                   Section card, empty state, status badge
+  config/
+    navigation.ts         All 19 areas and their availability
+    owner.ts              Private owner identity
   lib/
     auth/
       routes.ts           Pure redirect policy

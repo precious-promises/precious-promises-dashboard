@@ -30,7 +30,10 @@ strict mode.
   where interactivity requires them.
 - Route handlers under `src/app/api/` serve machine-readable endpoints. The only
   one that exists today is `GET /api/health`.
-- Mutations will use Server Actions or route handlers _(planned)_.
+- Mutations use Server Actions — sign-in and sign-out are both actions.
+- The interface layer is documented separately in
+  [stage-1-ui.md](./stage-1-ui.md). Server Components are the default there
+  too: the mobile navigation drawer is the only Client Component in the app.
 
 ## Secrets stay on the server
 
@@ -165,5 +168,6 @@ harder to change safely.
 | Email/password sign-in, sign-out           | Implemented     |
 | Protected `/dashboard`, private `/login`   | Implemented     |
 | `profiles` table with RLS                  | Implemented     |
+| Premium dashboard shell and navigation     | Implemented     |
 | Google Drive, worker, adapters, publishing | **Not started** |
-| Stage 1 dashboard interface                | **Not started** |
+| Content models beyond `profiles`           | **Not started** |

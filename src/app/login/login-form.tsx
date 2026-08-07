@@ -7,6 +7,9 @@ import { type LoginState, signIn } from "./actions";
 
 const INITIAL_STATE: LoginState = {};
 
+const FIELD_CLASSES =
+  "rounded-lg border border-edge bg-panel-raised/50 px-3.5 py-2.5 text-base text-ink-primary outline-none transition-colors placeholder:text-ink-muted focus-visible:border-highlight focus-visible:ring-2 focus-visible:ring-highlight/35 aria-[invalid=true]:border-red-500/60";
+
 function SubmitButton() {
   const { pending } = useFormStatus();
 
@@ -14,9 +17,9 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-md bg-sky-600 px-4 py-2 font-medium text-white transition-colors hover:bg-sky-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
+      className="mt-1 w-full rounded-lg bg-highlight px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight disabled:cursor-not-allowed disabled:opacity-60"
     >
-      {pending ? "Signing in…" : "Sign in"}
+      {pending ? "Signing in…" : "Sign In"}
     </button>
   );
 }
@@ -29,14 +32,17 @@ export function LoginForm() {
       {state.error ? (
         <p
           role="alert"
-          className="rounded-md border border-red-900/50 bg-red-950/40 px-3 py-2 text-sm text-red-200"
+          className="rounded-lg border border-red-900/50 bg-red-950/40 px-3.5 py-2.5 text-sm text-red-200"
         >
           {state.error}
         </p>
       ) : null}
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="email" className="text-sm font-medium">
+        <label
+          htmlFor="email"
+          className="text-sm font-medium text-ink-secondary"
+        >
           Email
         </label>
         <input
@@ -49,7 +55,7 @@ export function LoginForm() {
           aria-describedby={
             state.fieldErrors?.email ? "email-error" : undefined
           }
-          className="rounded-md border border-white/15 bg-white/5 px-3 py-2 text-base outline-none focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-400/40"
+          className={FIELD_CLASSES}
         />
         {state.fieldErrors?.email ? (
           <p id="email-error" className="text-sm text-red-300">
@@ -59,7 +65,10 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="password" className="text-sm font-medium">
+        <label
+          htmlFor="password"
+          className="text-sm font-medium text-ink-secondary"
+        >
           Password
         </label>
         <input
@@ -72,7 +81,7 @@ export function LoginForm() {
           aria-describedby={
             state.fieldErrors?.password ? "password-error" : undefined
           }
-          className="rounded-md border border-white/15 bg-white/5 px-3 py-2 text-base outline-none focus-visible:border-sky-400 focus-visible:ring-2 focus-visible:ring-sky-400/40"
+          className={FIELD_CLASSES}
         />
         {state.fieldErrors?.password ? (
           <p id="password-error" className="text-sm text-red-300">

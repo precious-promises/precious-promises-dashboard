@@ -1,3 +1,5 @@
+import { LogOut } from "lucide-react";
+
 import { signOut } from "@/app/login/actions";
 
 /**
@@ -11,9 +13,12 @@ export function LogoutButton() {
     <form action={signOut}>
       <button
         type="submit"
-        className="rounded-md border border-white/15 px-3 py-1.5 text-sm font-medium transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+        className="inline-flex size-9 items-center justify-center rounded-lg border border-edge text-ink-secondary transition-colors hover:bg-panel-hover/60 hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight sm:size-auto sm:gap-2 sm:px-3 sm:py-1.5"
       >
-        Log out
+        <LogOut aria-hidden="true" className="size-4" />
+        <span className="sr-only sm:not-sr-only sm:text-sm sm:font-medium">
+          Log out
+        </span>
       </button>
     </form>
   );
