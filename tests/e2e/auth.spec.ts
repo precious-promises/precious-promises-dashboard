@@ -41,6 +41,23 @@ test.describe("authentication", () => {
     ).toHaveCount(0);
   });
 
+  test("redirects an anonymous visitor away from every protected route", async ({
+    page,
+  }) => {
+    // Stage 2 added three more protected routes. Each must be closed to an
+    // anonymous visitor, not just the dashboard root.
+    for (const path of [
+      "/dashboard/content",
+      "/dashboard/content/new",
+      "/dashboard/media",
+    ]) {
+      await page.goto(path);
+      await expect(page, `${path} must require a session`).toHaveURL(
+        /\/login$/,
+      );
+    }
+  });
+
   test("keeps the health endpoint reachable without a session", async ({
     request,
   }) => {

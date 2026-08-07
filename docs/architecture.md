@@ -65,6 +65,10 @@ actions and audit records.
 - Email/password authentication with server-side session handling
 - The `profiles` table, with Row Level Security enabled and per-user policies
 
+**Implemented in Stage 2:** `content_items`, `media_assets` and `content_media`,
+each with Row Level Security. See
+[stage-2-content-library.md](./stage-2-content-library.md).
+
 **Still planned:** every other model in
 [database-plan.md](./database-plan.md).
 

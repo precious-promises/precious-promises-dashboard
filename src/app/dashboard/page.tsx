@@ -7,7 +7,8 @@ import {
   Music2,
   Send,
   ScrollText,
-  Upload,
+  Library,
+  Images,
   MonitorPlay,
 } from "lucide-react";
 import type { Metadata } from "next";
@@ -16,13 +17,17 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { PlatformStatus } from "@/components/dashboard/platform-status";
-import { QuickAction } from "@/components/dashboard/quick-action";
+import {
+  QuickAction,
+  QuickActionLink,
+} from "@/components/dashboard/quick-action";
 import { WorkflowPipeline } from "@/components/dashboard/workflow-pipeline";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { OWNER_NAME } from "@/config/owner";
 import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/routes";
+import { getContentCounts } from "@/lib/content/repository";
 import { greetingFor } from "@/lib/greeting";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -32,45 +37,47 @@ export const metadata: Metadata = {
 };
 
 /**
- * Every metric is zero because no content tables exist yet — `profiles` is the
- * only table in the database. These are real counts of nothing, not sample
- * data, and each carries a note saying so.
+ * Dashboard metrics.
  *
- * Replacing them later is a change to this array's values, not to the markup.
+ * The first two are **real queries** against `content_items` as of Stage 2 —
+ * often still zero, but now because the database says so rather than because
+ * the number was written into the markup.
+ *
+ * The last two stay at zero and say why: scheduling and publishing do not
+ * exist, so there is nothing to count. Showing anything else would imply a
+ * capability the product does not have.
  */
-const METRICS = [
-  {
-    label: "Content Ready",
-    value: 0,
-    icon: FileText,
-    note: "No content records yet",
-  },
-  {
-    label: "Awaiting Approval",
-    value: 0,
-    icon: CheckSquare,
-    note: "Approval workflow not built",
-  },
-  {
-    label: "Scheduled",
-    value: 0,
-    icon: CalendarClock,
-    note: "Scheduling not built",
-  },
-  {
-    label: "Published This Week",
-    value: 0,
-    icon: Send,
-    note: "Publishing not connected",
-  },
-] as const;
+function buildMetrics(counts: { draft: number; readyForReview: number }) {
+  return [
+    {
+      label: "Content Ready",
+      value: counts.readyForReview,
+      icon: CheckSquare,
+      note: "Marked ready for review",
+    },
+    {
+      label: "Drafts",
+      value: counts.draft,
+      icon: FileText,
+      note: "In progress in the library",
+    },
+    {
+      label: "Scheduled",
+      value: 0,
+      icon: CalendarClock,
+      note: "Scheduling not built",
+    },
+    {
+      label: "Published This Week",
+      value: 0,
+      icon: Send,
+      note: "Publishing not connected",
+    },
+  ] as const;
+}
 
+/** Actions that still have nothing behind them. */
 const QUICK_ACTIONS = [
-  {
-    label: "Create Content",
-    description: "Start a new content item",
-    icon: FileText,
-  },
   {
     label: "Scripture Studio",
     description: "Work with verified Scripture",
@@ -80,11 +87,6 @@ const QUICK_ACTIONS = [
     label: "Create Video",
     description: "Assemble and render a video",
     icon: Clapperboard,
-  },
-  {
-    label: "Upload Media",
-    description: "Add source media assets",
-    icon: Upload,
   },
   {
     label: "Schedule Post",
@@ -110,6 +112,8 @@ const FOUNDATION = [
   { label: "Authentication foundation", state: "Configured" },
   { label: "Database connection", state: "Configured" },
   { label: "Profiles RLS", state: "Configured" },
+  { label: "Content library RLS", state: "Configured" },
+  { label: "Media storage", state: "Not configured" },
   { label: "Publishing", state: "Not configured" },
 ] as const;
 
@@ -124,6 +128,8 @@ export default async function DashboardPage() {
     redirect(LOGIN_PATH);
   }
 
+  const counts = await getContentCounts();
+  const metrics = buildMetrics(counts);
   const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
 
   return (
@@ -146,7 +152,7 @@ export default async function DashboardPage() {
         <section aria-label="Overview">
           <h3 className="sr-only">Today</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {METRICS.map((metric) => (
+            {metrics.map((metric) => (
               <MetricCard key={metric.label} {...metric} />
             ))}
           </div>
@@ -197,6 +203,24 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <SectionCard title="Quick actions" className="xl:col-span-2">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <QuickActionLink
+                href="/dashboard/content/new"
+                label="Create Content"
+                description="Start a new content item"
+                icon={FileText}
+              />
+              <QuickActionLink
+                href="/dashboard/content"
+                label="Content Library"
+                description="Browse and filter your content"
+                icon={Library}
+              />
+              <QuickActionLink
+                href="/dashboard/media"
+                label="Media Assets"
+                description="Review media metadata"
+                icon={Images}
+              />
               {QUICK_ACTIONS.map((action) => (
                 <QuickAction key={action.label} {...action} />
               ))}

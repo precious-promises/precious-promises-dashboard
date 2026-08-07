@@ -23,6 +23,10 @@ import {
 
 import { DASHBOARD_PATH } from "@/lib/auth/routes";
 
+/** Routes activated in Stage 2. */
+export const CONTENT_LIBRARY_PATH = "/dashboard/content";
+export const MEDIA_ASSETS_PATH = "/dashboard/media";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -77,7 +81,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "content-library",
         label: "Content Library",
         icon: Library,
-        status: "coming-soon",
+        status: "available",
+        href: CONTENT_LIBRARY_PATH,
       },
       {
         id: "content-planner",
@@ -123,7 +128,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "media-assets",
         label: "Media Assets",
         icon: Images,
-        status: "coming-soon",
+        status: "available",
+        href: MEDIA_ASSETS_PATH,
       },
       {
         id: "google-drive-browser",

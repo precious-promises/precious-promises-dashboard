@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { NAVIGATION, type NavItem } from "@/config/navigation";
+import { DASHBOARD_PATH } from "@/lib/auth/routes";
 import { cn } from "@/lib/utils";
 
 interface SidebarNavProps {
@@ -73,6 +74,22 @@ function NavRow({
 }
 
 /**
+ * Whether a nav item covers the current path.
+ *
+ * A prefix match so `/dashboard/content/new` still highlights Content Library,
+ * with a boundary check so `/dashboard/media` never lights up an item pointing
+ * at `/dashboard/me`.
+ *
+ * `/dashboard` is matched exactly — as a prefix it would own every page.
+ */
+function isActiveFor(href: string, pathname: string): boolean {
+  if (href === DASHBOARD_PATH) {
+    return pathname === href;
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
  * The navigation list itself, shared by the desktop sidebar and the mobile
  * drawer so the two can never drift apart.
  */
@@ -91,7 +108,9 @@ export function SidebarNav({ pathname, onNavigate }: SidebarNavProps) {
               <NavRow
                 key={item.id}
                 item={item}
-                isActive={item.href === pathname}
+                isActive={
+                  item.href !== undefined && isActiveFor(item.href, pathname)
+                }
                 onNavigate={onNavigate}
               />
             ))}

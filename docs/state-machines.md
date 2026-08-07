@@ -1,8 +1,12 @@
 # State machines
 
-> **Status: planned.** No workflow described here is implemented. This document
-> records the approved state transitions so that the blocks implementing them
-> have a single reference.
+> **Status: partly implemented.** Stage 2 built the authoring end — `Draft`,
+> `Ready for review` and `Archived` are real statuses on `content_items`, and
+> the approval-invalidation rule for Scripture is enforced in domain code.
+>
+> `Approved`, `Scheduled`, `Publishing`, `Posted` and `Failed` remain planned:
+> those systems do not exist, and the database deliberately refuses those
+> values so the interface cannot claim a state it cannot honour.
 
 ## Content lifecycle
 
@@ -78,6 +82,17 @@ human approval:
 - Captions and copy
 - Metadata — titles, descriptions, tags, scheduling parameters
 - Thumbnails
+
+### Implemented for Scripture in Stage 2
+
+The Scripture half of this rule is live. `resolveVerificationAfterEdit` in
+`src/lib/content/verification.ts` moves a `manually_verified` item to
+`verification_required` whenever the reference or text changes, and clears the
+verification metadata. It sits in the domain layer, not the UI, so every write
+path obeys it.
+
+The remaining triggers — media, captions, metadata, thumbnails — arrive with
+the approval workflow itself.
 
 ### Why this rule is absolute
 
