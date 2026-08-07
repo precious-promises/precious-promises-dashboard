@@ -1,8 +1,9 @@
 # Security
 
-> **Status: mostly planned.** Only the secret-handling rules are enforced in
-> code today. Everything else records the approved requirements for the blocks
-> that will implement them. Each section is marked accordingly.
+> **Status: partly implemented.** Secret handling, authentication and Row Level
+> Security across every table are enforced in code today. OAuth, request
+> limits, auditing and publishing safety record the approved requirements for
+> the blocks that will implement them. Each section is marked accordingly.
 
 ## Secret handling — _implemented_
 
@@ -73,10 +74,23 @@ credentials in log lines, error messages, or telemetry.
 
 ## Access control
 
-- **Row Level Security** — _implemented for `profiles`_. RLS is enabled and
-  three policies each permit one operation, for `authenticated` only, restricted
-  to the caller's own row. No catch-all policy; no `anon` policy, and the `anon`
-  grant is revoked. Details in [supabase-setup.md](./supabase-setup.md).
+- **Row Level Security** — _implemented for every table_. `profiles`,
+  `content_items`, `media_assets` and `content_media` all have RLS enabled, with
+  one explicit policy per operation, for `authenticated` only, restricted to the
+  caller's own rows. No catch-all policy; no `anon` policy, and the `anon` grant
+  is revoked on each. Supabase's security advisor reports no lints. Details in
+  [supabase-setup.md](./supabase-setup.md) and
+  [stage-2-content-library.md](./stage-2-content-library.md).
+- **`content_media` inherits ownership** through its parent content item, and
+  writes additionally require ownership of the media asset — so a user cannot
+  attach somebody else's asset to their own content and read its metadata
+  through the join.
+- **`owner_id` is never accepted from a submission.** It is read from the
+  authenticated session in the server action; the Zod schemas do not define the
+  field, so a smuggled value is stripped before reaching the database. Tests
+  assert this on the create payload, the update payload and the FormData reader.
+- **Another owner's record 404s** rather than returning a distinguishable
+  error, so responses cannot be used to discover which ids exist.
 - **No service role key.** The application uses the publishable key exclusively,
   so every query it issues is subject to RLS. A test scans `src/` and fails if a
   service role reference ever appears.

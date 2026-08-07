@@ -10,15 +10,14 @@ Owner: Dave — Founder & Creator.
 
 ## Status
 
-**Stage 1 — premium dashboard shell.**
+**Stage 2 — Content Library and media foundation.**
 
-Stage 0 is complete: Supabase project, email/password sign-in, a protected
-`/dashboard`, and a `profiles` table with Row Level Security enforced.
+Content authoring is real: content items are created, edited, Scripture-verified
+and archived in Postgres under Row Level Security. Media assets have a metadata
+model and a declared storage seam.
 
-Stage 1 added the premium interface — responsive shell, sidebar and mobile
-drawer navigation covering all 19 planned areas, an upgraded login page and a
-public landing page. It is **UI architecture only**: no content features and no
-working platform integrations were added.
+Still absent: publishing, scheduling, approval, rendering, AI generation,
+analytics, and every platform OAuth flow.
 
 **It cannot publish content to any platform.** Nothing in it reaches YouTube,
 Instagram, TikTok, Google Drive or ElevenLabs.
@@ -186,22 +185,30 @@ repository secrets.
 
 ## Current limitations
 
-**Implemented:** Supabase project, email/password sign-in and sign-out, a
-protected `/dashboard`, the `profiles` table with RLS, and the premium
-responsive dashboard shell.
+**Implemented:** Supabase project, email/password sign-in and sign-out, the
+premium responsive dashboard shell, the Content Library with Scripture
+verification, and media asset metadata — all under Row Level Security.
 
 Everything below is **planned, not built**:
 
-- **No content features.** No content items, media, scheduling or approval —
-  `profiles` is the only table that exists.
+- **No file upload.** Media assets are metadata records; no bytes move.
 - **No functional integrations.** No YouTube, Instagram, TikTok, Google Drive,
-  ElevenLabs or AI provider. No adapter code exists.
+  ElevenLabs or AI provider. The storage seam is declared, not implemented.
 - **No publishing.** There is no scheduling, approval, rendering or publishing
   capability of any kind.
-- **No analytics.** Every metric on the dashboard is a real zero, labelled with
-  why. Nothing fabricates views, followers, revenue or engagement.
-- **18 of 19 navigation areas are unbuilt** and marked as such.
+- **No analytics.** Content counts are real database queries; scheduling and
+  publishing metrics stay at zero because those systems do not exist. Nothing
+  fabricates views, followers, revenue or engagement.
+- **16 of 19 navigation areas are unbuilt** and marked as such.
 - **No user registration, password reset or email flows.**
+
+### Deferred verification
+
+**Stage 1 authenticated visual E2E is deferred pending the owner Supabase Auth
+account.** The project has no auth users, so no session can be established and
+signed-in flows cannot be exercised end to end. Anonymous coverage — every
+protected route redirecting to `/login`, public page rendering, the health
+endpoint — passes. This is a deferral, not a failure.
 
 Integration variables appear in `.env.example` so the shape of future
 configuration is agreed. Their presence does not indicate a working integration.
@@ -241,6 +248,9 @@ src/
     navigation.ts         All 19 areas and their availability
     owner.ts              Private owner identity
   lib/
+    content/              Types, Zod schemas, verification rule, queries
+    media/                Media types and metadata validation
+    storage/              StorageProvider seam (no implementation)
     auth/
       routes.ts           Pure redirect policy
       login-schema.ts     Sign-in input validation

@@ -1,6 +1,39 @@
 import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
 
 import { StatusBadge } from "@/components/ui/status-badge";
+
+export interface QuickActionLinkProps {
+  href: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+}
+
+/**
+ * A quick action that actually goes somewhere.
+ *
+ * The variant promised when `QuickAction` was written: an action becomes a
+ * link when the route behind it exists, rather than a disabled button restyled
+ * to look enabled.
+ */
+export function QuickActionLink({
+  href,
+  label,
+  description,
+  icon: Icon,
+}: QuickActionLinkProps) {
+  return (
+    <Link
+      href={href}
+      className="flex w-full flex-col gap-2 rounded-xl border border-edge bg-panel-raised/40 px-4 py-4 text-left transition-colors hover:border-edge-strong hover:bg-panel-hover/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+    >
+      <Icon aria-hidden="true" className="size-5 text-highlight" />
+      <span className="text-sm font-medium text-ink-primary">{label}</span>
+      <span className="text-xs leading-5 text-ink-muted">{description}</span>
+    </Link>
+  );
+}
 
 export interface QuickActionProps {
   label: string;

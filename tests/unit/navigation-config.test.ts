@@ -53,14 +53,30 @@ describe("navigation configuration", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("marks Dashboard as the only available area", () => {
+  it("marks exactly the built areas as available", () => {
+    // Stage 1 had only Dashboard. Stage 2 activated Content Library and Media
+    // Assets by building their routes. This list grows only when a route
+    // genuinely exists.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
 
-    expect(available).toHaveLength(1);
-    expect(available[0]?.label).toBe("Dashboard");
-    expect(available[0]?.href).toBe(DASHBOARD_PATH);
+    expect(available.map((item) => item.label)).toEqual([
+      "Dashboard",
+      "Content Library",
+      "Media Assets",
+    ]);
+    expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
+      DASHBOARD_PATH,
+    );
+  });
+
+  it("leaves the remaining 16 areas unbuilt", () => {
+    const comingSoon = allNavItems().filter(
+      (item) => item.status === "coming-soon",
+    );
+
+    expect(comingSoon).toHaveLength(16);
   });
 
   it("gives no href to any unbuilt module", () => {

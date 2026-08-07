@@ -34,13 +34,16 @@ describe("SidebarNav", () => {
     }
   });
 
-  it("links only to the one area that exists", () => {
+  it("links only to the areas that exist", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
+    // One link per built route, and no others — the count is the guard.
     const links = screen.getAllByRole("link");
-    expect(links).toHaveLength(1);
-    expect(links[0]).toHaveAccessibleName("Dashboard");
-    expect(links[0]).toHaveAttribute("href", DASHBOARD_PATH);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual([
+      DASHBOARD_PATH,
+      "/dashboard/content",
+      "/dashboard/media",
+    ]);
   });
 
   it("does not render unbuilt modules as links", () => {

@@ -1,10 +1,12 @@
 # Database plan
 
-> **Status: mostly planned. One model is implemented.**
+> **Status: partly implemented.**
 >
-> `Profile` exists as the `profiles` table with Row Level Security enforced.
-> Every other model below is still a design sketch — no table, no migration,
-> no data. Field lists for planned models are indicative, not final.
+> `Profile`, `ContentItem`, `MediaAsset` and `ContentMedia` exist as real tables
+> with Row Level Security enforced — see
+> [stage-2-content-library.md](./stage-2-content-library.md) for their columns
+> and policies. Every other model below is still a design sketch: no table, no
+> migration, no data. Field lists for planned models are indicative, not final.
 
 The provider is Supabase Postgres, project `precious-promises-dashboard`
 (ref `yrlnahnbwrtmljcbfjdg`) — see [supabase-setup.md](./supabase-setup.md).
@@ -55,7 +57,7 @@ connection status, and the **encrypted** access and refresh tokens. Tokens are
 server-only and encrypted at rest. Disconnecting revokes upstream where
 supported and deletes the stored credential regardless.
 
-### MediaAsset _(planned)_
+### MediaAsset — _implemented_
 
 A single piece of media — source video, rendered export, audio, image,
 thumbnail.
@@ -64,7 +66,7 @@ Stores the Google Drive reference, media type, size, duration, checksum and
 render provenance. The bytes live in Drive; this record is the metadata and the
 pointer.
 
-### ContentItem _(planned)_
+### ContentItem — _implemented_
 
 The central unit of work: one piece of content moving through the content
 lifecycle in [state-machines.md](./state-machines.md).
@@ -73,7 +75,7 @@ Holds the lifecycle state, the body copy, Scripture references, and links to
 approval history. Scripture is stored distinctly from declarations, prayers and
 commentary — they are different content types and must stay distinguishable.
 
-### ContentMedia _(planned)_
+### ContentMedia — _implemented_
 
 Join between `ContentItem` and `MediaAsset`, carrying ordering and role
 (primary video, thumbnail, audio track).
