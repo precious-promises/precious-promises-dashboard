@@ -36,7 +36,8 @@ Instagram, TikTok, Google Drive or ElevenLabs.
 
 ## Requirements
 
-- Node.js 20.9 or newer
+- Node.js 22.22.2 or newer (required by jsdom 30 and undici; Node 20 is
+  end-of-life and cannot run the test suite)
 - pnpm (pinned via `packageManager`; run `corepack enable` to have it managed
   automatically)
 
@@ -141,7 +142,7 @@ environment values, versions, paths or infrastructure detail.
 ## Continuous integration
 
 `.github/workflows/ci.yml` runs on pull requests and pushes to `main`, using
-Node.js 20 and pnpm via Corepack:
+Node.js 22 and pnpm via Corepack:
 
 `pnpm install --frozen-lockfile` → `format:check` → `lint` → `typecheck` →
 `test` → `build`
