@@ -1,8 +1,9 @@
 # Design system
 
-> **Status: planned.** The approved visual direction is recorded here. The
-> current interface is a placeholder homepage on default Tailwind styling — none
-> of the palette, components or states below are built yet.
+> **Status: implemented in Stage 1.** The palette, surfaces, layout and
+> accessibility rules below are built. See [stage-1-ui.md](./stage-1-ui.md) for
+> the component inventory. Typography is still the system stack — see
+> [Not yet decided](#not-yet-decided).
 
 ## Visual direction
 
@@ -12,22 +13,41 @@ so that content and Scripture carry the attention.
 
 ### Palette
 
-| Role       | Direction                                                      |
-| ---------- | -------------------------------------------------------------- |
-| Background | Near-black navy — the base surface for every screen            |
-| Panels     | Deep sapphire — raised surfaces sitting above the background   |
-| Highlights | Cool blue — selection, focus, active state, interactive accent |
-| Typography | Clean white — primary text, with softened tints for secondary  |
-| Accents    | Restrained gold — sparingly, for emphasis and moments of note  |
+Implemented as CSS custom properties in `src/app/globals.css`, exposed to
+Tailwind through `@theme inline`.
+
+| Role            | Token            | Value                       |
+| --------------- | ---------------- | --------------------------- |
+| Page background | `canvas`         | `#070b16` — near-black navy |
+| Deepest ink     | `ink`            | `#05070f`                   |
+| Panels          | `panel`          | `#0c142a` — deep sapphire   |
+| Raised panels   | `panel-raised`   | `#111b36`                   |
+| Hover surface   | `panel-hover`    | `#162243`                   |
+| Hairline border | `edge`           | `#1e2b4d`                   |
+| Stronger border | `edge-strong`    | `#2b3b63`                   |
+| Primary text    | `ink-primary`    | `#f4f7fc`                   |
+| Secondary text  | `ink-secondary`  | `#9fb0cd`                   |
+| Muted text      | `ink-muted`      | `#6c7f9f`                   |
+| Highlight       | `highlight`      | `#4d8df7` — cool blue       |
+| Highlight hover | `highlight-soft` | `#7aabff`                   |
+| Accent          | `gold`           | `#c9a961` — restrained      |
+| Accent dim      | `gold-dim`       | `#8a7440`                   |
+
+There is no light theme. The product is a single dark workspace, so the palette
+is defined once rather than duplicated under a colour-scheme query.
 
 Gold is an accent, not a theme. It marks significance; it does not decorate. If
 gold appears in several places on one screen, it has stopped doing its job.
 
 ### Surfaces
 
-- **Glass-style panels** — subtle translucency and blur over the navy base.
-- **Fine borders** — hairline separations rather than heavy rules.
-- **Soft shadows** — depth through diffusion, not hard drop shadows.
+- **Glass-style panels** — `.pp-glass` mixes the panel colour to 78% opacity
+  over a 12px backdrop blur.
+- **Fine borders** — one-pixel `edge` separations rather than heavy rules.
+- **Soft shadows** — a tight contact shadow plus a wide diffuse one.
+- **Ambient wash** — `.pp-ambient` lays two low-opacity radial gradients (blue
+  top-left, gold top-right) behind the app. Pure CSS, so it never enters the
+  accessibility tree or the tab order.
 
 The combination should read as layered depth, not as ornament.
 
@@ -46,6 +66,8 @@ Accessibility is a requirement of the design, not a later audit.
 - **Accessible contrast.** Text and meaningful UI must meet WCAG AA contrast
   against its actual background. A dark palette with gold accents makes this
   easy to get wrong — verify measured contrast, do not judge by eye.
+- **A skip link** is the first tab stop on every page, asserted by an
+  end-to-end test.
 - **Keyboard navigation.** Every interactive element is reachable and operable
   by keyboard, in a sensible order, with a clearly visible focus indicator. The
   cool-blue highlight is the focus colour.
@@ -82,12 +104,23 @@ when it was not.
   the content. It does not compete with it, and it does not turn Scripture into
   decoration.
 
+## Component library
+
+**No component library was adopted.** Stage 1 uses `lucide-react` for icons and
+`clsx` + `tailwind-merge` for class composition, with the handful of primitives
+built directly in `src/components/ui/`.
+
+shadcn/ui was considered and declined. Its value here would have been Radix
+primitives for the mobile drawer, but its initialiser also rewrites
+`globals.css` with its own neutral theme — which is precisely the layer this
+product defines itself. The drawer that needed building is about seventy lines
+of focus and keyboard handling, and owning it outright was cheaper than
+overriding a theme to get it. Revisit if a genuinely hard primitive is needed —
+a combobox, a date picker, a virtualised table.
+
 ## Not yet decided
 
-- Typeface selection
-- Exact colour values and the token naming scheme
-- Component library approach — bespoke versus a headless primitive library
-- Spacing scale and grid definition
-
-These are settled in the block that implements the interface, against the
-direction above.
+- **Typeface.** Still the system stack. A licensed display face for headings is
+  the obvious next refinement.
+- **Spacing scale** beyond Tailwind's defaults.
+- **Motion vocabulary** — Stage 1 uses only short colour transitions.

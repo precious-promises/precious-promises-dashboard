@@ -1,23 +1,91 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
+/*
+ * Precious Promises design tokens.
+ *
+ * The product is a dark, single-theme workspace — see docs/design-system.md.
+ * There is no light variant, so the palette is defined once rather than
+ * duplicated under a colour-scheme query.
+ *
+ * Gold is an accent, not a theme. If it appears more than once or twice on a
+ * screen it has stopped carrying meaning.
+ */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  /* Surfaces, darkest to lightest */
+  --color-ink: #05070f;
+  --color-canvas: #070b16;
+  --color-panel: #0c142a;
+  --color-panel-raised: #111b36;
+  --color-panel-hover: #162243;
+
+  /* Hairline borders */
+  --color-edge: #1e2b4d;
+  --color-edge-strong: #2b3b63;
+
+  /* Typography */
+  --color-ink-primary: #f4f7fc;
+  --color-ink-secondary: #9fb0cd;
+  --color-ink-muted: #6c7f9f;
+
+  /* Cool blue — selection, focus, active state */
+  --color-highlight: #4d8df7;
+  --color-highlight-soft: #7aabff;
+  --color-highlight-dim: #2a4a86;
+
+  /* Restrained gold */
+  --color-gold: #c9a961;
+  --color-gold-dim: #8a7440;
+
+  /* Status */
+  --color-positive: #4ade80;
+  --color-neutral-status: #7f8fa8;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background-color: var(--color-canvas);
+  color: var(--color-ink-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/*
+ * A single ambient wash behind the app. Kept in CSS rather than as a component
+ * so it never enters the accessibility tree or the tab order.
+ */
+.pp-ambient {
+  background-image:
+    radial-gradient(
+      ellipse 80% 50% at 15% -10%,
+      rgba(77, 141, 247, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 60% 40% at 95% 0%,
+      rgba(201, 169, 97, 0.06),
+      transparent 55%
+    );
+}
+
+/* Glass panel treatment: translucency over the navy base, hairline edge. */
+.pp-glass {
+  background-color: color-mix(in srgb, var(--color-panel) 78%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+/*
+ * Respect a reduced-motion preference. The interface uses only short colour
+ * and opacity transitions, so removing them costs nothing.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

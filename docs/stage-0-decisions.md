@@ -191,3 +191,43 @@ layer, and platform credentials are already per-account rather than global.
 Equally, nothing here commits to it. No multi-tenant machinery is built, and none
 should be built on speculation. This is recorded so a future reader knows the
 door was left open on purpose — not so anyone treats it as a roadmap item.
+
+---
+
+## Stage 1 — why no component library
+
+**Decision.** Stage 1 uses `lucide-react`, `clsx` and `tailwind-merge`, with a
+handful of primitives built directly. shadcn/ui was considered and declined.
+
+**Reasoning.** Its real value here would have been Radix primitives for the
+mobile drawer. But its initialiser also rewrites `globals.css` with its own
+neutral theme, and that file is exactly where the Precious Promises palette
+lives — adopting it would have meant fighting a theme to get back to the
+approved one.
+
+The drawer that actually needed building is about seventy lines of focus and
+keyboard handling. Owning that outright was cheaper than the override, and it
+keeps the dependency surface small.
+
+**Reopen if.** A genuinely hard primitive is needed — a combobox, a date picker,
+a virtualised table. Those are worth a library; a drawer was not.
+
+---
+
+## Stage 1 — why the interface shows only zeros
+
+**Decision.** Every metric, pipeline count and platform status on the dashboard
+shows a real zero or "Not connected". No sample data, no illustrative numbers.
+
+**Reasoning.** A dashboard's entire value is that its numbers can be trusted.
+Seeding it with plausible-looking figures to make a screenshot look finished
+teaches the owner to read the interface as decoration — and the first time a
+real number appears, there is no way to tell it apart from the fake ones that
+came before.
+
+Zeros with an explanation are also more useful during construction: "Publishing
+not connected" says exactly what is missing, which a fabricated 1,240 views
+never would.
+
+**Reopen if.** Never for production. A clearly-labelled fixture mode for visual
+regression testing would be a separate, explicitly marked thing.
