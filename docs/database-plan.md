@@ -2,7 +2,8 @@
 
 > **Status: partly implemented.**
 >
-> `Profile`, `ContentItem`, `MediaAsset` and `ContentMedia` exist as real tables
+> `Profile`, `ContentItem`, `MediaAsset`, `ContentMedia`, `ScriptRevision` and
+> `PlatformVariant` exist as real tables
 > with Row Level Security enforced — see
 > [stage-2-content-library.md](./stage-2-content-library.md) for their columns
 > and policies. Every other model below is still a design sketch: no table, no
@@ -83,13 +84,26 @@ Join between `ContentItem` and `MediaAsset`, carrying ordering and role
 A join model rather than a foreign key because one item may carry several
 assets, and one asset may be reused across items.
 
-### PlatformVariant _(planned)_
+### PlatformVariant — _implemented_
 
-The per-platform rendering of a `ContentItem`: platform-specific caption,
-hashtags, aspect ratio, title, and any platform-only fields.
+`public.platform_variants`. The per-platform wording of a `ContentItem`: title,
+caption, description, hashtags (`text[]`), first comment, CTA and thumbnail
+text, plus a `review_state` of `draft` or `ready_for_review`.
 
-The same content is not identical across YouTube, Instagram and TikTok. Modelling
-the variant separately keeps platform quirks out of the core content record.
+A check constraint ties each `variant_type` to its `platform`, so an
+`instagram_reel` cannot be filed under `youtube`.
+
+`approved` and `rejected` are deliberately absent from `review_state` — those
+belong to the approval stage, which does not exist.
+
+### ScriptRevision — _implemented_
+
+`public.script_revisions`. Append-only script history: hook, explanation,
+declaration, prayer, outro and private notes, numbered from 1 and unique per
+content item.
+
+**No Scripture column**, by design. Scripture lives on `ContentItem`; a script
+holds only the words the owner wrote, so writing a script cannot alter a verse.
 
 ### ScheduledPost _(planned)_
 

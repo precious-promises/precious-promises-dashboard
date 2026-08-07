@@ -42,6 +42,9 @@ describe("SidebarNav", () => {
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       DASHBOARD_PATH,
       "/dashboard/content",
+      "/dashboard/scripture",
+      "/dashboard/scripts",
+      "/dashboard/captions",
       "/dashboard/media",
     ]);
   });
@@ -50,7 +53,7 @@ describe("SidebarNav", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
     // A link to a non-existent route is the failure this guards against.
-    for (const label of ["Scripture Studio", "Analytics", "Settings"]) {
+    for (const label of ["Production Board", "Analytics", "Settings"]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });
@@ -58,7 +61,7 @@ describe("SidebarNav", () => {
   it("marks unbuilt modules as unavailable for assistive technology", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
-    const row = screen.getByText("Scripture Studio").closest("[aria-disabled]");
+    const row = screen.getByText("Production Board").closest("[aria-disabled]");
     expect(row).not.toBeNull();
     expect(row).toHaveAttribute("aria-disabled", "true");
     expect(row?.textContent).toContain("coming soon");

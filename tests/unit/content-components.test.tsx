@@ -146,19 +146,7 @@ describe("ContentFiltersBar", () => {
   });
 });
 
-describe("navigation after Stage 2", () => {
-  it("activates Content Library and Media Assets", () => {
-    const available = allNavItems().filter(
-      (item) => item.status === "available",
-    );
-
-    expect(available.map((item) => item.label).sort()).toEqual([
-      "Content Library",
-      "Dashboard",
-      "Media Assets",
-    ]);
-  });
-
+describe("content navigation", () => {
   it("renders them as real links", () => {
     render(<SidebarNav pathname="/dashboard/content" />);
 
@@ -191,7 +179,7 @@ describe("navigation after Stage 2", () => {
   it("still refuses to link the modules that remain unbuilt", () => {
     render(<SidebarNav pathname="/dashboard" />);
 
-    for (const label of ["Scripture Studio", "Analytics", "Calendar"]) {
+    for (const label of ["Production Board", "Analytics", "Calendar"]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });

@@ -10,6 +10,7 @@ import {
   Library,
   Images,
   MonitorPlay,
+  MessageSquareQuote,
 } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
@@ -27,7 +28,11 @@ import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { OWNER_NAME } from "@/config/owner";
 import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/routes";
-import { getContentCounts } from "@/lib/content/repository";
+import {
+  countScriptureNeedingAttention,
+  getContentCounts,
+} from "@/lib/content/repository";
+import { countItemsWithScripts } from "@/lib/scripts/repository";
 import { greetingFor } from "@/lib/greeting";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -47,19 +52,36 @@ export const metadata: Metadata = {
  * exist, so there is nothing to count. Showing anything else would imply a
  * capability the product does not have.
  */
-function buildMetrics(counts: { draft: number; readyForReview: number }) {
+function buildMetrics(counts: {
+  draft: number;
+  readyForReview: number;
+  scriptureNeedingAttention: number;
+  itemsWithScripts: number;
+}) {
   return [
-    {
-      label: "Content Ready",
-      value: counts.readyForReview,
-      icon: CheckSquare,
-      note: "Marked ready for review",
-    },
     {
       label: "Drafts",
       value: counts.draft,
       icon: FileText,
       note: "In progress in the library",
+    },
+    {
+      label: "Ready for Review",
+      value: counts.readyForReview,
+      icon: CheckSquare,
+      note: "Marked ready by you",
+    },
+    {
+      label: "Scripture to Verify",
+      value: counts.scriptureNeedingAttention,
+      icon: ScrollText,
+      note: "Unverified or needing re-verification",
+    },
+    {
+      label: "Scripts In Progress",
+      value: counts.itemsWithScripts,
+      icon: Clapperboard,
+      note: "Items with at least one revision",
     },
     {
       label: "Scheduled",
@@ -78,11 +100,6 @@ function buildMetrics(counts: { draft: number; readyForReview: number }) {
 
 /** Actions that still have nothing behind them. */
 const QUICK_ACTIONS = [
-  {
-    label: "Scripture Studio",
-    description: "Work with verified Scripture",
-    icon: ScrollText,
-  },
   {
     label: "Create Video",
     description: "Assemble and render a video",
@@ -113,6 +130,7 @@ const FOUNDATION = [
   { label: "Database connection", state: "Configured" },
   { label: "Profiles RLS", state: "Configured" },
   { label: "Content library RLS", state: "Configured" },
+  { label: "Script & variant RLS", state: "Configured" },
   { label: "Media storage", state: "Not configured" },
   { label: "Publishing", state: "Not configured" },
 ] as const;
@@ -128,8 +146,17 @@ export default async function DashboardPage() {
     redirect(LOGIN_PATH);
   }
 
-  const counts = await getContentCounts();
-  const metrics = buildMetrics(counts);
+  const [counts, scriptureNeedingAttention, itemsWithScripts] =
+    await Promise.all([
+      getContentCounts(),
+      countScriptureNeedingAttention(),
+      countItemsWithScripts(),
+    ]);
+  const metrics = buildMetrics({
+    ...counts,
+    scriptureNeedingAttention,
+    itemsWithScripts,
+  });
   const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
 
   return (
@@ -151,7 +178,7 @@ export default async function DashboardPage() {
 
         <section aria-label="Overview">
           <h3 className="sr-only">Today</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {metrics.map((metric) => (
               <MetricCard key={metric.label} {...metric} />
             ))}
@@ -214,6 +241,24 @@ export default async function DashboardPage() {
                 label="Content Library"
                 description="Browse and filter your content"
                 icon={Library}
+              />
+              <QuickActionLink
+                href="/dashboard/scripture"
+                label="Scripture Studio"
+                description="Review and verify Scripture"
+                icon={ScrollText}
+              />
+              <QuickActionLink
+                href="/dashboard/scripts"
+                label="Script Studio"
+                description="Write and revise scripts"
+                icon={Clapperboard}
+              />
+              <QuickActionLink
+                href="/dashboard/captions"
+                label="Caption Studio"
+                description="Write per-platform captions"
+                icon={MessageSquareQuote}
               />
               <QuickActionLink
                 href="/dashboard/media"

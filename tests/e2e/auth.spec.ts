@@ -50,6 +50,9 @@ test.describe("authentication", () => {
       "/dashboard/content",
       "/dashboard/content/new",
       "/dashboard/media",
+      "/dashboard/scripture",
+      "/dashboard/scripts",
+      "/dashboard/captions",
     ]) {
       await page.goto(path);
       await expect(page, `${path} must require a session`).toHaveURL(

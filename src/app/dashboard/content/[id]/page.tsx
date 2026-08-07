@@ -16,6 +16,17 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { getContentItem } from "@/lib/content/repository";
 import {
+  classifyProductionStage,
+  PRODUCTION_STAGE_LABELS,
+} from "@/lib/production/stage";
+import { getLatestRevision } from "@/lib/scripts/repository";
+import { listVariantsForItem } from "@/lib/variants/repository";
+import {
+  PLATFORM_LABELS,
+  REVIEW_STATE_LABELS,
+  VARIANT_PLATFORMS,
+} from "@/lib/variants/types";
+import {
   CONTENT_STATUS_LABELS,
   SCRIPTURE_VERIFICATION_LABELS,
 } from "@/lib/content/types";
@@ -48,6 +59,18 @@ export default async function ContentDetailPage(
   if (!item) {
     notFound();
   }
+
+  const [latestRevision, variants] = await Promise.all([
+    getLatestRevision(item.id),
+    listVariantsForItem(item.id),
+  ]);
+
+  const productionStage = classifyProductionStage(item, {
+    hasScript: latestRevision !== null,
+    hasVariantReadyForReview: variants.some(
+      (variant) => variant.review_state === "ready_for_review",
+    ),
+  });
 
   const verifiable = canManuallyVerify({
     scripture_reference: item.scripture_reference,
@@ -183,6 +206,93 @@ export default async function ContentDetailPage(
             item={item}
           />
         </div>
+
+        <SectionCard
+          title="Studios"
+          description={`Production stage: ${PRODUCTION_STAGE_LABELS[productionStage]}`}
+        >
+          <dl className="flex flex-col gap-2.5">
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5">
+              <dt className="text-sm text-ink-secondary">Scripture</dt>
+              <dd className="flex items-center gap-3">
+                <StatusBadge
+                  tone={
+                    item.scripture_verification_status === "manually_verified"
+                      ? "configured"
+                      : item.scripture_verification_status ===
+                          "verification_required"
+                        ? "accent"
+                        : "inactive"
+                  }
+                >
+                  {
+                    SCRIPTURE_VERIFICATION_LABELS[
+                      item.scripture_verification_status
+                    ]
+                  }
+                </StatusBadge>
+                <Link
+                  href="/dashboard/scripture"
+                  className="text-xs font-medium text-highlight hover:text-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                >
+                  Scripture Studio
+                </Link>
+              </dd>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5">
+              <dt className="text-sm text-ink-secondary">Script</dt>
+              <dd className="flex items-center gap-3">
+                <span className="text-sm text-ink-primary">
+                  {latestRevision
+                    ? `Revision ${latestRevision.revision_number}`
+                    : "No script"}
+                </span>
+                <Link
+                  href={`/dashboard/scripts?item=${item.id}`}
+                  className="text-xs font-medium text-highlight hover:text-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                >
+                  Script Studio
+                </Link>
+              </dd>
+            </div>
+
+            {VARIANT_PLATFORMS.map((platform) => {
+              const variant = variants.find((v) => v.platform === platform);
+              return (
+                <div
+                  key={platform}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                >
+                  <dt className="text-sm text-ink-secondary">
+                    {PLATFORM_LABELS[platform]}
+                  </dt>
+                  <dd className="flex items-center gap-3">
+                    {variant ? (
+                      <StatusBadge
+                        tone={
+                          variant.review_state === "ready_for_review"
+                            ? "accent"
+                            : "inactive"
+                        }
+                      >
+                        {REVIEW_STATE_LABELS[variant.review_state]}
+                      </StatusBadge>
+                    ) : (
+                      <span className="text-sm text-ink-muted">None</span>
+                    )}
+                    <Link
+                      href={`/dashboard/captions?item=${item.id}&platform=${platform}`}
+                      className="text-xs font-medium text-highlight hover:text-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                    >
+                      Caption Studio
+                    </Link>
+                  </dd>
+                </div>
+              );
+            })}
+          </dl>
+        </SectionCard>
 
         <SectionCard title="Lifecycle">
           {item.status === "archived" ? (

@@ -54,9 +54,9 @@ describe("navigation configuration", () => {
   });
 
   it("marks exactly the built areas as available", () => {
-    // Stage 1 had only Dashboard. Stage 2 activated Content Library and Media
-    // Assets by building their routes. This list grows only when a route
-    // genuinely exists.
+    // Stage 1 had only Dashboard; Stage 2 added Content Library and Media
+    // Assets; Stage 3 added the three studios. This list grows only when a
+    // route genuinely exists.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -64,6 +64,9 @@ describe("navigation configuration", () => {
     expect(available.map((item) => item.label)).toEqual([
       "Dashboard",
       "Content Library",
+      "Scripture Studio",
+      "Script Studio",
+      "Caption Studio",
       "Media Assets",
     ]);
     expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
@@ -71,12 +74,12 @@ describe("navigation configuration", () => {
     );
   });
 
-  it("leaves the remaining 16 areas unbuilt", () => {
+  it("leaves the remaining 13 areas unbuilt", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(16);
+    expect(comingSoon).toHaveLength(13);
   });
 
   it("gives no href to any unbuilt module", () => {
