@@ -116,8 +116,8 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 3", () => {
-  it("activates exactly the six built areas", () => {
+describe("navigation after Stage 4", () => {
+  it("activates exactly the seven built areas", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -128,16 +128,17 @@ describe("navigation after Stage 3", () => {
       "Scripture Studio",
       "Script Studio",
       "Caption Studio",
+      "Video Creation Studio",
       "Media Assets",
     ]);
   });
 
-  it("leaves the remaining 13 areas unbuilt and unlinkable", () => {
+  it("leaves the remaining 12 areas unbuilt and unlinkable", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(13);
+    expect(comingSoon).toHaveLength(12);
     for (const item of comingSoon) {
       expect(item.href, `${item.label} must not be linkable`).toBeUndefined();
     }
@@ -156,6 +157,9 @@ describe("navigation after Stage 3", () => {
     expect(
       screen.getByRole("link", { name: "Caption Studio" }),
     ).toHaveAttribute("href", "/dashboard/captions");
+    expect(
+      screen.getByRole("link", { name: "Video Creation Studio" }),
+    ).toHaveAttribute("href", "/dashboard/video");
   });
 
   it("still refuses to link publishing modules", () => {

@@ -45,6 +45,7 @@ describe("SidebarNav", () => {
       "/dashboard/scripture",
       "/dashboard/scripts",
       "/dashboard/captions",
+      "/dashboard/video",
       "/dashboard/media",
     ]);
   });

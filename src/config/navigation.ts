@@ -32,6 +32,9 @@ export const SCRIPTURE_STUDIO_PATH = "/dashboard/scripture";
 export const SCRIPT_STUDIO_PATH = "/dashboard/scripts";
 export const CAPTION_STUDIO_PATH = "/dashboard/captions";
 
+/** Routes activated in Stage 4. */
+export const VIDEO_STUDIO_PATH = "/dashboard/video";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -125,7 +128,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "video-creation-studio",
         label: "Video Creation Studio",
         icon: Clapperboard,
-        status: "coming-soon",
+        status: "available",
+        href: VIDEO_STUDIO_PATH,
       },
     ],
   },

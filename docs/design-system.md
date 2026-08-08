@@ -78,17 +78,42 @@ never at its expense.
   operation and routes the owner to where the work happens. It does not become
   an editing surface.
 - **Specialist editing tools live on their own dedicated pages** —
-  `/dashboard/scripture`, `/dashboard/scripts`, `/dashboard/captions`, and the
-  studios that follow them. Each is a full working surface, reached from the
-  command centre rather than embedded in it.
+  `/dashboard/scripture`, `/dashboard/scripts`, `/dashboard/captions`,
+  `/dashboard/video`, and the studios that follow them. Each is a full working
+  surface, reached from the command centre rather than embedded in it.
 
 This split is the reason the studios were built as separate routes in Stage 3
-rather than as panels on the dashboard.
+rather than as panels on the dashboard, and why the Stage 4 video editor is a
+route of its own rather than a widget.
+
+### The editor pattern
+
+The Video Creation Studio establishes the layout every heavier tool should
+follow — the creator-studio depth Concept 3 contributes, inside Concept 4's
+cleanliness:
+
+| Region | Holds                                               |
+| ------ | --------------------------------------------------- |
+| Top    | What the artefact _is_ — name, format, status, save |
+| Left   | What can be added to it                             |
+| Centre | The artefact itself, at the size it deserves        |
+| Bottom | Its structure over time                             |
+| Right  | The properties of whatever is currently selected    |
+
+Two rules travel with the pattern:
+
+- **Selection lives in the URL, not in client state.** The whole editor renders
+  on the server, survives a reload and can be linked to. Client Components are
+  the exception, used only where field-level errors or playback genuinely need
+  them.
+- **Below the editor's minimum width, show a management view rather than a
+  miniature editor.** A shrunken timeline looks operable and is not. The mobile
+  view reads the composition and says where to go to change it.
 
 ### How the studios already fit
 
-Scripture Studio, Script Studio and Caption Studio are built from the shared
-system rather than styled independently:
+Scripture Studio, Script Studio, Caption Studio and the Video Creation Studio
+are built from the shared system rather than styled independently:
 
 - Each renders inside `DashboardShell`, so chrome, navigation and spacing are
   the shell's, not the page's.
@@ -181,4 +206,7 @@ a combobox, a date picker, a virtualised table.
 - **Typeface.** Still the system stack. A licensed display face for headings is
   the obvious next refinement.
 - **Spacing scale** beyond Tailwind's defaults.
-- **Motion vocabulary** — Stage 1 uses only short colour transitions.
+- **Motion vocabulary.** The interface itself still uses only short colour and
+  opacity transitions. Stage 4 added three text animation presets — fade in,
+  rise, scale in — but those belong to video compositions, not to the chrome,
+  and all of them are neutralised under `prefers-reduced-motion`.

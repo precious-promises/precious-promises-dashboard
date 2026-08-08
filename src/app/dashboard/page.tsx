@@ -33,6 +33,7 @@ import {
   getContentCounts,
 } from "@/lib/content/repository";
 import { countItemsWithScripts } from "@/lib/scripts/repository";
+import { countVideoProjects } from "@/lib/video/repository";
 import { greetingFor } from "@/lib/greeting";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
@@ -57,6 +58,7 @@ function buildMetrics(counts: {
   readyForReview: number;
   scriptureNeedingAttention: number;
   itemsWithScripts: number;
+  videoProjects: number;
 }) {
   return [
     {
@@ -84,6 +86,12 @@ function buildMetrics(counts: {
       note: "Items with at least one revision",
     },
     {
+      label: "Video Projects",
+      value: counts.videoProjects,
+      icon: MonitorPlay,
+      note: "Compositions in the video studio",
+    },
+    {
       label: "Scheduled",
       value: 0,
       icon: CalendarClock,
@@ -100,11 +108,6 @@ function buildMetrics(counts: {
 
 /** Actions that still have nothing behind them. */
 const QUICK_ACTIONS = [
-  {
-    label: "Create Video",
-    description: "Assemble and render a video",
-    icon: Clapperboard,
-  },
   {
     label: "Schedule Post",
     description: "Queue approved content",
@@ -131,7 +134,9 @@ const FOUNDATION = [
   { label: "Profiles RLS", state: "Configured" },
   { label: "Content library RLS", state: "Configured" },
   { label: "Script & variant RLS", state: "Configured" },
+  { label: "Video studio RLS", state: "Configured" },
   { label: "Media storage", state: "Not configured" },
+  { label: "Video rendering", state: "Not configured" },
   { label: "Publishing", state: "Not configured" },
 ] as const;
 
@@ -146,16 +151,18 @@ export default async function DashboardPage() {
     redirect(LOGIN_PATH);
   }
 
-  const [counts, scriptureNeedingAttention, itemsWithScripts] =
+  const [counts, scriptureNeedingAttention, itemsWithScripts, videoProjects] =
     await Promise.all([
       getContentCounts(),
       countScriptureNeedingAttention(),
       countItemsWithScripts(),
+      countVideoProjects(),
     ]);
   const metrics = buildMetrics({
     ...counts,
     scriptureNeedingAttention,
     itemsWithScripts,
+    videoProjects,
   });
   const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
 
@@ -178,7 +185,7 @@ export default async function DashboardPage() {
 
         <section aria-label="Overview">
           <h3 className="sr-only">Today</h3>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {metrics.map((metric) => (
               <MetricCard key={metric.label} {...metric} />
             ))}
@@ -259,6 +266,12 @@ export default async function DashboardPage() {
                 label="Caption Studio"
                 description="Write per-platform captions"
                 icon={MessageSquareQuote}
+              />
+              <QuickActionLink
+                href="/dashboard/video"
+                label="Video Creation Studio"
+                description="Build a video composition"
+                icon={MonitorPlay}
               />
               <QuickActionLink
                 href="/dashboard/media"

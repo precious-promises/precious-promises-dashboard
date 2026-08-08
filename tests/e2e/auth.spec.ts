@@ -44,8 +44,8 @@ test.describe("authentication", () => {
   test("redirects an anonymous visitor away from every protected route", async ({
     page,
   }) => {
-    // Stage 2 added three more protected routes. Each must be closed to an
-    // anonymous visitor, not just the dashboard root.
+    // Every route added since Stage 2 must be closed to an anonymous visitor,
+    // not just the dashboard root.
     for (const path of [
       "/dashboard/content",
       "/dashboard/content/new",
@@ -53,6 +53,7 @@ test.describe("authentication", () => {
       "/dashboard/scripture",
       "/dashboard/scripts",
       "/dashboard/captions",
+      "/dashboard/video",
     ]) {
       await page.goto(path);
       await expect(page, `${path} must require a session`).toHaveURL(

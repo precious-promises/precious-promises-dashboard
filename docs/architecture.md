@@ -74,6 +74,12 @@ carries a Scripture column — Scripture lives on `content_items` alone, so no
 writing surface can alter a verse. See
 [stage-3-writing-studios.md](./stage-3-writing-studios.md).
 
+**Implemented in Stage 4:** `video_projects`, `video_scenes`,
+`production_assets` and `render_jobs`. A Scripture scene stores a _reference_
+rather than a copy of the verse, and `render_jobs` cannot record a completed
+render without an output file. See
+[stage-4-video-studio.md](./stage-4-video-studio.md).
+
 **Still planned:** every other model in
 [database-plan.md](./database-plan.md).
 
@@ -121,6 +127,15 @@ the request path. Both are long-running and failure-prone: a render can take
 minutes, and a publish depends on a third-party API that may be slow, rate
 limited, or down.
 
+Stage 4 established why this is not negotiable for rendering specifically:
+Remotion's bundler cannot run inside a Next.js route, a renderer needs a
+headless browser and FFmpeg binaries that a function bundle does not carry, and
+a render can outlast the platform's maximum function duration. The research and
+the chosen architecture are in
+[stage-4-video-studio.md](./stage-4-video-studio.md). The `RenderProvider`
+interface exists; **no provider is connected**, and `getRenderProvider()`
+returns `null` rather than a stub.
+
 The worker is responsible for:
 
 - Media rendering jobs
@@ -164,19 +179,22 @@ harder to change safely.
 
 ## What exists today
 
-| Piece                                      | State           |
-| ------------------------------------------ | --------------- |
-| Next.js App Router shell                   | Implemented     |
-| TypeScript strict mode                     | Implemented     |
-| Tailwind CSS styling                       | Implemented     |
-| Typed environment validation               | Implemented     |
-| `GET /api/health`                          | Implemented     |
-| Unit, component and E2E test setup         | Implemented     |
-| CI workflow                                | Implemented     |
-| Supabase project and SSR clients           | Implemented     |
-| Email/password sign-in, sign-out           | Implemented     |
-| Protected `/dashboard`, private `/login`   | Implemented     |
-| `profiles` table with RLS                  | Implemented     |
-| Premium dashboard shell and navigation     | Implemented     |
-| Google Drive, worker, adapters, publishing | **Not started** |
-| Content models beyond `profiles`           | **Not started** |
+| Piece                                       | State           |
+| ------------------------------------------- | --------------- |
+| Next.js App Router shell                    | Implemented     |
+| TypeScript strict mode                      | Implemented     |
+| Tailwind CSS styling                        | Implemented     |
+| Typed environment validation                | Implemented     |
+| `GET /api/health`                           | Implemented     |
+| Unit, component and E2E test setup          | Implemented     |
+| CI workflow                                 | Implemented     |
+| Supabase project and SSR clients            | Implemented     |
+| Email/password sign-in, sign-out            | Implemented     |
+| Protected `/dashboard`, private `/login`    | Implemented     |
+| `profiles` table with RLS                   | Implemented     |
+| Premium dashboard shell and navigation      | Implemented     |
+| Content, script and caption models with RLS | Implemented     |
+| Video studio models with RLS                | Implemented     |
+| Video editor and browser preview            | Implemented     |
+| Server rendering                            | **Not started** |
+| Google Drive, worker, adapters, publishing  | **Not started** |

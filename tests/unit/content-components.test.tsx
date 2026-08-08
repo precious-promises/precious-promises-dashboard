@@ -4,7 +4,6 @@ import { describe, expect, it } from "vitest";
 import { ContentCard } from "@/components/content/content-card";
 import { ContentFiltersBar } from "@/components/content/content-filters";
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
-import { allNavItems } from "@/config/navigation";
 import { EMPTY_FILTERS } from "@/lib/content/filters";
 import type { ContentItem } from "@/lib/content/types";
 
