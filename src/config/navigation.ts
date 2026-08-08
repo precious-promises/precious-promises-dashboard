@@ -27,6 +27,11 @@ import { DASHBOARD_PATH } from "@/lib/auth/routes";
 export const CONTENT_LIBRARY_PATH = "/dashboard/content";
 export const MEDIA_ASSETS_PATH = "/dashboard/media";
 
+/** Routes activated in Stage 3. */
+export const SCRIPTURE_STUDIO_PATH = "/dashboard/scripture";
+export const SCRIPT_STUDIO_PATH = "/dashboard/scripts";
+export const CAPTION_STUDIO_PATH = "/dashboard/captions";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -99,19 +104,22 @@ export const NAVIGATION: NavGroup[] = [
         id: "scripture-studio",
         label: "Scripture Studio",
         icon: ScrollText,
-        status: "coming-soon",
+        status: "available",
+        href: SCRIPTURE_STUDIO_PATH,
       },
       {
         id: "script-studio",
         label: "Script Studio",
         icon: FileText,
-        status: "coming-soon",
+        status: "available",
+        href: SCRIPT_STUDIO_PATH,
       },
       {
         id: "caption-studio",
         label: "Caption Studio",
         icon: MessageSquareQuote,
-        status: "coming-soon",
+        status: "available",
+        href: CAPTION_STUDIO_PATH,
       },
       {
         id: "video-creation-studio",

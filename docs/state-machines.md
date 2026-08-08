@@ -4,6 +4,12 @@
 > `Ready for review` and `Archived` are real statuses on `content_items`, and
 > the approval-invalidation rule for Scripture is enforced in domain code.
 >
+> Stage 3 added the writing steps and a stage classifier
+> (`src/lib/production/stage.ts`) covering Plan → Verify Scripture → Write →
+> Review. `Produce`, `Approve`, `Schedule` and `Publish` are named but
+> unreachable: nothing can be classified into them, because those systems do
+> not exist.
+>
 > `Approved`, `Scheduled`, `Publishing`, `Posted` and `Failed` remain planned:
 > those systems do not exist, and the database deliberately refuses those
 > values so the interface cannot claim a state it cannot honour.

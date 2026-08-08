@@ -1,7 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 import { escapeLikePattern, type ContentFilters } from "./filters";
-import type { ContentItem, ContentStatus } from "./types";
+import type {
+  ContentItem,
+  ContentStatus,
+  ScriptureVerificationStatus,
+} from "./types";
 
 /**
  * Server-side data access for content.
@@ -115,6 +119,58 @@ export async function listTopics(): Promise<string[]> {
     }
   }
   return [...topics].sort((a, b) => a.localeCompare(b));
+}
+
+/**
+ * Items that carry Scripture, for the Scripture Studio.
+ *
+ * Filtered on the reference rather than the text: a reference with no wording
+ * yet is still Scripture awaiting attention, and hiding it would let it be
+ * forgotten.
+ */
+export async function listScriptureItems(
+  verification: ScriptureVerificationStatus | null,
+): Promise<ContentItem[]> {
+  const supabase = await createSupabaseServerClient();
+  const ownerId = await requireUserId();
+
+  let query = supabase
+    .from("content_items")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .not("scripture_reference", "is", null)
+    .neq("scripture_reference", "")
+    .order("updated_at", { ascending: false })
+    .limit(200);
+
+  if (verification) {
+    query = query.eq("scripture_verification_status", verification);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    throw new Error(`Could not load Scripture items: ${error.message}`);
+  }
+  return (data ?? []) as ContentItem[];
+}
+
+/** Items whose Scripture needs a verification decision. */
+export async function countScriptureNeedingAttention(): Promise<number> {
+  const supabase = await createSupabaseServerClient();
+  const ownerId = await requireUserId();
+
+  const { count, error } = await supabase
+    .from("content_items")
+    .select("id", { count: "exact", head: true })
+    .eq("owner_id", ownerId)
+    .not("scripture_reference", "is", null)
+    .neq("scripture_reference", "")
+    .in("scripture_verification_status", [
+      "unverified",
+      "verification_required",
+    ]);
+
+  return error ? 0 : (count ?? 0);
 }
 
 export interface ContentCounts {

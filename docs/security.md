@@ -81,6 +81,9 @@ credentials in log lines, error messages, or telemetry.
   is revoked on each. Supabase's security advisor reports no lints. Details in
   [supabase-setup.md](./supabase-setup.md) and
   [stage-2-content-library.md](./stage-2-content-library.md).
+- **Script revisions and platform variants prove parent ownership on write**,
+  not just row ownership — otherwise a user could attach a script or a caption
+  to somebody else's content item.
 - **`content_media` inherits ownership** through its parent content item, and
   writes additionally require ownership of the media asset — so a user cannot
   attach somebody else's asset to their own content and read its metadata
@@ -91,6 +94,9 @@ credentials in log lines, error messages, or telemetry.
   assert this on the create payload, the update payload and the FormData reader.
 - **Another owner's record 404s** rather than returning a distinguishable
   error, so responses cannot be used to discover which ids exist.
+- **Writing surfaces cannot reach Scripture.** `script_revisions` and
+  `platform_variants` have no Scripture column and their schemas define no such
+  field, so the Script and Caption Studios structurally cannot alter a verse.
 - **No service role key.** The application uses the publishable key exclusively,
   so every query it issues is subject to RLS. A test scans `src/` and fails if a
   service role reference ever appears.

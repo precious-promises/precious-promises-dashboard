@@ -10,14 +10,14 @@ Owner: Dave — Founder & Creator.
 
 ## Status
 
-**Stage 2 — Content Library and media foundation.**
+**Stage 3 — Scripture, Script and Caption Studios.**
 
-Content authoring is real: content items are created, edited, Scripture-verified
-and archived in Postgres under Row Level Security. Media assets have a metadata
-model and a declared storage seam.
+The writing half of the workflow is real: Scripture is reviewed and verified,
+scripts are written with full revision history, and per-platform captions are
+drafted — all under Row Level Security.
 
-Still absent: publishing, scheduling, approval, rendering, AI generation,
-analytics, and every platform OAuth flow.
+Still absent: AI generation, video production, rendering, approval execution,
+scheduling, publishing, analytics, and every platform OAuth flow.
 
 **It cannot publish content to any platform.** Nothing in it reaches YouTube,
 Instagram, TikTok, Google Drive or ElevenLabs.
@@ -187,7 +187,8 @@ repository secrets.
 
 **Implemented:** Supabase project, email/password sign-in and sign-out, the
 premium responsive dashboard shell, the Content Library with Scripture
-verification, and media asset metadata — all under Row Level Security.
+verification, the Scripture, Script and Caption Studios, and media asset
+metadata — all under Row Level Security.
 
 Everything below is **planned, not built**:
 
@@ -199,7 +200,11 @@ Everything below is **planned, not built**:
 - **No analytics.** Content counts are real database queries; scheduling and
   publishing metrics stay at zero because those systems do not exist. Nothing
   fabricates views, followers, revenue or engagement.
-- **16 of 19 navigation areas are unbuilt** and marked as such.
+- **No AI generation.** The Script Studio's "Generate with AI" control is a
+  genuinely disabled button marking where it will go.
+- **No approval execution.** A variant marked "ready for review" publishes
+  nothing; no integration reads that state.
+- **13 of 19 navigation areas are unbuilt** and marked as such.
 - **No user registration, password reset or email flows.**
 
 ### Deferred verification
@@ -249,6 +254,9 @@ src/
     owner.ts              Private owner identity
   lib/
     content/              Types, Zod schemas, verification rule, queries
+    scripts/              Script revisions and numbering
+    variants/             Platform variants and validation
+    production/           Workflow stage classification
     media/                Media types and metadata validation
     storage/              StorageProvider seam (no implementation)
     auth/

@@ -51,6 +51,64 @@ gold appears in several places on one screen, it has stopped doing its job.
 
 The combination should read as layered depth, not as ornament.
 
+## Long-term visual target — the Command Centre hybrid
+
+**Locked direction.** The approved Precious Promises Command Centre hybrid is
+the long-term visual target for the product. Stage 1's shell is the foundation
+it grows from; it is **not** to be redesigned from scratch, and no stage should
+restart the visual language.
+
+The approved hierarchy, in order of precedence:
+
+| Rank | Source    | Contributes                          |
+| ---- | --------- | ------------------------------------ |
+| 1    | Concept 4 | Premium cleanliness — the foundation |
+| 2    | Concept 5 | Workflow depth                       |
+| 3    | Concept 3 | Creator-studio tools                 |
+| 4    | Concept 1 | Scheduling structure                 |
+| 5    | Concept 2 | Analytics depth                      |
+
+Where two concepts disagree, the higher rank wins. Concept 4's cleanliness is
+the floor: workflow, tooling, scheduling and analytics are added **within** it,
+never at its expense.
+
+### Structural rule: command centre versus specialist tools
+
+- **`/dashboard` is the command centre.** It reports the state of the whole
+  operation and routes the owner to where the work happens. It does not become
+  an editing surface.
+- **Specialist editing tools live on their own dedicated pages** —
+  `/dashboard/scripture`, `/dashboard/scripts`, `/dashboard/captions`, and the
+  studios that follow them. Each is a full working surface, reached from the
+  command centre rather than embedded in it.
+
+This split is the reason the studios were built as separate routes in Stage 3
+rather than as panels on the dashboard.
+
+### How the studios already fit
+
+Scripture Studio, Script Studio and Caption Studio are built from the shared
+system rather than styled independently:
+
+- Each renders inside `DashboardShell`, so chrome, navigation and spacing are
+  the shell's, not the page's.
+- Each composes the shared primitives in `src/components/ui/` — `SectionCard`,
+  `EmptyState`, `StatusBadge`.
+- **None of them contains a hardcoded colour.** Every colour comes from the
+  `@theme inline` tokens above, so a change to the palette moves the studios
+  with it.
+
+That is what makes the Command Centre hybrid reachable by refinement instead of
+rewrite: the studios have no private visual language to unpick.
+
+### What is not yet specified
+
+The concepts themselves — the actual layouts, compositions and screens of
+Concepts 1–5 — are **not recorded in this repository**. Only the hierarchy
+above is. Nothing in the codebase should claim to implement a concept's visual
+detail until that detail has been supplied and written down here; inventing it
+would be inventing an approved design.
+
 ## Layout
 
 - **Desktop-first responsive.** The primary working context is a desktop

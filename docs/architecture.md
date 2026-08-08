@@ -69,6 +69,11 @@ actions and audit records.
 each with Row Level Security. See
 [stage-2-content-library.md](./stage-2-content-library.md).
 
+**Implemented in Stage 3:** `script_revisions` and `platform_variants`. Neither
+carries a Scripture column — Scripture lives on `content_items` alone, so no
+writing surface can alter a verse. See
+[stage-3-writing-studios.md](./stage-3-writing-studios.md).
+
 **Still planned:** every other model in
 [database-plan.md](./database-plan.md).
 
