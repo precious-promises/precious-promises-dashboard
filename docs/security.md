@@ -74,16 +74,21 @@ credentials in log lines, error messages, or telemetry.
 
 ## Access control
 
-- **Row Level Security** — _implemented for every table_. `profiles`,
-  `content_items`, `media_assets` and `content_media` all have RLS enabled, with
-  one explicit policy per operation, for `authenticated` only, restricted to the
-  caller's own rows. No catch-all policy; no `anon` policy, and the `anon` grant
-  is revoked on each. Supabase's security advisor reports no lints. Details in
-  [supabase-setup.md](./supabase-setup.md) and
-  [stage-2-content-library.md](./stage-2-content-library.md).
-- **Script revisions and platform variants prove parent ownership on write**,
-  not just row ownership — otherwise a user could attach a script or a caption
-  to somebody else's content item.
+- **Row Level Security** — _implemented for every table_. All ten tables have
+  RLS enabled, with one explicit policy per operation, for `authenticated`
+  only, restricted to the caller's own rows. No catch-all policy; no `anon`
+  policy, and the `anon` grant is revoked on each. Supabase's security advisor
+  reports no lints. Details in [supabase-setup.md](./supabase-setup.md),
+  [stage-2-content-library.md](./stage-2-content-library.md) and
+  [stage-4-video-studio.md](./stage-4-video-studio.md).
+- **Every child table proves parent ownership on write**, not just row
+  ownership — script revisions and platform variants against `content_items`;
+  video scenes, production assets and render jobs against `video_projects`.
+  Otherwise a user could attach a scene, a caption or a render to somebody
+  else's work.
+- **Production asset slots additionally require ownership of the media
+  asset**, so a user cannot attach somebody else's file to their own project
+  and read its metadata back through the join.
 - **`content_media` inherits ownership** through its parent content item, and
   writes additionally require ownership of the media asset — so a user cannot
   attach somebody else's asset to their own content and read its metadata
@@ -97,6 +102,9 @@ credentials in log lines, error messages, or telemetry.
 - **Writing surfaces cannot reach Scripture.** `script_revisions` and
   `platform_variants` have no Scripture column and their schemas define no such
   field, so the Script and Caption Studios structurally cannot alter a verse.
+  `video_scenes` goes further: a Scripture scene is forbidden by check
+  constraint from holding text at all, so the video editor references the
+  verified verse rather than carrying a copy of it.
 - **No service role key.** The application uses the publishable key exclusively,
   so every query it issues is subject to RLS. A test scans `src/` and fails if a
   service role reference ever appears.
@@ -129,3 +137,12 @@ credentials in log lines, error messages, or telemetry.
 - **Never fake a successful publish.** If a publish did not genuinely reach the
   platform, it is recorded as a failure. A completed code path is not evidence
   of a completed publish.
+
+### The same rule, already enforced for rendering — _implemented_
+
+`render_jobs` cannot record a `completed` render without an output media asset,
+and cannot record a `failed` one without a reason. No rendering provider is
+connected, so every render request is refused and written down as a failure
+with its reason. The application has no code path that writes `completed`;
+only something that produced a file could. See
+[stage-4-video-studio.md](./stage-4-video-studio.md).

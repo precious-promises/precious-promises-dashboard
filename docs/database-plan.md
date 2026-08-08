@@ -2,8 +2,9 @@
 
 > **Status: partly implemented.**
 >
-> `Profile`, `ContentItem`, `MediaAsset`, `ContentMedia`, `ScriptRevision` and
-> `PlatformVariant` exist as real tables
+> `Profile`, `ContentItem`, `MediaAsset`, `ContentMedia`, `ScriptRevision`,
+> `PlatformVariant`, `VideoProject`, `VideoScene`, `ProductionAsset` and
+> `RenderJob` exist as real tables
 > with Row Level Security enforced — see
 > [stage-2-content-library.md](./stage-2-content-library.md) for their columns
 > and policies. Every other model below is still a design sketch: no table, no
@@ -105,6 +106,46 @@ content item.
 **No Scripture column**, by design. Scripture lives on `ContentItem`; a script
 holds only the words the owner wrote, so writing a script cannot alter a verse.
 
+### VideoProject — _implemented_
+
+`public.video_projects`. A video composition built from a `ContentItem`: name,
+aspect ratio (`9:16`, `16:9`, `1:1`), derived duration estimate, authoring
+status and a revision counter.
+
+`duration_estimate_seconds` is recomputed from the scenes on every change, so
+it can never disagree with the timeline. `current_revision` increments with
+each structural change, which is what lets a `RenderJob` record the composition
+it was actually asked to render.
+
+### VideoScene — _implemented_
+
+`public.video_scenes`. One ordered layer: type, text source, optional text,
+optional background asset, duration, transition, text position, alignment and
+animation preset. `scene_order` is unique per project.
+
+**A Scripture scene holds no verse text.** It stores a reference to its
+project's content item and the verse is read from there, enforced by
+`video_scenes_scripture_is_referenced` and
+`video_scenes_only_scripture_reads_scripture`. A duplicated verse would drift
+from the verified record and nobody would notice.
+
+### ProductionAsset — _implemented_
+
+`public.production_assets`. The project-level media slots — background video,
+background image, background audio, voiceover, logo, caption track — one asset
+per slot, referencing a `MediaAsset`.
+
+### RenderJob — _implemented_
+
+`public.render_jobs`. Every render request, including the ones that were
+refused: status, provider, the project revision requested, failure reason and
+output asset.
+
+**A completed job requires an output file, and a failed job requires a
+reason** — both are check constraints. A code path that finished without
+rendering anything cannot be written down as a success. This mirrors
+`PublishAttempt` below, for the same reason.
+
 ### ScheduledPost _(planned)_
 
 A `PlatformVariant` bound to a publish time and target account.
@@ -158,7 +199,12 @@ User ──1:N── MediaAsset
 
 ContentItem ──1:N── ContentMedia ──N:1── MediaAsset
 ContentItem ──1:N── PlatformVariant
+ContentItem ──1:N── ScriptRevision
 ContentItem ──1:N── ApprovalAction
+
+ContentItem ──1:N── VideoProject ──1:N── VideoScene ──N:1── MediaAsset
+VideoProject ──1:N── ProductionAsset ──N:1── MediaAsset
+VideoProject ──1:N── RenderJob ──N:1── MediaAsset (output)
 
 PlatformVariant ──1:N── ScheduledPost ──N:1── SocialAccount
 ScheduledPost   ──1:N── PublishAttempt

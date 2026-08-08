@@ -10,6 +10,11 @@
 > unreachable: nothing can be classified into them, because those systems do
 > not exist.
 >
+> Stage 4 added the render job lifecycle below as a real model with real
+> constraints, and a `video_projects` status of `draft`, `ready_for_review` or
+> `archived`. No renderer is connected, so every render request is recorded as
+> a failure.
+>
 > `Approved`, `Scheduled`, `Publishing`, `Posted` and `Failed` remain planned:
 > those systems do not exist, and the database deliberately refuses those
 > values so the interface cannot claim a state it cannot honour.
@@ -54,26 +59,48 @@ Draft
 - **`Archived` is reachable from any resting state** — it is a retirement, not a
   stage of production.
 
-## Rendering lifecycle
+## Render job lifecycle — _implemented as a model_
+
+Stage 4 replaced the earlier sketch with the vocabulary that is actually
+stored on `render_jobs`.
 
 ```
-Draft
-  → Preparing
-    → Rendering
-      → Rendered
-      → Failed
+queued
+  → rendering
+    → completed
+    → failed
+    → cancelled
+  → failed
+  → cancelled
 ```
 
-| State         | Meaning                                                       |
-| ------------- | ------------------------------------------------------------- |
-| **Draft**     | Render not requested. Inputs may still change.                |
-| **Preparing** | Inputs are being gathered and validated ahead of the render.  |
-| **Rendering** | The render job is executing on the background worker.         |
-| **Rendered**  | Output produced and stored. Ready to be attached to content.  |
-| **Failed**    | The render did not produce usable output. Carries the reason. |
+| State         | Meaning                                              |
+| ------------- | ---------------------------------------------------- |
+| **queued**    | Accepted by a provider and waiting for a worker.     |
+| **rendering** | A worker is executing the render.                    |
+| **completed** | A file was produced. Requires an output media asset. |
+| **failed**    | No usable output. Requires a reason.                 |
+| **cancelled** | Abandoned before completion.                         |
 
-Rendering runs on the background worker described in
-[architecture.md](./architecture.md); it is never performed in the request path.
+### Rules
+
+- **`completed` is reachable only from `rendering`.** A job nothing ever picked
+  up cannot become a finished render. `canTransitionRender` enforces this and a
+  test asserts it for every starting status.
+- **`completed`, `failed` and `cancelled` are terminal.** Nothing leaves them; a
+  re-render is a new job, so the history of what was asked for stays intact.
+- **A completed job must carry an output file**, and a failed one must carry a
+  reason. Both are check constraints, not conventions.
+- **The application never writes `completed`.** Only a worker that produced a
+  file can, and no worker is deployed.
+
+No rendering provider is connected, so today every request is refused and
+recorded as `failed` with its reason. A refusal written down is the truth; a
+job left sitting in `queued` would look like work in progress. Rendering runs
+on the background worker described in [architecture.md](./architecture.md) and
+is never performed in the request path — see
+[stage-4-video-studio.md](./stage-4-video-studio.md) for why that is a
+constraint rather than a preference.
 
 ## Approval invalidation
 
