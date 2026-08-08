@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { syncApprovalsForItem } from "@/lib/approvals/invalidate";
 import { parseVariantForm, variantValuesFrom } from "@/lib/variants/schema";
 import type { VariantFieldErrors } from "@/lib/variants/schema";
 import { canMarkReadyForReview } from "@/lib/variants/types";
@@ -84,8 +85,15 @@ export async function saveVariant(
     return { error: "Could not save this variant. Please try again." };
   }
 
+  // Editing a caption changes what would be published, so any approval it
+  // invalidated is withdrawn here and anything scheduled on it is paused. This
+  // is a write, not a warning — an edited caption must not stay approved.
+  await syncApprovalsForItem(contentItemId);
+
   revalidatePath("/dashboard/captions");
   revalidatePath(`/dashboard/content/${contentItemId}`);
+  revalidatePath("/dashboard/approvals");
+  revalidatePath("/dashboard/calendar");
   redirect(
     `/dashboard/captions?item=${contentItemId}&platform=${parsed.data.platform}`,
   );

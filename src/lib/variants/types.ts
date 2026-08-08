@@ -37,9 +37,37 @@ export const PLATFORM_VARIANT_TYPES: Record<
   tiktok: ["tiktok_video"],
 };
 
-/** Stage 3 drafts only. Approval states arrive with the approval stage. */
-export const REVIEW_STATES = ["draft", "ready_for_review"] as const;
+/**
+ * The review states a variant can be in.
+ *
+ * Stage 5 added `approved` and `rejected`, and only then, because approval is
+ * now a real decision with a recorded fingerprint behind it.
+ */
+export const REVIEW_STATES = [
+  "draft",
+  "ready_for_review",
+  "approved",
+  "rejected",
+] as const;
 export type ReviewState = (typeof REVIEW_STATES)[number];
+
+/**
+ * The states the caption editor may set directly.
+ *
+ * Approval and rejection are **decisions taken in the Approval Queue**, not
+ * values a form may post. Without this split, saving a caption with a
+ * hand-edited field could approve it — bypassing every eligibility check and
+ * writing no fingerprint.
+ */
+export const EDITABLE_REVIEW_STATES = ["draft", "ready_for_review"] as const;
+export type EditableReviewState = (typeof EDITABLE_REVIEW_STATES)[number];
+
+/** True when the state is one an editor may set on its own. */
+export function isEditableReviewState(
+  state: ReviewState,
+): state is EditableReviewState {
+  return (EDITABLE_REVIEW_STATES as readonly ReviewState[]).includes(state);
+}
 
 export const PLATFORM_LABELS: Record<VariantPlatform, string> = {
   youtube: "YouTube",
@@ -59,6 +87,8 @@ export const VARIANT_TYPE_LABELS: Record<VariantType, string> = {
 export const REVIEW_STATE_LABELS: Record<ReviewState, string> = {
   draft: "Draft",
   ready_for_review: "Ready for review",
+  approved: "Approved",
+  rejected: "Rejected",
 };
 
 export interface PlatformVariant {
@@ -75,6 +105,16 @@ export interface PlatformVariant {
   cta: string | null;
   thumbnail_text: string | null;
   review_state: ReviewState;
+
+  // Stage 5 approval metadata. The database refuses an `approved` row without
+  // all three, and a `rejected` row without a reason.
+  approved_at: string | null;
+  approved_by: string | null;
+  approval_hash: string | null;
+  rejected_at: string | null;
+  rejected_by: string | null;
+  rejection_reason: string | null;
+
   created_at: string;
   updated_at: string;
 }

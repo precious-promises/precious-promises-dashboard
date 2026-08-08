@@ -116,29 +116,32 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 4", () => {
-  it("activates exactly the seven built areas", () => {
+describe("navigation after Stage 5", () => {
+  it("activates exactly the ten built areas", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
 
     expect(available.map((item) => item.label)).toEqual([
       "Dashboard",
+      "Production Board",
       "Content Library",
       "Scripture Studio",
       "Script Studio",
       "Caption Studio",
       "Video Creation Studio",
       "Media Assets",
+      "Calendar",
+      "Approval Queue",
     ]);
   });
 
-  it("leaves the remaining 12 areas unbuilt and unlinkable", () => {
+  it("leaves the remaining 9 areas unbuilt and unlinkable", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(12);
+    expect(comingSoon).toHaveLength(9);
     for (const item of comingSoon) {
       expect(item.href, `${item.label} must not be linkable`).toBeUndefined();
     }
@@ -165,7 +168,7 @@ describe("navigation after Stage 4", () => {
   it("still refuses to link publishing modules", () => {
     render(<SidebarNav pathname="/dashboard" />);
 
-    for (const label of ["Publish Queue", "Calendar", "Analytics"]) {
+    for (const label of ["Publish Queue", "Growth Centre", "Analytics"]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });

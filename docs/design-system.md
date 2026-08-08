@@ -76,11 +76,17 @@ never at its expense.
 
 - **`/dashboard` is the command centre.** It reports the state of the whole
   operation and routes the owner to where the work happens. It does not become
-  an editing surface.
+  an editing surface. Stage 5 filled it with live figures — awaiting approval,
+  approved, scheduled, Scripture to verify, upcoming content and a production
+  pipeline whose counts are derived from the records.
 - **Specialist editing tools live on their own dedicated pages** —
   `/dashboard/scripture`, `/dashboard/scripts`, `/dashboard/captions`,
   `/dashboard/video`, and the studios that follow them. Each is a full working
   surface, reached from the command centre rather than embedded in it.
+- **Workflow surfaces are their own pages too** — `/dashboard/production`,
+  `/dashboard/approvals` and `/dashboard/calendar`. They are where decisions
+  get made, which is different work from editing and different again from
+  reporting.
 
 This split is the reason the studios were built as separate routes in Stage 3
 rather than as panels on the dashboard, and why the Stage 4 video editor is a
@@ -167,6 +173,12 @@ than defaulted:
 | **Empty**   | Explains what belongs here and the action that fills it.          |
 | **Success** | Confirms what happened, specifically enough to be trusted.        |
 | **Error**   | Says what failed and what to do next. Never exposes internals.    |
+
+A fifth state earns its own rule from Stage 5: **withdrawn**. When an approval
+is invalidated by an edit, the interface says so wherever that variant appears
+— on its queue row, in its review detail, on its board card and on the content
+item — rather than only where the change was made. A quietly withdrawn approval
+looks exactly like an approval.
 
 Error states follow [security.md](./security.md): no secrets, no stack traces,
 no infrastructure detail in anything a user can see.

@@ -19,6 +19,9 @@ import {
   classifyProductionStage,
   PRODUCTION_STAGE_LABELS,
 } from "@/lib/production/stage";
+import { loadReviewRows } from "@/lib/approvals/repository";
+import { schedulesByVariant } from "@/lib/schedule/repository";
+import { formatInTimeZone } from "@/lib/schedule/timezone";
 import { getLatestRevision } from "@/lib/scripts/repository";
 import { listVariantsForItem } from "@/lib/variants/repository";
 import {
@@ -60,16 +63,28 @@ export default async function ContentDetailPage(
     notFound();
   }
 
-  const [latestRevision, variants] = await Promise.all([
+  const [latestRevision, variants, reviewRows] = await Promise.all([
     getLatestRevision(item.id),
     listVariantsForItem(item.id),
+    loadReviewRows(),
   ]);
 
+  // Rows for this item only. They carry the recomputed fingerprint, so an
+  // approval that no longer matches its content shows as withdrawn here too.
+  const rowsForItem = reviewRows.filter((row) => row.item.id === item.id);
+  const schedules = await schedulesByVariant(variants.map((v) => v.id));
+
+  const hasVideo = rowsForItem.some((row) => row.hasVideo);
   const productionStage = classifyProductionStage(item, {
     hasScript: latestRevision !== null,
     hasVariantReadyForReview: variants.some(
       (variant) => variant.review_state === "ready_for_review",
     ),
+    hasVideo,
+    hasValidApproval: rowsForItem.some((row) => row.validity === "valid"),
+    hasActiveSchedule: [...schedules.values()]
+      .flat()
+      .some((post) => post.status === "scheduled"),
   });
 
   const verifiable = canManuallyVerify({
@@ -257,8 +272,38 @@ export default async function ContentDetailPage(
               </dd>
             </div>
 
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5">
+              <dt className="text-sm text-ink-secondary">Video</dt>
+              <dd className="flex items-center gap-3">
+                <span className="text-sm text-ink-primary">
+                  {hasVideo ? "Composition with scenes" : "No composition"}
+                </span>
+                <Link
+                  href="/dashboard/video"
+                  className="text-xs font-medium text-highlight hover:text-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                >
+                  Video Studio
+                </Link>
+              </dd>
+            </div>
+
             {VARIANT_PLATFORMS.map((platform) => {
               const variant = variants.find((v) => v.platform === platform);
+              const row = rowsForItem.find(
+                (candidate) => candidate.variant.platform === platform,
+              );
+              const posts = variant ? (schedules.get(variant.id) ?? []) : [];
+              const active = posts.find((post) => post.status === "scheduled");
+              const paused = posts.find((post) => post.status === "paused");
+
+              // Every state shown here is derived from a record. A state the
+              // system cannot produce is never displayed.
+              const scheduleLabel = active
+                ? `Scheduled ${formatInTimeZone(new Date(active.scheduled_for), active.timezone)}`
+                : paused
+                  ? "Schedule paused"
+                  : "Not scheduled";
+
               return (
                 <div
                   key={platform}
@@ -267,17 +312,29 @@ export default async function ContentDetailPage(
                   <dt className="text-sm text-ink-secondary">
                     {PLATFORM_LABELS[platform]}
                   </dt>
-                  <dd className="flex items-center gap-3">
+                  <dd className="flex flex-wrap items-center gap-3">
                     {variant ? (
-                      <StatusBadge
-                        tone={
-                          variant.review_state === "ready_for_review"
-                            ? "accent"
-                            : "inactive"
-                        }
-                      >
-                        {REVIEW_STATE_LABELS[variant.review_state]}
-                      </StatusBadge>
+                      <>
+                        <StatusBadge
+                          tone={
+                            variant.review_state === "approved"
+                              ? "configured"
+                              : variant.review_state === "ready_for_review"
+                                ? "accent"
+                                : "inactive"
+                          }
+                        >
+                          {REVIEW_STATE_LABELS[variant.review_state]}
+                        </StatusBadge>
+                        {row?.validity === "invalidated" ? (
+                          <span className="text-xs text-gold">
+                            Approval withdrawn after a change
+                          </span>
+                        ) : null}
+                        <span className="text-xs text-ink-muted">
+                          {scheduleLabel}
+                        </span>
+                      </>
                     ) : (
                       <span className="text-sm text-ink-muted">None</span>
                     )}
@@ -287,11 +344,24 @@ export default async function ContentDetailPage(
                     >
                       Caption Studio
                     </Link>
+                    {variant ? (
+                      <Link
+                        href={`/dashboard/approvals?variant=${variant.id}`}
+                        className="text-xs font-medium text-highlight hover:text-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                      >
+                        Approval
+                      </Link>
+                    ) : null}
                   </dd>
                 </div>
               );
             })}
           </dl>
+
+          <p className="mt-3 text-xs text-ink-muted">
+            Approval and scheduling record decisions. Nothing in this product
+            publishes to a platform.
+          </p>
         </SectionCard>
 
         <SectionCard title="Lifecycle">

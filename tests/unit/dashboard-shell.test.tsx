@@ -41,12 +41,15 @@ describe("SidebarNav", () => {
     const links = screen.getAllByRole("link");
     expect(links.map((link) => link.getAttribute("href"))).toEqual([
       DASHBOARD_PATH,
+      "/dashboard/production",
       "/dashboard/content",
       "/dashboard/scripture",
       "/dashboard/scripts",
       "/dashboard/captions",
       "/dashboard/video",
       "/dashboard/media",
+      "/dashboard/calendar",
+      "/dashboard/approvals",
     ]);
   });
 
@@ -54,7 +57,7 @@ describe("SidebarNav", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
     // A link to a non-existent route is the failure this guards against.
-    for (const label of ["Production Board", "Analytics", "Settings"]) {
+    for (const label of ["Publish Queue", "Analytics", "Settings"]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });
@@ -62,7 +65,7 @@ describe("SidebarNav", () => {
   it("marks unbuilt modules as unavailable for assistive technology", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
-    const row = screen.getByText("Production Board").closest("[aria-disabled]");
+    const row = screen.getByText("Publish Queue").closest("[aria-disabled]");
     expect(row).not.toBeNull();
     expect(row).toHaveAttribute("aria-disabled", "true");
     expect(row?.textContent).toContain("coming soon");
@@ -151,30 +154,51 @@ describe("QuickAction", () => {
 });
 
 describe("WorkflowPipeline", () => {
-  it("shows the approved workflow with zero counts", () => {
-    render(<WorkflowPipeline />);
+  it("shows every workflow stage the board can place work in", () => {
+    render(<WorkflowPipeline counts={{}} />);
 
     const list = screen.getByRole("list", {
       name: "Content production workflow",
     });
     for (const stage of [
       "Plan",
+      "Verify Scripture",
       "Write",
       "Produce",
       "Review",
       "Approve",
       "Schedule",
-      "Publish",
     ]) {
       expect(within(list).getByText(stage)).toBeInTheDocument();
     }
     expect(within(list).getAllByText("0")).toHaveLength(7);
   });
 
-  it("says the counts are structural rather than live", () => {
-    render(<WorkflowPipeline />);
+  it("does not offer Publish as a stage", () => {
+    // Nothing publishes, so a Publish column would imply a capability the
+    // product does not have.
+    render(<WorkflowPipeline counts={{}} />);
 
-    expect(screen.getByText(/not a live queue/i)).toBeInTheDocument();
+    const list = screen.getByRole("list", {
+      name: "Content production workflow",
+    });
+    expect(within(list).queryByText("Publish")).toBeNull();
+  });
+
+  it("renders the real counts it is given", () => {
+    render(<WorkflowPipeline counts={{ write: 3, approve: 1 }} />);
+
+    const list = screen.getByRole("list", {
+      name: "Content production workflow",
+    });
+    expect(within(list).getByText("3")).toBeInTheDocument();
+    expect(within(list).getByText("1")).toBeInTheDocument();
+  });
+
+  it("says the counts are derived from the records", () => {
+    render(<WorkflowPipeline counts={{}} />);
+
+    expect(screen.getByText(/derived from the records/i)).toBeInTheDocument();
   });
 });
 

@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 import {
+  EDITABLE_REVIEW_STATES,
   isVariantTypeForPlatform,
-  REVIEW_STATES,
   VARIANT_PLATFORMS,
   VARIANT_TYPES,
 } from "./types";
@@ -69,7 +69,10 @@ export const variantObjectSchema = z.object({
   first_comment: optionalText(3000),
   cta: optionalText(500),
   thumbnail_text: optionalText(200),
-  review_state: z.enum(REVIEW_STATES).default("draft"),
+  // Editable states only. `approved` and `rejected` are decisions taken in the
+  // Approval Queue with their own eligibility checks and fingerprint; a form
+  // that could post them would bypass both.
+  review_state: z.enum(EDITABLE_REVIEW_STATES).default("draft"),
 });
 
 export const variantFormSchema = variantObjectSchema.refine(

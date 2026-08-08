@@ -80,6 +80,13 @@ rather than a copy of the verse, and `render_jobs` cannot record a completed
 render without an output file. See
 [stage-4-video-studio.md](./stage-4-video-studio.md).
 
+**Implemented in Stage 5:** approval columns on `platform_variants`, plus
+`scheduled_posts`, `recurring_schedule_rules` and an append-only `audit_log`.
+Approval carries a deterministic fingerprint of what was approved, so an edit
+to publication-sensitive content withdraws the approval and pauses anything
+scheduled on it. See
+[stage-5-approval-scheduling.md](./stage-5-approval-scheduling.md).
+
 **Still planned:** every other model in
 [database-plan.md](./database-plan.md).
 
@@ -196,5 +203,9 @@ harder to change safely.
 | Content, script and caption models with RLS | Implemented     |
 | Video studio models with RLS                | Implemented     |
 | Video editor and browser preview            | Implemented     |
+| Approval workflow and fingerprinting        | Implemented     |
+| Production Board, Calendar, scheduling      | Implemented     |
+| Audit log                                   | Implemented     |
 | Server rendering                            | **Not started** |
+| Timed job execution                         | **Not started** |
 | Google Drive, worker, adapters, publishing  | **Not started** |
