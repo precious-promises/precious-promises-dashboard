@@ -44,7 +44,8 @@ export type ApprovalBlockerCode =
   | "scripture_not_verified"
   | "variant_empty"
   | "missing_video"
-  | "missing_image";
+  | "missing_image"
+  | "platform_settings_incomplete";
 
 export interface ApprovalBlocker {
   code: ApprovalBlockerCode;
@@ -69,6 +70,16 @@ export interface ApprovalContext {
   hasVideo: boolean;
   /** How many media assets are attached to the content item. */
   mediaCount: number;
+  /**
+   * Problems the platform's own module found with this variant's settings.
+   *
+   * Passed in rather than computed here, so this module stays pure and free of
+   * any platform's vocabulary. A YouTube variant with an unanswered
+   * made-for-kids declaration cannot be approved — approving it would approve
+   * an upload that YouTube would refuse, or worse, one this system would have
+   * to answer a legal question on Dave's behalf to send.
+   */
+  platformProblems?: readonly string[];
 }
 
 /**
@@ -135,6 +146,10 @@ export function approvalBlockers(context: ApprovalContext): ApprovalBlocker[] {
       message:
         "This content type is published as an image, and no media asset is attached.",
     });
+  }
+
+  for (const problem of context.platformProblems ?? []) {
+    blockers.push({ code: "platform_settings_incomplete", message: problem });
   }
 
   return blockers;

@@ -34,6 +34,13 @@ export function approvalSubjectFrom(
   >,
   video: { id: string; current_revision: number } | null,
   mediaSelections: ApprovalMediaSelection[],
+  /**
+   * The platform's own settings, already canonicalised by that platform's
+   * module. Required rather than defaulted: a default would let one call site
+   * quietly omit it and compute a fingerprint that never matches the one
+   * approval was granted under.
+   */
+  platformSettings: string | null,
 ): ApprovalSubject {
   return {
     contentItemId: variant.content_item_id,
@@ -58,5 +65,7 @@ export function approvalSubjectFrom(
     videoProjectRevision: video?.current_revision ?? null,
 
     mediaSelections,
+
+    platformSettings,
   };
 }

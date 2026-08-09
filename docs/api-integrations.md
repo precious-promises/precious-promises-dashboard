@@ -1,10 +1,18 @@
 # API integrations
 
-> **Status: planned. No integration is implemented.**
+> **Status: one integration implemented — YouTube.**
 >
-> No adapter, client, credential or API call exists in this repository. The
-> dashboard cannot currently authenticate with, read from, or publish to any
-> external platform.
+> Stage 7 built a genuine Google OAuth 2.0 connection and a YouTube Data API v3
+> publishing provider. Every request it makes is a real request to Google.
+>
+> **It has not published anything, and cannot yet:** the upload path refuses
+> with `media_source_unavailable`, because media is stored as metadata and no
+> storage integration retrieves the file. See
+> [stage-7-youtube.md](./stage-7-youtube.md).
+>
+> Instagram, TikTok, Google Drive, ElevenLabs and the AI caption provider remain
+> unimplemented. No adapter, client, credential or API call exists for any of
+> them.
 
 ## Verify the documentation before you build
 
@@ -55,19 +63,42 @@ only be driven as far as a draft or that need the owner to finish by hand.
 Forcing that third case into "succeeded" would claim something went live that
 did not.
 
-**`getPublishingProvider` returns `null` for every platform.** No stub exists,
-deliberately: a stub returning a plausible post id would be indistinguishable
-from a working integration at the call site. See
+**`getPublishingProvider` returns `null` for Instagram and TikTok.** No stub
+exists, deliberately: a stub returning a plausible post id would be
+indistinguishable from a working integration at the call site. See
 [stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
+
+`PROVIDER_STATUS` distinguishes `implemented` — a fact about this repository —
+from whether a publish would actually succeed, which depends on a connected
+account and on media that can be fetched. Conflating the two is how an interface
+starts lying.
 
 ## Planned adapters
 
-### YouTube _(planned)_
+### YouTube — _implemented in Stage 7_
 
-Video publishing and metrics retrieval for the channel.
+Google OAuth 2.0 web-server flow and the YouTube Data API v3.
+`src/lib/youtube/` holds the whole integration, and it is the only directory in
+`src/` permitted to name a platform host — a source-wide test enforces that.
 
-Scopes, quota model, upload mechanics and metadata constraints: **to be verified
-at implementation time.**
+Verified at implementation time, with provenance recorded in
+[stage-7-youtube.md](./stage-7-youtube.md):
+
+- **Scopes:** `youtube.upload`, `youtube.readonly`, `youtube` — the narrowest
+  set that can upload, identify the channel, and file a video in a playlist.
+  `youtubepartner` and `force-ssl` are deliberately not requested.
+- **Quota:** an upload costs 1,600 units of a default 10,000 a day — six uploads.
+- **Privacy:** an API client that has not passed Google's compliance audit has
+  its uploads forced to private, so only `private` and `unlisted` are offered.
+- **Field limits:** title 100 characters, description 5,000 **bytes**, tags 500
+  characters combined, thumbnail 2 MB as JPEG or PNG.
+- **Shorts:** no API field requests the classification. YouTube decides from the
+  uploaded file, so this application does not claim to create one.
+- **Uploads are resumable**, and the session is recorded before any bytes are
+  sent, so an interrupted upload can be reconciled rather than repeated.
+
+What is _not_ asserted: the Shorts duration threshold, which is a product rule
+that has changed more than once. It is shown as guidance, not enforced.
 
 ### Instagram _(planned)_
 

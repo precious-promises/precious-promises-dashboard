@@ -10,10 +10,13 @@ import { VariantForm } from "@/components/variants/variant-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { YouTubeMetadataForm } from "@/components/youtube/metadata-form";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { EMPTY_FILTERS } from "@/lib/content/filters";
 import { getContentItem, listContentItems } from "@/lib/content/repository";
+import { listMediaAssets } from "@/lib/media/repository";
 import { listVariantsForItem } from "@/lib/variants/repository";
+import { loadYouTubeMetadata } from "@/lib/youtube/repository";
 import {
   PLATFORM_LABELS,
   REVIEW_STATE_LABELS,
@@ -66,6 +69,19 @@ export default async function CaptionStudioPage(
   const item = selectedId ? await getContentItem(selectedId) : null;
   const variants = item ? await listVariantsForItem(item.id) : [];
   const current = variants.find((v) => v.platform === platform) ?? null;
+
+  // Only loaded for the YouTube tab, and only when a variant exists to attach
+  // them to. There is nothing to configure until there is something to publish.
+  const youtubeMetadata =
+    platform === "youtube" && current
+      ? await loadYouTubeMetadata(current.id)
+      : null;
+  const imageAssets =
+    platform === "youtube" && current
+      ? (await listMediaAssets()).filter(
+          (asset) => asset.media_type === "image",
+        )
+      : [];
 
   return (
     <DashboardShell
@@ -174,6 +190,20 @@ export default async function CaptionStudioPage(
                 variant={current}
               />
             </SectionCard>
+
+            {platform === "youtube" && current ? (
+              <SectionCard
+                title="YouTube publishing settings"
+                description="What YouTube itself needs, separate from the wording. Changing any of it withdraws approval."
+              >
+                <YouTubeMetadataForm
+                  platformVariantId={current.id}
+                  contentItemId={item.id}
+                  metadata={youtubeMetadata}
+                  imageAssets={imageAssets}
+                />
+              </SectionCard>
+            ) : null}
           </>
         )}
       </div>

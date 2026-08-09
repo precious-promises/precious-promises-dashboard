@@ -89,9 +89,16 @@ scheduled on it. See
 
 **Implemented in Stage 6:** publishing lifecycle and claim columns on
 `scheduled_posts`, plus `publish_attempts` and the `claim_due_scheduled_posts`
-function. Nothing publishes: no provider exists, and the database refuses
-`posted` without the platform's own post id. See
+function. The database refuses `posted` without the platform's own post id. See
 [stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
+
+**Implemented in Stage 7:** `social_accounts`, `social_account_credentials`,
+`oauth_states`, `youtube_video_metadata` and `youtube_upload_sessions`, plus
+platform processing columns on `scheduled_posts`. Three of those tables have RLS
+enabled with **no policies at all**, so the browser cannot reach them by
+construction. Nothing has been published: the YouTube provider is real, and
+refuses with `media_source_unavailable` because no integration can fetch the
+video file. See [stage-7-youtube.md](./stage-7-youtube.md).
 
 **Still planned:** every other model in
 [database-plan.md](./database-plan.md).
@@ -153,7 +160,8 @@ The worker is responsible for:
 
 - Media rendering jobs _(planned)_
 - Publishing to social platforms at scheduled times — **infrastructure built
-  in Stage 6, no platform connected**
+  in Stage 6, a real YouTube adapter in Stage 7, and still no successful
+  publish: there is no way to fetch the video file**
 - Retry and backoff on transient failure — _implemented_ as an error
   classification framework
 - Recording every attempt — _implemented_ as `publish_attempts`
@@ -200,28 +208,31 @@ harder to change safely.
 
 ## What exists today
 
-| Piece                                       | State           |
-| ------------------------------------------- | --------------- |
-| Next.js App Router shell                    | Implemented     |
-| TypeScript strict mode                      | Implemented     |
-| Tailwind CSS styling                        | Implemented     |
-| Typed environment validation                | Implemented     |
-| `GET /api/health`                           | Implemented     |
-| Unit, component and E2E test setup          | Implemented     |
-| CI workflow                                 | Implemented     |
-| Supabase project and SSR clients            | Implemented     |
-| Email/password sign-in, sign-out            | Implemented     |
-| Protected `/dashboard`, private `/login`    | Implemented     |
-| `profiles` table with RLS                   | Implemented     |
-| Premium dashboard shell and navigation      | Implemented     |
-| Content, script and caption models with RLS | Implemented     |
-| Video studio models with RLS                | Implemented     |
-| Video editor and browser preview            | Implemented     |
-| Approval workflow and fingerprinting        | Implemented     |
-| Production Board, Calendar, scheduling      | Implemented     |
-| Audit log                                   | Implemented     |
-| Publishing infrastructure and safety gate   | Implemented     |
-| Trigger.dev task foundation (not deployed)  | Implemented     |
-| Platform connections and real publishing    | **Not started** |
-| Server rendering                            | **Not started** |
-| Google Drive, worker, adapters, publishing  | **Not started** |
+| Piece                                       | State                          |
+| ------------------------------------------- | ------------------------------ |
+| Next.js App Router shell                    | Implemented                    |
+| TypeScript strict mode                      | Implemented                    |
+| Tailwind CSS styling                        | Implemented                    |
+| Typed environment validation                | Implemented                    |
+| `GET /api/health`                           | Implemented                    |
+| Unit, component and E2E test setup          | Implemented                    |
+| CI workflow                                 | Implemented                    |
+| Supabase project and SSR clients            | Implemented                    |
+| Email/password sign-in, sign-out            | Implemented                    |
+| Protected `/dashboard`, private `/login`    | Implemented                    |
+| `profiles` table with RLS                   | Implemented                    |
+| Premium dashboard shell and navigation      | Implemented                    |
+| Content, script and caption models with RLS | Implemented                    |
+| Video studio models with RLS                | Implemented                    |
+| Video editor and browser preview            | Implemented                    |
+| Approval workflow and fingerprinting        | Implemented                    |
+| Production Board, Calendar, scheduling      | Implemented                    |
+| Audit log                                   | Implemented                    |
+| Publishing infrastructure and safety gate   | Implemented                    |
+| Trigger.dev task foundation (not deployed)  | Implemented                    |
+| Google OAuth and YouTube provider           | Implemented                    |
+| Encrypted credential storage                | Implemented                    |
+| A successful external publish               | **Blocked on media retrieval** |
+| Instagram and TikTok providers              | **Not started**                |
+| Server rendering                            | **Not started**                |
+| Google Drive and media retrieval            | **Not started**                |

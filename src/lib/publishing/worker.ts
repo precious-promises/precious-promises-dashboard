@@ -6,6 +6,8 @@ import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createWorkerClient } from "@/lib/supabase/worker";
 import type { PlatformVariant } from "@/lib/variants/types";
+import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
+import { loadMetadataAsWorker } from "@/lib/youtube/repository";
 
 import { holdsClaim, newClaimToken, releaseClaim } from "./claim";
 import { classifyThrown, safeError, type SafeError } from "./errors";
@@ -217,7 +219,15 @@ export async function publishClaimedPost(
     sortOrder: row.sort_order,
   }));
 
-  // 3. Recompute the fingerprint from what is stored right now.
+  // 3. Recompute the fingerprint from what is stored right now — including
+  //    the platform's own settings, which are part of what was approved.
+  const platformSettings =
+    variant?.platform === "youtube"
+      ? youtubeSettingsDigest(
+          await loadMetadataAsWorker(client, variant.id, owner),
+        )
+      : null;
+
   const currentFingerprint =
     variant && item
       ? approvalFingerprint(
@@ -228,6 +238,7 @@ export async function publishClaimedPost(
               ? { id: video.id, current_revision: video.current_revision }
               : null,
             mediaSelections,
+            platformSettings,
           ),
         )
       : null;

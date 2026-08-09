@@ -67,6 +67,7 @@ function reviewRow(overrides: Partial<ReviewRow> = {}): ReviewRow {
     latestScriptRevision: 2,
     mediaCount: 0,
     schedules: [],
+    platformProblems: [],
     ...overrides,
   };
 }

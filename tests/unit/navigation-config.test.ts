@@ -57,7 +57,8 @@ describe("navigation configuration", () => {
     // Stage 1 had only Dashboard; Stage 2 added Content Library and Media
     // Assets; Stage 3 added the three writing studios; Stage 4 added the Video
     // Creation Studio; Stage 5 added the Production Board, Calendar and
-    // Approval Queue. This list grows only when a route genuinely exists.
+    // Approval Queue; Stage 6 added the Publish Queue; Stage 7 added Connected
+    // Accounts. This list grows only when a route genuinely exists.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -74,30 +75,42 @@ describe("navigation configuration", () => {
       "Calendar",
       "Approval Queue",
       "Publish Queue",
+      "Connected Accounts",
     ]);
     expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
       DASHBOARD_PATH,
     );
   });
 
-  it("leaves the remaining 8 areas unbuilt", () => {
+  it("leaves the remaining 7 areas unbuilt", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(8);
+    expect(comingSoon).toHaveLength(7);
   });
 
-  it("still refuses to offer Connected Accounts", () => {
-    // Stage 6 activated the Publish Queue — the infrastructure is real, and
-    // the queue reports refusals honestly. Connecting an account is Stage 7,
-    // and activating it now would claim a capability that does not exist.
+  it("offers Connected Accounts, because the route now exists", () => {
+    // Stage 7 built a real OAuth flow and a real YouTube adapter, so this is
+    // no longer a claim about a capability that does not exist. What the page
+    // itself says about publishing stays honest — see the accounts page.
     const connectedAccounts = allNavItems().find(
       (item) => item.id === "connected-accounts",
     );
 
-    expect(connectedAccounts?.status).toBe("coming-soon");
-    expect(connectedAccounts?.href).toBeUndefined();
+    expect(connectedAccounts?.status).toBe("available");
+    expect(connectedAccounts?.href).toBe("/dashboard/accounts");
+  });
+
+  it("still refuses to offer YouTube & Playlists as its own area", () => {
+    // Playlist selection lives inside the YouTube settings form. A separate
+    // area would imply browsing and managing playlists, which nothing does.
+    const playlists = allNavItems().find(
+      (item) => item.id === "youtube-playlists",
+    );
+
+    expect(playlists?.status).toBe("coming-soon");
+    expect(playlists?.href).toBeUndefined();
   });
 
   it("gives no href to any unbuilt module", () => {
@@ -128,6 +141,12 @@ describe("navigation configuration", () => {
 describe("sectionTitleForPath", () => {
   it("names the dashboard section", () => {
     expect(sectionTitleForPath(DASHBOARD_PATH)).toBe("Dashboard");
+  });
+
+  it("names the Connected Accounts section", () => {
+    expect(sectionTitleForPath("/dashboard/accounts")).toBe(
+      "Connected Accounts",
+    );
   });
 
   it("falls back to Dashboard for an unknown path", () => {

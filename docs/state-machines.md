@@ -126,12 +126,20 @@ human approval:
 - Metadata — titles, descriptions, tags, scheduling parameters
 - Thumbnails
 
-### Implemented in full for platform variants in Stage 5
+### Implemented in full for platform variants in Stage 5, extended in Stage 7
 
 Every publication-sensitive field of a platform variant — Scripture, title,
 caption, description, hashtags, first comment, CTA, thumbnail text, the
-selected video and its revision, and the attached media — is reduced to a
-SHA-256 fingerprint at the moment of approval. Any later change moves the
+selected video and its revision, the attached media, and (from Stage 7) the
+platform's own settings — is reduced to a SHA-256 fingerprint at the moment of
+approval.
+
+The Stage 7 addition is `platformSettings`. A YouTube variant carries a privacy
+status, a made-for-kids declaration, tags and a thumbnail, all of which change
+what an audience sees; approving a variant and then flipping its privacy would
+otherwise publish something nobody approved. It is `null` for a platform with no
+such settings and for a YouTube variant with none saved yet, so saving them for
+the first time is itself a change. Any later change moves the
 fingerprint, and the approval is withdrawn automatically:
 
 ```

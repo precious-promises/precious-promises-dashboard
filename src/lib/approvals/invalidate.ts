@@ -4,6 +4,8 @@ import { invalidationPause } from "@/lib/schedule/rules";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
+import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
+import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
 
 import { approvalFingerprint } from "./fingerprint";
 import { APPROVAL_INVALIDATED_REASON, invalidationUpdate } from "./rules";
@@ -110,6 +112,15 @@ export async function syncApprovalsForItem(
     sortOrder: row.sort_order,
   }));
 
+  // YouTube's own settings are part of what was approved, so a changed privacy
+  // status or thumbnail invalidates an approval exactly as a changed caption
+  // does.
+  const youtubeMetadata = await loadYouTubeMetadataFor(
+    approved
+      .filter((variant) => variant.platform === "youtube")
+      .map((v) => v.id),
+  );
+
   for (const variant of approved) {
     const current = approvalFingerprint(
       approvalSubjectFrom(
@@ -119,6 +130,7 @@ export async function syncApprovalsForItem(
           ? { id: video.id, current_revision: video.current_revision }
           : null,
         mediaSelections,
+        youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
       ),
     );
 

@@ -74,18 +74,35 @@ describe("nothing can publish", () => {
     }
   });
 
-  it("writes no platform API call anywhere in the source", () => {
-    // A grep, deliberately: the guarantee is that no code path reaches a
-    // platform, and that is a property of the whole tree rather than of one
-    // module.
+  it("keeps every platform API call inside the YouTube module", () => {
+    // A grep, deliberately. Stage 7 made one platform reachable, and the
+    // guarantee that replaced "nothing reaches a platform" is narrower but
+    // still a property of the whole tree: only src/lib/youtube may name a
+    // platform host, so no page, action or scheduling path can start talking
+    // to one.
     const forbidden =
-      /(googleapis\.com|graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com|www\.googleapis\.com\/youtube)/i;
+      /(googleapis\.com|accounts\.google\.com|graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
 
     for (const file of sourceFiles()) {
+      if (file.includes(join("src", "lib", "youtube"))) {
+        continue;
+      }
       expect(
         readFileSync(file, "utf8"),
-        `${file} contacts a platform`,
+        `${file} contacts a platform directly`,
       ).not.toMatch(forbidden);
+    }
+  });
+
+  it("keeps the scheduling code free of any platform call", () => {
+    // The specific worry this started as: a schedule must not execute itself.
+    const forbidden = /(googleapis\.com|accounts\.google\.com)/i;
+
+    for (const file of sourceFiles()) {
+      if (!file.includes(join("src", "lib", "schedule"))) {
+        continue;
+      }
+      expect(readFileSync(file, "utf8"), file).not.toMatch(forbidden);
     }
   });
 
