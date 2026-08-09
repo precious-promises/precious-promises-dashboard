@@ -170,15 +170,23 @@ A rule defines _when_ something could go out. It never selects content and
 never creates a `ScheduledPost` — a rule that could fill itself would be
 publishing on nobody's authority.
 
-### PublishAttempt _(planned)_
+### PublishAttempt — _implemented_
 
-One attempt to publish a `ScheduledPost` to a platform.
+`public.publish_attempts`. One attempt to publish a `ScheduledPost` to a
+platform: attempt number, idempotency key, status (`started`, `succeeded`,
+`failed`, `blocked`, `cancelled`), provider, retryability, a sanitised error
+code and message, the external post id and url, and timestamps.
 
-Records started and finished timestamps, outcome, the platform's response
-identifier on success, and the error classification on failure. **Every attempt
-is recorded, including failures and retries** — the attempt history is how the
-system can be trusted about what did and did not reach an audience. A row is
-never rewritten to turn a failure into a success.
+**Every attempt is recorded, including refusals** — the history is how the
+system can be trusted about what did and did not reach an audience. There is
+no DELETE policy, so a row cannot be removed; and `succeeded` requires the
+platform's own post id, so a failure cannot be rewritten into a success.
+
+`blocked` is distinct from `failed`: a failure is the provider saying no, a
+block is this system saying no before anything was sent.
+
+A partial unique index on `idempotency_key WHERE status = 'succeeded'` means
+one approved operation can succeed at most once.
 
 ### ApprovalAction _(planned)_
 

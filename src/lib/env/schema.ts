@@ -70,6 +70,15 @@ export const serverEnvSchema = z.object({
     }),
   ),
 
+  // The trusted server credential for background work, in Supabase's current
+  // form (`sb_secret_…`). It replaces the legacy service role key, is
+  // independently rotatable and instantly revocable, and is refused by
+  // Supabase in a browser — which the legacy JWT was not. Only the worker
+  // reads it, and it never appears in a client bundle.
+  SUPABASE_SECRET_KEY: optionalText,
+
+  // Legacy, kept only so an older deployment does not fail validation.
+  // Nothing in this codebase reads it. See docs/security.md.
   SUPABASE_SERVICE_ROLE_KEY: optionalText,
   TOKEN_ENCRYPTION_KEY: optionalText,
 

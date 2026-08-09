@@ -152,11 +152,17 @@ describe("duplicate detection", () => {
 });
 
 describe("schedule state machine", () => {
-  it("offers exactly the three states the product can honour", () => {
-    // publishing, posted and failed are absent: nothing executes a schedule.
+  it("offers the lifecycle the worker needs", () => {
+    // Stage 6 made the execution states real. `posted` is in the vocabulary
+    // because the worker needs somewhere to land — but nothing can reach it,
+    // which tests/unit/publishing-safety.test.ts proves.
     expect([...SCHEDULE_STATUSES]).toEqual([
       "scheduled",
       "paused",
+      "queued",
+      "publishing",
+      "posted",
+      "failed",
       "cancelled",
     ]);
   });

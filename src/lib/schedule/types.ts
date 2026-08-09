@@ -15,26 +15,51 @@ import { DEFAULT_TIMEZONE } from "./timezone";
  * exactly that wherever one is shown.
  */
 
-export const SCHEDULE_STATUSES = ["scheduled", "paused", "cancelled"] as const;
+export const SCHEDULE_STATUSES = [
+  "scheduled",
+  "paused",
+  "queued",
+  "publishing",
+  "posted",
+  "failed",
+  "cancelled",
+] as const;
 export type ScheduleStatus = (typeof SCHEDULE_STATUSES)[number];
 
 export const SCHEDULE_STATUS_LABELS: Record<ScheduleStatus, string> = {
   scheduled: "Scheduled",
   paused: "Paused",
+  queued: "Queued",
+  publishing: "Publishing",
+  posted: "Posted",
+  failed: "Failed",
   cancelled: "Cancelled",
 };
 
 /**
- * States a future publishing stage would add.
+ * Statuses the *interface* may show as an outcome.
  *
- * Listed here so the gap is visible in the codebase rather than only in the
- * documentation — and **not** in `SCHEDULE_STATUSES`, so nothing can be
- * written into one of them today.
+ * `posted` is in the vocabulary because the worker lifecycle needs somewhere
+ * to land — but nothing can reach it in Stage 6: no provider exists, and the
+ * database refuses `posted` without the platform's own post id.
  */
-export const FUTURE_SCHEDULE_STATUSES = [
-  "publishing",
+export const OUTCOME_SCHEDULE_STATUSES: readonly ScheduleStatus[] = [
   "posted",
   "failed",
+];
+
+/**
+ * States a future provider will need, kept out of the live vocabulary.
+ *
+ * A provider that can only reach a platform's draft, or that requires the
+ * owner to finish the post by hand, needs somewhere honest to stop. Both are
+ * named in the database's check constraint so the shape is agreed — and
+ * **neither is in `SCHEDULE_STATUSES`**, so nothing can be written into one
+ * until the provider that needs it exists.
+ */
+export const FUTURE_SCHEDULE_STATUSES = [
+  "ready_for_manual_post",
+  "uploaded_to_platform_draft",
 ] as const;
 
 export interface ScheduledPost {
@@ -51,6 +76,22 @@ export interface ScheduledPost {
   pause_reason: string | null;
   cancelled_at: string | null;
   cancellation_reason: string | null;
+
+  // Stage 6 execution columns. The claim triple is all-or-nothing, and
+  // `external_post_id` is what makes `posted` unfakeable.
+  attempt_count: number;
+  claimed_at: string | null;
+  claim_token: string | null;
+  claim_expires_at: string | null;
+  claimed_by: string | null;
+  queued_at: string | null;
+  publishing_started_at: string | null;
+  posted_at: string | null;
+  external_post_id: string | null;
+  external_post_url: string | null;
+  last_error_code: string | null;
+  last_error_message: string | null;
+
   created_at: string;
   updated_at: string;
 }

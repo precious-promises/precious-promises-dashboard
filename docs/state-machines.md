@@ -19,7 +19,13 @@
 > what was approved — and added scheduling. `Scheduled` now exists as a
 > `scheduled_posts` row that records an intention; **nothing executes it**.
 >
-> `Publishing`, `Posted` and `Failed` remain planned:
+> Stage 6 made `Queued`, `Publishing`, `Posted` and `Failed` real states on
+> `scheduled_posts` and built the worker that moves between them — but
+> **nothing can reach `Posted`**: no platform provider exists, and the database
+> refuses that status without the platform's own post id. See
+> [stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
+>
+> The remaining planned states:
 > those systems do not exist, and the database deliberately refuses those
 > values so the interface cannot claim a state it cannot honour.
 

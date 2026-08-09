@@ -110,9 +110,17 @@ credentials in log lines, error messages, or telemetry.
   `video_scenes` goes further: a Scripture scene is forbidden by check
   constraint from holding text at all, so the video editor references the
   verified verse rather than carrying a copy of it.
-- **No service role key.** The application uses the publishable key exclusively,
-  so every query it issues is subject to RLS. A test scans `src/` and fails if a
-  service role reference ever appears.
+- **No service role key.** The application uses the publishable key
+  exclusively, so every query it issues is subject to RLS. A test scans `src/`
+  and fails if a service role reference ever appears.
+- **The background worker uses a modern secret key** — _implemented in
+  Stage 6_. A worker has no user session, so it needs a trusted server
+  credential: `SUPABASE_SECRET_KEY`, Supabase's current `sb_secret_…` form,
+  which replaces the legacy service role JWT. It is independently rotatable,
+  instantly revocable, and **refused by Supabase from a browser origin**. It is
+  read in exactly one module, the client is built lazily so no build needs it,
+  and a test asserts it appears in no client component. Because it bypasses
+  RLS, every worker query filters `owner_id` explicitly.
 - **Ownership checks in application code** _(planned)_ for models beyond
   `profiles`, so a bug in one layer cannot widen access on its own. Defence in
   depth: both layers, not one.
@@ -156,6 +164,21 @@ credentials in log lines, error messages, or telemetry.
 - **Never fake a successful publish.** If a publish did not genuinely reach the
   platform, it is recorded as a failure. A completed code path is not evidence
   of a completed publish.
+
+### The same rule, enforced for publishing — _implemented_
+
+`scheduled_posts` cannot record `posted` without the platform's own post id,
+and `publish_attempts` cannot record `succeeded` without one; an attempt made
+with no provider cannot succeed at all. **No provider exists**, so the
+execution-time safety gate refuses every run before anything is sent, and the
+refusal is written down.
+
+A completed background job is not evidence of a completed publish, and nothing
+in this codebase treats it as though it were.
+
+Publishing diagnostics are sanitised before storage: bearer tokens, JWTs,
+`sb_secret_…` and `tr_…` keys and named credentials are redacted **before**
+truncation, so a secret cannot survive by sitting past the cut.
 
 ### The same rule, already enforced for rendering — _implemented_
 
