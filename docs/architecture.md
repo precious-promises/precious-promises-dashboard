@@ -87,6 +87,12 @@ to publication-sensitive content withdraws the approval and pauses anything
 scheduled on it. See
 [stage-5-approval-scheduling.md](./stage-5-approval-scheduling.md).
 
+**Implemented in Stage 6:** publishing lifecycle and claim columns on
+`scheduled_posts`, plus `publish_attempts` and the `claim_due_scheduled_posts`
+function. Nothing publishes: no provider exists, and the database refuses
+`posted` without the platform's own post id. See
+[stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
+
 **Still planned:** every other model in
 [database-plan.md](./database-plan.md).
 
@@ -145,11 +151,19 @@ returns `null` rather than a stub.
 
 The worker is responsible for:
 
-- Media rendering jobs
-- Publishing to social platforms at scheduled times
-- Retry and backoff on transient failure
-- Recording every attempt (see `PublishAttempt` in
-  [database-plan.md](./database-plan.md))
+- Media rendering jobs _(planned)_
+- Publishing to social platforms at scheduled times — **infrastructure built
+  in Stage 6, no platform connected**
+- Retry and backoff on transient failure — _implemented_ as an error
+  classification framework
+- Recording every attempt — _implemented_ as `publish_attempts`
+
+Stage 6 built the publishing half on Trigger.dev v4: a scheduled dispatcher
+claims due posts atomically, and a per-post task reloads everything and runs
+the safety gate immediately before any provider call. The task code is written
+and type-checked; **no Trigger.dev project is connected**, and the single
+manual step to connect one is documented in
+[stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
 
 The worker is a separate execution context, not a separate service in the
 microservice sense — it shares the same codebase and data model.
@@ -206,6 +220,8 @@ harder to change safely.
 | Approval workflow and fingerprinting        | Implemented     |
 | Production Board, Calendar, scheduling      | Implemented     |
 | Audit log                                   | Implemented     |
+| Publishing infrastructure and safety gate   | Implemented     |
+| Trigger.dev task foundation (not deployed)  | Implemented     |
+| Platform connections and real publishing    | **Not started** |
 | Server rendering                            | **Not started** |
-| Timed job execution                         | **Not started** |
 | Google Drive, worker, adapters, publishing  | **Not started** |

@@ -1,4 +1,5 @@
 import {
+  AlertTriangle,
   CalendarClock,
   Check,
   CheckSquare,
@@ -74,6 +75,8 @@ function buildMetrics(counts: {
   awaitingApproval: number;
   approved: number;
   scheduled: number;
+  queued: number;
+  publishFailed: number;
 }) {
   return [
     {
@@ -122,13 +125,25 @@ function buildMetrics(counts: {
       label: "Scheduled",
       value: counts.scheduled,
       icon: CalendarClock,
-      note: "Times set. Nothing sends them",
+      note: "Times set, waiting for the dispatcher",
+    },
+    {
+      label: "Queued",
+      value: counts.queued,
+      icon: Send,
+      note: "Claimed by the worker",
+    },
+    {
+      label: "Publish Failures",
+      value: counts.publishFailed,
+      icon: AlertTriangle,
+      note: "Stopped, with the reason recorded",
     },
     {
       label: "Published This Week",
       value: 0,
       icon: Send,
-      note: "Publishing not connected",
+      note: "No platform is connected",
     },
   ] as const;
 }
@@ -164,6 +179,8 @@ const FOUNDATION = [
   { label: "Video studio RLS", state: "Configured" },
   { label: "Approval & schedule RLS", state: "Configured" },
   { label: "Audit log", state: "Configured" },
+  { label: "Publishing infrastructure", state: "Configured" },
+  { label: "Platform connections", state: "Not configured" },
   { label: "Media storage", state: "Not configured" },
   { label: "Video rendering", state: "Not configured" },
   { label: "Publishing", state: "Not configured" },
@@ -220,6 +237,13 @@ export default async function DashboardPage() {
     approved: reviewRows.filter((row) => row.validity === "valid").length,
     scheduled: scheduleEntries.filter(
       (entry) => entry.post.status === "scheduled",
+    ).length,
+    queued: scheduleEntries.filter(
+      (entry) =>
+        entry.post.status === "queued" || entry.post.status === "publishing",
+    ).length,
+    publishFailed: scheduleEntries.filter(
+      (entry) => entry.post.status === "failed",
     ).length,
   });
   const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
@@ -373,6 +397,12 @@ export default async function DashboardPage() {
                 label="Calendar"
                 description="Give approved content a time"
                 icon={CalendarClock}
+              />
+              <QuickActionLink
+                href="/dashboard/publish"
+                label="Publish Queue"
+                description="Claims, attempts and outcomes"
+                icon={Send}
               />
               <QuickActionLink
                 href="/dashboard/media"

@@ -40,6 +40,9 @@ export const PRODUCTION_BOARD_PATH = "/dashboard/production";
 export const APPROVAL_QUEUE_PATH = "/dashboard/approvals";
 export const CALENDAR_PATH = "/dashboard/calendar";
 
+/** Routes activated in Stage 6. */
+export const PUBLISH_QUEUE_PATH = "/dashboard/publish";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -178,7 +181,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "publish-queue",
         label: "Publish Queue",
         icon: Send,
-        status: "coming-soon",
+        status: "available",
+        href: PUBLISH_QUEUE_PATH,
       },
       {
         id: "youtube-playlists",

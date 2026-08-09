@@ -39,6 +39,27 @@ live, and they are what makes the domain testable without live credentials.
 Adapters must never fabricate success. If a call did not genuinely succeed, the
 adapter reports failure — see [security.md](./security.md).
 
+### The publishing contract — _implemented in Stage 6_
+
+`PublishingProvider` in `src/lib/publishing/providers.ts` is the interface every
+platform integration will implement: `isConnected`, `validateReadiness`,
+`preparePayload`, `publish`, an optional `reconcile`, and `classifyError`.
+
+`reconcile` is optional because not every platform lets you look up a post you
+may have created; requiring it of all of them would mean writing a fake one
+somewhere.
+
+A `PublishResult` has three shapes, not two — `succeeded` (which **requires**
+the platform's own post id), `failed`, and `incomplete` for platforms that can
+only be driven as far as a draft or that need the owner to finish by hand.
+Forcing that third case into "succeeded" would claim something went live that
+did not.
+
+**`getPublishingProvider` returns `null` for every platform.** No stub exists,
+deliberately: a stub returning a plausible post id would be indistinguishable
+from a working integration at the call site. See
+[stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
+
 ## Planned adapters
 
 ### YouTube _(planned)_

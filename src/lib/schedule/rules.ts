@@ -1,3 +1,4 @@
+import { canTransitionPublish } from "@/lib/publishing/lifecycle";
 import type { PlatformVariant } from "@/lib/variants/types";
 
 import type { ScheduledPost, ScheduleStatus } from "./types";
@@ -109,18 +110,14 @@ export function findDuplicateSchedule(
  * can be reinstated — but only ever by an explicit action after re-approval,
  * never automatically.
  */
-const SCHEDULE_TRANSITIONS: Record<ScheduleStatus, readonly ScheduleStatus[]> =
-  {
-    scheduled: ["paused", "cancelled"],
-    paused: ["scheduled", "cancelled"],
-    cancelled: [],
-  };
-
 export function canTransitionSchedule(
   from: ScheduleStatus,
   to: ScheduleStatus,
 ): boolean {
-  return SCHEDULE_TRANSITIONS[from].includes(to);
+  // One table for the whole lifecycle, in the publishing module — the owner's
+  // moves and the worker's moves are the same state machine, and splitting it
+  // in two would let the halves disagree.
+  return canTransitionPublish(from, to);
 }
 
 /** Statuses that still represent an intention to go out. */

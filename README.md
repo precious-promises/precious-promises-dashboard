@@ -195,16 +195,19 @@ Everything below is **planned, not built**:
 - **No file upload.** Media assets are metadata records; no bytes move.
 - **No functional integrations.** No YouTube, Instagram, TikTok, Google Drive,
   ElevenLabs or AI provider. The storage seam is declared, not implemented.
-- **No publishing.** There is no scheduling, approval, rendering or publishing
-  capability of any kind.
-- **No analytics.** Content counts are real database queries; scheduling and
-  publishing metrics stay at zero because those systems do not exist. Nothing
-  fabricates views, followers, revenue or engagement.
+- **No publishing.** Approval and scheduling are real as of Stages 5 and 6,
+  and the publishing infrastructure — queue, atomic claiming, idempotency,
+  attempt history and the execution-time safety gate — is built. **No platform
+  is connected, so nothing can be posted anywhere.** Every attempt is refused
+  before anything is sent, and the refusal is recorded.
+- **No rendering.** The video studio composes and previews; server rendering is
+  designed and not connected.
+- **No analytics.** Content, approval and schedule counts are real database
+  queries; publishing metrics stay at zero because no platform is connected.
+  Nothing fabricates views, followers, revenue or engagement.
 - **No AI generation.** The Script Studio's "Generate with AI" control is a
   genuinely disabled button marking where it will go.
-- **No approval execution.** A variant marked "ready for review" publishes
-  nothing; no integration reads that state.
-- **13 of 19 navigation areas are unbuilt** and marked as such.
+- **8 of 19 navigation areas are unbuilt** and marked as such, with no `href`.
 - **No user registration, password reset or email flows.**
 
 ### Deferred verification
@@ -220,21 +223,22 @@ configuration is agreed. Their presence does not indicate a working integration.
 
 ## Documentation
 
-| Document                                                                | Covers                                          |
-| ----------------------------------------------------------------------- | ----------------------------------------------- |
-| [architecture.md](./docs/architecture.md)                               | Modular monolith, data, worker and adapters     |
-| [security.md](./docs/security.md)                                       | Secrets, OAuth, access control, auditing        |
-| [state-machines.md](./docs/state-machines.md)                           | Content, approval and render job lifecycles     |
-| [database-plan.md](./docs/database-plan.md)                             | Data models — what is built and what is planned |
-| [supabase-setup.md](./docs/supabase-setup.md)                           | Project identity, RLS, owner account setup      |
-| [api-integrations.md](./docs/api-integrations.md)                       | Planned adapters and research rules             |
-| [design-system.md](./docs/design-system.md)                             | Approved visual direction and the locked target |
-| [stage-0-decisions.md](./docs/stage-0-decisions.md)                     | Stage 0 decisions and reasoning                 |
-| [stage-1-ui.md](./docs/stage-1-ui.md)                                   | The dashboard shell and component inventory     |
-| [stage-2-content-library.md](./docs/stage-2-content-library.md)         | Content items, media and the Scripture rule     |
-| [stage-3-writing-studios.md](./docs/stage-3-writing-studios.md)         | Scripture, Script and Caption Studios           |
-| [stage-4-video-studio.md](./docs/stage-4-video-studio.md)               | Video editor, render model, rendering research  |
-| [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md) | Approval fingerprint, board, calendar           |
+| Document                                                                            | Covers                                          |
+| ----------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [architecture.md](./docs/architecture.md)                                           | Modular monolith, data, worker and adapters     |
+| [security.md](./docs/security.md)                                                   | Secrets, OAuth, access control, auditing        |
+| [state-machines.md](./docs/state-machines.md)                                       | Content, approval and render job lifecycles     |
+| [database-plan.md](./docs/database-plan.md)                                         | Data models — what is built and what is planned |
+| [supabase-setup.md](./docs/supabase-setup.md)                                       | Project identity, RLS, owner account setup      |
+| [api-integrations.md](./docs/api-integrations.md)                                   | Planned adapters and research rules             |
+| [design-system.md](./docs/design-system.md)                                         | Approved visual direction and the locked target |
+| [stage-0-decisions.md](./docs/stage-0-decisions.md)                                 | Stage 0 decisions and reasoning                 |
+| [stage-1-ui.md](./docs/stage-1-ui.md)                                               | The dashboard shell and component inventory     |
+| [stage-2-content-library.md](./docs/stage-2-content-library.md)                     | Content items, media and the Scripture rule     |
+| [stage-3-writing-studios.md](./docs/stage-3-writing-studios.md)                     | Scripture, Script and Caption Studios           |
+| [stage-4-video-studio.md](./docs/stage-4-video-studio.md)                           | Video editor, render model, rendering research  |
+| [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md)             | Approval fingerprint, board, calendar           |
+| [stage-6-publishing-infrastructure.md](./docs/stage-6-publishing-infrastructure.md) | Queue, claiming, idempotency, safety gate       |
 
 Each document marks implemented and planned work explicitly. They do not claim
 that future features already work.
@@ -253,6 +257,7 @@ src/
     globals.css           Design tokens and surface treatments
   components/
     approvals/            Approval queue rows and review detail
+    publish/              Publish queue rows and attempt history
     calendar/             Month grid, schedule form, recurring slots
     dashboard/            Shell, sidebar, top bar, cards
     content/              Content forms, filters, item picker
@@ -269,6 +274,7 @@ src/
     scripts/              Script revisions and numbering
     variants/             Platform variants and validation
     approvals/            Fingerprint, eligibility rules, invalidation
+    publishing/           Lifecycle, claim, idempotency, safety gate, providers
     schedule/             Timezones, recurrence, calendar mapping, safety
     audit/                Append-only workflow log
     production/           Workflow stage classification and board data

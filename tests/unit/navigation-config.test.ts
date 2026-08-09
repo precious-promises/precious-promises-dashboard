@@ -73,29 +73,31 @@ describe("navigation configuration", () => {
       "Media Assets",
       "Calendar",
       "Approval Queue",
+      "Publish Queue",
     ]);
     expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
       DASHBOARD_PATH,
     );
   });
 
-  it("leaves the remaining 9 areas unbuilt", () => {
+  it("leaves the remaining 8 areas unbuilt", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(9);
+    expect(comingSoon).toHaveLength(8);
   });
 
-  it("still refuses to offer Publish Queue", () => {
-    // Nothing publishes. Activating this would be the navigation claiming a
-    // capability the product does not have.
-    const publishQueue = allNavItems().find(
-      (item) => item.id === "publish-queue",
+  it("still refuses to offer Connected Accounts", () => {
+    // Stage 6 activated the Publish Queue — the infrastructure is real, and
+    // the queue reports refusals honestly. Connecting an account is Stage 7,
+    // and activating it now would claim a capability that does not exist.
+    const connectedAccounts = allNavItems().find(
+      (item) => item.id === "connected-accounts",
     );
 
-    expect(publishQueue?.status).toBe("coming-soon");
-    expect(publishQueue?.href).toBeUndefined();
+    expect(connectedAccounts?.status).toBe("coming-soon");
+    expect(connectedAccounts?.href).toBeUndefined();
   });
 
   it("gives no href to any unbuilt module", () => {
