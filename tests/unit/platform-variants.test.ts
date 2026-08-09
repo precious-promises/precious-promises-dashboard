@@ -9,6 +9,8 @@ import {
 } from "@/lib/variants/schema";
 import {
   canMarkReadyForReview,
+  EDITABLE_REVIEW_STATES,
+  isEditableReviewState,
   isVariantTypeForPlatform,
   PLATFORM_VARIANT_TYPES,
   REVIEW_STATES,
@@ -81,8 +83,22 @@ describe("parseVariantForm", () => {
     }
   });
 
-  it("only offers draft and ready_for_review", () => {
-    expect([...REVIEW_STATES]).toEqual(["draft", "ready_for_review"]);
+  it("offers all four review states", () => {
+    expect([...REVIEW_STATES]).toEqual([
+      "draft",
+      "ready_for_review",
+      "approved",
+      "rejected",
+    ]);
+  });
+
+  it("lets the caption editor set only the two editable states", () => {
+    // Approval and rejection are decisions taken in the Approval Queue, with
+    // eligibility checks and a fingerprint behind them. A form that could post
+    // them would bypass both.
+    expect([...EDITABLE_REVIEW_STATES]).toEqual(["draft", "ready_for_review"]);
+    expect(isEditableReviewState("approved")).toBe(false);
+    expect(isEditableReviewState("rejected")).toBe(false);
   });
 });
 

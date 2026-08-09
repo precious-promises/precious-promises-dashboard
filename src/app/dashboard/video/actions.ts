@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { syncApprovalsForItem } from "@/lib/approvals/invalidate";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { requestRender } from "@/lib/video/render";
 import {
@@ -102,6 +103,20 @@ async function refreshProjectDerived(projectId: string): Promise<void> {
     })
     .eq("id", projectId)
     .eq("owner_id", user.id);
+
+  // The video and its revision are part of every variant's approval
+  // fingerprint for this item — a recut composition is different content, even
+  // when the caption is identical. Withdraw any approval it invalidated.
+  const { data: owning } = await supabase
+    .from("video_projects")
+    .select("content_item_id")
+    .eq("id", projectId)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (owning) {
+    await syncApprovalsForItem(owning.content_item_id as string);
+  }
 }
 
 function editorPath(projectId: string, sceneId?: string | null): string {

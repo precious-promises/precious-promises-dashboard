@@ -74,8 +74,8 @@ credentials in log lines, error messages, or telemetry.
 
 ## Access control
 
-- **Row Level Security** — _implemented for every table_. All ten tables have
-  RLS enabled, with one explicit policy per operation, for `authenticated`
+- **Row Level Security** — _implemented for every table_. All thirteen tables
+  have RLS enabled, with one explicit policy per operation, for `authenticated`
   only, restricted to the caller's own rows. No catch-all policy; no `anon`
   policy, and the `anon` grant is revoked on each. Supabase's security advisor
   reports no lints. Details in [supabase-setup.md](./supabase-setup.md),
@@ -89,6 +89,11 @@ credentials in log lines, error messages, or telemetry.
 - **Production asset slots additionally require ownership of the media
   asset**, so a user cannot attach somebody else's file to their own project
   and read its metadata back through the join.
+- **Scheduled posts prove ownership of the platform variant on write**, so a
+  schedule cannot be attached to somebody else's approved wording.
+- **The audit log is append-only by policy** — a SELECT policy and an INSERT
+  policy exist, and there is deliberately no UPDATE or DELETE policy, so with
+  RLS enabled a recorded action cannot be rewritten or removed.
 - **`content_media` inherits ownership** through its parent content item, and
   writes additionally require ownership of the media asset — so a user cannot
   attach somebody else's asset to their own content and read its metadata
@@ -127,13 +132,27 @@ credentials in log lines, error messages, or telemetry.
   operations. See `AuditLog` in [database-plan.md](./database-plan.md).
 - Audit records capture who, what, and when — never the secret values involved.
 
-## Publishing safety _(planned)_
+## Publishing safety
 
-- **Human approval before publishing.** No content reaches an external platform
-  without explicit approval by the owner. There is no automatic-publish path.
-- **Editing approved content invalidates approval.** Changing media, Scripture,
-  captions, metadata or thumbnails returns the item to an unapproved state. See
+- **Human approval before publishing** — _implemented for the approval half_.
+  Approval is explicit, per platform variant, and refused unless the content
+  item's Scripture is manually verified and the required production assets
+  exist. No automatic-approval path exists anywhere. Nothing publishes, so
+  there is no automatic-publish path either.
+- **Editing approved content invalidates approval** — _implemented_. Changing
+  Scripture, captions, titles, descriptions, hashtags, CTA, thumbnail text or
+  the selected video withdraws the approval and pauses anything scheduled on
+  it. This is enforced by comparing a stored SHA-256 fingerprint of the
+  publication-sensitive content, in domain code called from every write path —
+  **not** by a warning in the interface. See
+  [stage-5-approval-scheduling.md](./stage-5-approval-scheduling.md) and
   [state-machines.md](./state-machines.md).
+- **Scheduling re-checks approval on the server.** The page's belief that
+  something is approved is never accepted as evidence; the fingerprint is
+  recomputed from stored records in the request that saves the schedule.
+- **A schedule whose approval has gone is paused, not left running.** A stale
+  approved item is never left sitting in the calendar as though it were still
+  agreed.
 - **Never fake a successful publish.** If a publish did not genuinely reach the
   platform, it is recorded as a failure. A completed code path is not evidence
   of a completed publish.

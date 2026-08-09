@@ -56,31 +56,46 @@ describe("navigation configuration", () => {
   it("marks exactly the built areas as available", () => {
     // Stage 1 had only Dashboard; Stage 2 added Content Library and Media
     // Assets; Stage 3 added the three writing studios; Stage 4 added the Video
-    // Creation Studio. This list grows only when a route genuinely exists.
+    // Creation Studio; Stage 5 added the Production Board, Calendar and
+    // Approval Queue. This list grows only when a route genuinely exists.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
 
     expect(available.map((item) => item.label)).toEqual([
       "Dashboard",
+      "Production Board",
       "Content Library",
       "Scripture Studio",
       "Script Studio",
       "Caption Studio",
       "Video Creation Studio",
       "Media Assets",
+      "Calendar",
+      "Approval Queue",
     ]);
     expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
       DASHBOARD_PATH,
     );
   });
 
-  it("leaves the remaining 12 areas unbuilt", () => {
+  it("leaves the remaining 9 areas unbuilt", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(12);
+    expect(comingSoon).toHaveLength(9);
+  });
+
+  it("still refuses to offer Publish Queue", () => {
+    // Nothing publishes. Activating this would be the navigation claiming a
+    // capability the product does not have.
+    const publishQueue = allNavItems().find(
+      (item) => item.id === "publish-queue",
+    );
+
+    expect(publishQueue?.status).toBe("coming-soon");
+    expect(publishQueue?.href).toBeUndefined();
   });
 
   it("gives no href to any unbuilt module", () => {

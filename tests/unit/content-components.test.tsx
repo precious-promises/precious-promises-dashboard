@@ -178,7 +178,7 @@ describe("content navigation", () => {
   it("still refuses to link the modules that remain unbuilt", () => {
     render(<SidebarNav pathname="/dashboard" />);
 
-    for (const label of ["Production Board", "Analytics", "Calendar"]) {
+    for (const label of ["Publish Queue", "Analytics", "Settings"]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });

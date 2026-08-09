@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { syncApprovalsForItem } from "@/lib/approvals/invalidate";
 import {
   contentFormValuesFrom,
   parseContentForm,
@@ -144,8 +145,15 @@ export async function updateContent(
     return { error: "Could not save your changes. Please try again." };
   }
 
+  // Editing an item can change Scripture, and Scripture is part of every
+  // variant's approval fingerprint. Any approval this edit invalidated is
+  // withdrawn here, and anything scheduled on it is paused.
+  await syncApprovalsForItem(id);
+
   revalidatePath(LIBRARY_PATH);
   revalidatePath(`${LIBRARY_PATH}/${id}`);
+  revalidatePath("/dashboard/approvals");
+  revalidatePath("/dashboard/calendar");
   return {};
 }
 
@@ -235,6 +243,11 @@ export async function verifyScripture(formData: FormData): Promise<void> {
     .eq("id", id)
     .eq("owner_id", user.id);
 
+  // The verification status is part of the approval fingerprint, so a change
+  // here can invalidate an existing approval too.
+  await syncApprovalsForItem(id);
+
   revalidatePath(`${LIBRARY_PATH}/${id}`);
+  revalidatePath("/dashboard/approvals");
   redirect(`${LIBRARY_PATH}/${id}`);
 }

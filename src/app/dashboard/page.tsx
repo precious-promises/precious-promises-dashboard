@@ -1,7 +1,9 @@
 import {
   CalendarClock,
+  Check,
   CheckSquare,
   Clapperboard,
+  Gauge,
   FileText,
   Camera,
   Music2,
@@ -13,6 +15,7 @@ import {
   MessageSquareQuote,
 } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -32,7 +35,16 @@ import {
   countScriptureNeedingAttention,
   getContentCounts,
 } from "@/lib/content/repository";
+import { loadReviewRows } from "@/lib/approvals/repository";
+import { loadBoard } from "@/lib/production/board";
+import type { ProductionStage } from "@/lib/production/stage";
+import {
+  listScheduleEntries,
+  upcomingEntries,
+} from "@/lib/schedule/repository";
+import { formatInTimeZone } from "@/lib/schedule/timezone";
 import { countItemsWithScripts } from "@/lib/scripts/repository";
+import { PLATFORM_LABELS } from "@/lib/variants/types";
 import { countVideoProjects } from "@/lib/video/repository";
 import { greetingFor } from "@/lib/greeting";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -59,6 +71,9 @@ function buildMetrics(counts: {
   scriptureNeedingAttention: number;
   itemsWithScripts: number;
   videoProjects: number;
+  awaitingApproval: number;
+  approved: number;
+  scheduled: number;
 }) {
   return [
     {
@@ -92,10 +107,22 @@ function buildMetrics(counts: {
       note: "Compositions in the video studio",
     },
     {
+      label: "Awaiting Approval",
+      value: counts.awaitingApproval,
+      icon: CheckSquare,
+      note: "Variants marked ready for review",
+    },
+    {
+      label: "Approved",
+      value: counts.approved,
+      icon: Check,
+      note: "Approvals that still match their content",
+    },
+    {
       label: "Scheduled",
-      value: 0,
+      value: counts.scheduled,
       icon: CalendarClock,
-      note: "Scheduling not built",
+      note: "Times set. Nothing sends them",
     },
     {
       label: "Published This Week",
@@ -135,6 +162,8 @@ const FOUNDATION = [
   { label: "Content library RLS", state: "Configured" },
   { label: "Script & variant RLS", state: "Configured" },
   { label: "Video studio RLS", state: "Configured" },
+  { label: "Approval & schedule RLS", state: "Configured" },
+  { label: "Audit log", state: "Configured" },
   { label: "Media storage", state: "Not configured" },
   { label: "Video rendering", state: "Not configured" },
   { label: "Publishing", state: "Not configured" },
@@ -151,18 +180,47 @@ export default async function DashboardPage() {
     redirect(LOGIN_PATH);
   }
 
-  const [counts, scriptureNeedingAttention, itemsWithScripts, videoProjects] =
-    await Promise.all([
-      getContentCounts(),
-      countScriptureNeedingAttention(),
-      countItemsWithScripts(),
-      countVideoProjects(),
-    ]);
+  const [
+    counts,
+    scriptureNeedingAttention,
+    itemsWithScripts,
+    videoProjects,
+    reviewRows,
+    scheduleEntries,
+    board,
+  ] = await Promise.all([
+    getContentCounts(),
+    countScriptureNeedingAttention(),
+    countItemsWithScripts(),
+    countVideoProjects(),
+    loadReviewRows(),
+    listScheduleEntries(),
+    loadBoard(),
+  ]);
+
+  const now = new Date();
+  const upcoming = upcomingEntries(scheduleEntries, now, 5);
+
+  // Stage counts for the pipeline, derived rather than stored.
+  const stageCounts: Partial<Record<ProductionStage, number>> = {};
+  for (const card of board) {
+    stageCounts[card.stage] = (stageCounts[card.stage] ?? 0) + 1;
+  }
+
   const metrics = buildMetrics({
     ...counts,
     scriptureNeedingAttention,
     itemsWithScripts,
     videoProjects,
+    awaitingApproval: reviewRows.filter(
+      (row) => row.variant.review_state === "ready_for_review",
+    ).length,
+    // Only approvals that still match their content. An approval whose
+    // fingerprint has moved on has already been withdrawn.
+    approved: reviewRows.filter((row) => row.validity === "valid").length,
+    scheduled: scheduleEntries.filter(
+      (entry) => entry.post.status === "scheduled",
+    ).length,
   });
   const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
 
@@ -195,24 +253,49 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <SectionCard
             title="Upcoming content"
+            description="Approved variants with a time against them. Nothing sends them."
             className="xl:col-span-2"
-            action={<StatusBadge>Coming soon</StatusBadge>}
           >
-            <EmptyState
-              icon={CalendarClock}
-              title="No content scheduled yet."
-              description="Your approved publishing schedule will appear here once the content workflow is connected."
-              action={
-                <button
-                  type="button"
-                  disabled
-                  className="cursor-not-allowed rounded-lg border border-edge-strong/70 px-4 py-2 text-sm font-medium text-ink-muted opacity-70"
-                >
-                  View Calendar
-                  <span className="sr-only"> — coming soon</span>
-                </button>
-              }
-            />
+            {upcoming.length === 0 ? (
+              <EmptyState
+                icon={CalendarClock}
+                title="Nothing scheduled yet."
+                description="Approve a platform variant, then give it a time in the Calendar. Scheduling records an intention — no publishing integration exists."
+                action={
+                  <Link
+                    href="/dashboard/calendar"
+                    className="rounded-lg border border-edge-strong bg-panel-raised/60 px-4 py-2 text-sm font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                  >
+                    Open Calendar
+                  </Link>
+                }
+              />
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {upcoming.map((entry) => (
+                  <li key={entry.post.id}>
+                    <Link
+                      href={`/dashboard/calendar?entry=${entry.post.id}`}
+                      className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5 transition-colors hover:border-edge-strong hover:bg-panel-hover/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                    >
+                      <span className="min-w-0">
+                        <span className="block text-sm font-medium text-ink-primary">
+                          {entry.item.title}
+                        </span>
+                        <span className="block text-xs text-ink-muted">
+                          {PLATFORM_LABELS[entry.variant.platform]} ·{" "}
+                          {formatInTimeZone(
+                            new Date(entry.post.scheduled_for),
+                            entry.post.timezone,
+                          )}
+                        </span>
+                      </span>
+                      <StatusBadge tone="inactive">Scheduled</StatusBadge>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </SectionCard>
 
           <SectionCard
@@ -229,9 +312,9 @@ export default async function DashboardPage() {
 
         <SectionCard
           title="Production pipeline"
-          description="The approved content workflow."
+          description="Where the work actually is, derived from the records."
         >
-          <WorkflowPipeline />
+          <WorkflowPipeline counts={stageCounts} />
         </SectionCard>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -272,6 +355,24 @@ export default async function DashboardPage() {
                 label="Video Creation Studio"
                 description="Build a video composition"
                 icon={MonitorPlay}
+              />
+              <QuickActionLink
+                href="/dashboard/approvals"
+                label="Approval Queue"
+                description="Review and approve per platform"
+                icon={CheckSquare}
+              />
+              <QuickActionLink
+                href="/dashboard/production"
+                label="Production Board"
+                description="See where every item is"
+                icon={Gauge}
+              />
+              <QuickActionLink
+                href="/dashboard/calendar"
+                label="Calendar"
+                description="Give approved content a time"
+                icon={CalendarClock}
               />
               <QuickActionLink
                 href="/dashboard/media"

@@ -40,14 +40,31 @@ export const PRODUCTION_STAGE_LABELS: Record<ProductionStage, string> = {
 /**
  * Stages the product cannot yet place anything in.
  *
- * Kept explicit so the Production Board, when built, renders them as
- * structurally empty rather than appearing to have found nothing.
+ * Stage 4 made `produce` reachable — a video project with scenes is real
+ * production work. Stage 5 made `approve` and `schedule` reachable, because
+ * approval and scheduling are now real records.
+ *
+ * **`publish` remains unreachable, and must.** Nothing publishes: no platform
+ * integration exists, so nothing can legitimately be classified as published
+ * and this module will not pretend otherwise. The board renders the column as
+ * structurally empty rather than as a column that happened to find nothing.
  */
-export const UNREACHABLE_STAGES: readonly ProductionStage[] = [
+export const UNREACHABLE_STAGES: readonly ProductionStage[] = ["publish"];
+
+/**
+ * The columns the Production Board shows.
+ *
+ * `publish` is deliberately absent rather than present-and-empty: a column
+ * implies a place work can arrive at, and nothing can arrive there.
+ */
+export const BOARD_STAGES: readonly ProductionStage[] = [
+  "plan",
+  "verify_scripture",
+  "write",
   "produce",
+  "review",
   "approve",
   "schedule",
-  "publish",
 ];
 
 export interface ProductionSignals {
@@ -55,6 +72,12 @@ export interface ProductionSignals {
   hasScript: boolean;
   /** Is any platform variant marked ready for review? */
   hasVariantReadyForReview: boolean;
+  /** Does a video project with at least one scene exist? */
+  hasVideo?: boolean;
+  /** Is any platform variant approved, with its approval still valid? */
+  hasValidApproval?: boolean;
+  /** Is any approved variant currently scheduled? */
+  hasActiveSchedule?: boolean;
 }
 
 /**
@@ -68,9 +91,12 @@ export interface ProductionSignals {
  *   verification lapsed is not "in writing" — it is waiting on a decision
  *   about its Scripture, and treating it otherwise would let unverified
  *   wording drift downstream.
- * - **`ready_for_review`** on the item, or a variant marked ready, means it is
- *   in review.
- * - An item with a script is in `write`; without one it is still `plan`.
+ * - After that the checks run from the most advanced stage backwards, so an
+ *   item reports the furthest point it has genuinely reached.
+ *
+ * Every signal is **derived from records**, never set by dragging a card. A
+ * card cannot be moved into Approve because somebody dropped it there; it
+ * appears there because an approval exists and still matches its content.
  */
 export function classifyProductionStage(
   item: Pick<
@@ -91,8 +117,23 @@ export function classifyProductionStage(
     return "verify_scripture";
   }
 
+  if (signals.hasActiveSchedule) {
+    return "schedule";
+  }
+
+  // Only a *valid* approval counts. An approval whose fingerprint no longer
+  // matches the content has already been invalidated, and showing the item as
+  // approved would be the interface disagreeing with the database.
+  if (signals.hasValidApproval) {
+    return "approve";
+  }
+
   if (item.status === "ready_for_review" || signals.hasVariantReadyForReview) {
     return "review";
+  }
+
+  if (signals.hasVideo) {
+    return "produce";
   }
 
   return signals.hasScript ? "write" : "plan";

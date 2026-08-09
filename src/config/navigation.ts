@@ -35,6 +35,11 @@ export const CAPTION_STUDIO_PATH = "/dashboard/captions";
 /** Routes activated in Stage 4. */
 export const VIDEO_STUDIO_PATH = "/dashboard/video";
 
+/** Routes activated in Stage 5. */
+export const PRODUCTION_BOARD_PATH = "/dashboard/production";
+export const APPROVAL_QUEUE_PATH = "/dashboard/approvals";
+export const CALENDAR_PATH = "/dashboard/calendar";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -83,7 +88,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "production-board",
         label: "Production Board",
         icon: Gauge,
-        status: "coming-soon",
+        status: "available",
+        href: PRODUCTION_BOARD_PATH,
       },
       {
         id: "content-library",
@@ -158,13 +164,15 @@ export const NAVIGATION: NavGroup[] = [
         id: "calendar",
         label: "Calendar",
         icon: Calendar,
-        status: "coming-soon",
+        status: "available",
+        href: CALENDAR_PATH,
       },
       {
         id: "approval-queue",
         label: "Approval Queue",
         icon: CheckSquare,
-        status: "coming-soon",
+        status: "available",
+        href: APPROVAL_QUEUE_PATH,
       },
       {
         id: "publish-queue",

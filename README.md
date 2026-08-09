@@ -220,20 +220,21 @@ configuration is agreed. Their presence does not indicate a working integration.
 
 ## Documentation
 
-| Document                                                        | Covers                                          |
-| --------------------------------------------------------------- | ----------------------------------------------- |
-| [architecture.md](./docs/architecture.md)                       | Modular monolith, data, worker and adapters     |
-| [security.md](./docs/security.md)                               | Secrets, OAuth, access control, auditing        |
-| [state-machines.md](./docs/state-machines.md)                   | Content, approval and render job lifecycles     |
-| [database-plan.md](./docs/database-plan.md)                     | Data models — what is built and what is planned |
-| [supabase-setup.md](./docs/supabase-setup.md)                   | Project identity, RLS, owner account setup      |
-| [api-integrations.md](./docs/api-integrations.md)               | Planned adapters and research rules             |
-| [design-system.md](./docs/design-system.md)                     | Approved visual direction and the locked target |
-| [stage-0-decisions.md](./docs/stage-0-decisions.md)             | Stage 0 decisions and reasoning                 |
-| [stage-1-ui.md](./docs/stage-1-ui.md)                           | The dashboard shell and component inventory     |
-| [stage-2-content-library.md](./docs/stage-2-content-library.md) | Content items, media and the Scripture rule     |
-| [stage-3-writing-studios.md](./docs/stage-3-writing-studios.md) | Scripture, Script and Caption Studios           |
-| [stage-4-video-studio.md](./docs/stage-4-video-studio.md)       | Video editor, render model, rendering research  |
+| Document                                                                | Covers                                          |
+| ----------------------------------------------------------------------- | ----------------------------------------------- |
+| [architecture.md](./docs/architecture.md)                               | Modular monolith, data, worker and adapters     |
+| [security.md](./docs/security.md)                                       | Secrets, OAuth, access control, auditing        |
+| [state-machines.md](./docs/state-machines.md)                           | Content, approval and render job lifecycles     |
+| [database-plan.md](./docs/database-plan.md)                             | Data models — what is built and what is planned |
+| [supabase-setup.md](./docs/supabase-setup.md)                           | Project identity, RLS, owner account setup      |
+| [api-integrations.md](./docs/api-integrations.md)                       | Planned adapters and research rules             |
+| [design-system.md](./docs/design-system.md)                             | Approved visual direction and the locked target |
+| [stage-0-decisions.md](./docs/stage-0-decisions.md)                     | Stage 0 decisions and reasoning                 |
+| [stage-1-ui.md](./docs/stage-1-ui.md)                                   | The dashboard shell and component inventory     |
+| [stage-2-content-library.md](./docs/stage-2-content-library.md)         | Content items, media and the Scripture rule     |
+| [stage-3-writing-studios.md](./docs/stage-3-writing-studios.md)         | Scripture, Script and Caption Studios           |
+| [stage-4-video-studio.md](./docs/stage-4-video-studio.md)               | Video editor, render model, rendering research  |
+| [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md) | Approval fingerprint, board, calendar           |
 
 Each document marks implemented and planned work explicitly. They do not claim
 that future features already work.
@@ -251,6 +252,8 @@ src/
     page.tsx              Public landing page
     globals.css           Design tokens and surface treatments
   components/
+    approvals/            Approval queue rows and review detail
+    calendar/             Month grid, schedule form, recurring slots
     dashboard/            Shell, sidebar, top bar, cards
     content/              Content forms, filters, item picker
     scripture/            Read-only Scripture panel
@@ -265,7 +268,10 @@ src/
     content/              Types, Zod schemas, verification rule, queries
     scripts/              Script revisions and numbering
     variants/             Platform variants and validation
-    production/           Workflow stage classification
+    approvals/            Fingerprint, eligibility rules, invalidation
+    schedule/             Timezones, recurrence, calendar mapping, safety
+    audit/                Append-only workflow log
+    production/           Workflow stage classification and board data
     video/                Projects, scenes, preview resolution, render model
     media/                Media types and metadata validation
     storage/              StorageProvider seam (no implementation)

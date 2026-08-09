@@ -15,7 +15,11 @@
 > `archived`. No renderer is connected, so every render request is recorded as
 > a failure.
 >
-> `Approved`, `Scheduled`, `Publishing`, `Posted` and `Failed` remain planned:
+> Stage 5 made `Approved` real — per platform variant, with a fingerprint of
+> what was approved — and added scheduling. `Scheduled` now exists as a
+> `scheduled_posts` row that records an intention; **nothing executes it**.
+>
+> `Publishing`, `Posted` and `Failed` remain planned:
 > those systems do not exist, and the database deliberately refuses those
 > values so the interface cannot claim a state it cannot honour.
 
@@ -115,6 +119,29 @@ human approval:
 - Captions and copy
 - Metadata — titles, descriptions, tags, scheduling parameters
 - Thumbnails
+
+### Implemented in full for platform variants in Stage 5
+
+Every publication-sensitive field of a platform variant — Scripture, title,
+caption, description, hashtags, first comment, CTA, thumbnail text, the
+selected video and its revision, and the attached media — is reduced to a
+SHA-256 fingerprint at the moment of approval. Any later change moves the
+fingerprint, and the approval is withdrawn automatically:
+
+```
+approved ──▶ ready_for_review          (approval metadata cleared)
+    │
+    └──▶ any active schedule ──▶ paused
+             reason: "Approval invalidated by content change."
+```
+
+Nothing resumes on its own. A paused schedule returns to `scheduled` only after
+re-approval and an explicit reinstatement.
+
+The schedule states are `scheduled`, `paused` and `cancelled`; cancellation is
+terminal. `publishing`, `posted` and `failed` are deliberately absent because
+nothing executes a schedule. Details in
+[stage-5-approval-scheduling.md](./stage-5-approval-scheduling.md).
 
 ### Implemented for Scripture in Stage 2
 

@@ -139,17 +139,23 @@ describe("the stage vocabulary", () => {
     ]);
   });
 
-  it("marks the unbuilt stages as unreachable", () => {
-    expect(isStageUnreachable("produce")).toBe(true);
-    expect(isStageUnreachable("approve")).toBe(true);
-    expect(isStageUnreachable("schedule")).toBe(true);
+  it("leaves publish as the only unreachable stage", () => {
+    // Stage 4 made produce real, Stage 5 made approve and schedule real.
+    // Nothing publishes, so publish stays unreachable.
     expect(isStageUnreachable("publish")).toBe(true);
   });
 
-  it("marks the built stages as reachable", () => {
-    expect(isStageUnreachable("plan")).toBe(false);
-    expect(isStageUnreachable("verify_scripture")).toBe(false);
-    expect(isStageUnreachable("write")).toBe(false);
-    expect(isStageUnreachable("review")).toBe(false);
+  it("marks every built stage as reachable", () => {
+    for (const stage of [
+      "plan",
+      "verify_scripture",
+      "write",
+      "produce",
+      "review",
+      "approve",
+      "schedule",
+    ] as const) {
+      expect(isStageUnreachable(stage), stage).toBe(false);
+    }
   });
 });

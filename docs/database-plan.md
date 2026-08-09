@@ -146,12 +146,29 @@ reason** — both are check constraints. A code path that finished without
 rendering anything cannot be written down as a success. This mirrors
 `PublishAttempt` below, for the same reason.
 
-### ScheduledPost _(planned)_
+### ScheduledPost — _implemented_
 
-A `PlatformVariant` bound to a publish time and target account.
+`public.scheduled_posts`. A `PlatformVariant` bound to a publish time: the UTC
+instant, the IANA timezone the owner chose, a status of `scheduled`, `paused`
+or `cancelled`, and the **approval fingerprint the schedule was created
+against**.
 
-Holds the scheduled time, timezone, target `SocialAccount`, and current
-scheduling state. Only approved content may be scheduled.
+Only an approved variant whose fingerprint still matches can be scheduled, and
+a later edit to that content pauses the schedule with an explicit reason.
+`publishing`, `posted` and `failed` are deliberately absent — no worker reads
+these rows and no platform integration exists.
+
+The target `SocialAccount` arrives with publishing, which does not exist.
+
+### RecurringScheduleRule — _implemented_
+
+`public.recurring_schedule_rules`. A weekly slot: name, platform, optional
+content type, day of week, local time, timezone and an `enabled` flag that
+defaults to **false**.
+
+A rule defines _when_ something could go out. It never selects content and
+never creates a `ScheduledPost` — a rule that could fill itself would be
+publishing on nobody's authority.
 
 ### PublishAttempt _(planned)_
 
@@ -172,13 +189,19 @@ Because editing approved content invalidates approval, re-approval creates a
 **new** row rather than updating the existing one — the history of what was
 approved, and when, stays intact.
 
-### AuditLog _(planned)_
+### AuditLog — _implemented_
 
-Append-only record of security- and trust-relevant actions: sign-in, account
-connect and disconnect, approval and re-approval, publish attempts, and
-destructive operations.
+`public.audit_log`. Append-only record of workflow actions: submission for
+review, approval, rejection, return to draft, approval invalidation,
+scheduling, pausing, cancellation and recurring-rule changes.
 
-Captures actor, action, target and timestamp. Never captures secret values.
+Captures actor, action, entity type and id, a sanitised metadata object and a
+timestamp. **Append-only by RLS**: there is a SELECT policy and an INSERT
+policy and deliberately no UPDATE or DELETE policy, so an entry cannot be
+rewritten. `sanitiseMetadata` drops any key that looks like a credential.
+
+Sign-in, account connection and publish attempts join it with the stages that
+build them.
 
 ### AnalyticsSnapshot _(planned)_
 
