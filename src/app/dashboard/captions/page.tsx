@@ -16,6 +16,7 @@ import { EMPTY_FILTERS } from "@/lib/content/filters";
 import { getContentItem, listContentItems } from "@/lib/content/repository";
 import { listMediaAssets } from "@/lib/media/repository";
 import { listVariantsForItem } from "@/lib/variants/repository";
+import { loadChannelPlaylists } from "@/lib/youtube/channel";
 import { loadYouTubeMetadata } from "@/lib/youtube/repository";
 import {
   PLATFORM_LABELS,
@@ -82,6 +83,13 @@ export default async function CaptionStudioPage(
           (asset) => asset.media_type === "image",
         )
       : [];
+
+  // Playlists come from the connected channel, never from a text field. When
+  // nothing is connected this returns an empty list and the reason why.
+  const { playlists, reason: playlistsReason } =
+    platform === "youtube" && current
+      ? await loadChannelPlaylists(user.id)
+      : { playlists: [], reason: null };
 
   return (
     <DashboardShell
@@ -201,6 +209,8 @@ export default async function CaptionStudioPage(
                   contentItemId={item.id}
                   metadata={youtubeMetadata}
                   imageAssets={imageAssets}
+                  playlists={playlists}
+                  playlistsReason={playlistsReason}
                 />
               </SectionCard>
             ) : null}

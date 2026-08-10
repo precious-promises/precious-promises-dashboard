@@ -264,7 +264,7 @@ export default async function ConnectedAccountsPage(
                     {status.detail}
                   </span>
                 </span>
-                <StatusBadge tone="inactive">Not built</StatusBadge>
+                <StatusBadge tone="coming-soon">Coming soon</StatusBadge>
               </li>
             ))}
           </ul>

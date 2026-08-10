@@ -179,9 +179,72 @@ Every connected account then has to be reconnected. There is no key-rotation
 path in Stage 7; the envelope format is versioned (`v1.…`) so one can be added
 without breaking existing values.
 
-### 6. Connect
+### 6. Create the owner Supabase account
+
+**This has still not been done, and it blocks everything below step 7.**
+
+There is no user in the Supabase project. `/dashboard` refuses an anonymous
+visitor, so the Connected Accounts page cannot be opened, the OAuth flow cannot
+be started, and no part of Stage 7 has been exercised against a live session.
+
+The account is created by hand, deliberately: this is a private, single-owner
+dashboard with **no public registration route**, and inventing credentials —
+guessing an email, choosing a password on Dave's behalf — is exactly the kind of
+fabrication this project forbids. It also cannot be automated safely from here,
+because the password must be chosen by the person who will use it and must never
+reach a transcript or a repository.
+
+In the Supabase dashboard for project `precious-promises-dashboard`
+(`yrlnahnbwrtmljcbfjdg`):
+
+1. **Authentication → Users → Add user → Create new user.**
+2. Enter Dave's email address.
+3. Enter a password chosen by Dave. Do not paste it anywhere else.
+4. Tick **Auto Confirm User**, so no confirmation email is needed.
+5. Create the user.
+
+Then, under **Authentication → Providers**, confirm **Email** is enabled and
+that **Allow new users to sign up** is **off**. Leaving sign-up on would make
+this a public registration route, which the product does not have.
+
+Sign in at `/login` with those credentials.
+
+### 7. Connect
 
 Open **Connected Accounts** in the dashboard and press _Connect YouTube_.
+
+---
+
+## Status vocabulary
+
+These four words are not interchangeable, and this document uses them exactly.
+
+| Word              | Means                                                                        |
+| ----------------- | ---------------------------------------------------------------------------- |
+| **Implemented**   | The code exists, is type-checked and is covered by tests against a fake API. |
+| **Connected**     | A real credential is configured and an account is genuinely authorised.      |
+| **Live-verified** | It has been run against the real platform and observed to work.              |
+| **Deferred**      | Deliberately not attempted yet, with the blocker named.                      |
+
+Where Stage 7 stands:
+
+| Capability                          | Status                                                                     |
+| ----------------------------------- | -------------------------------------------------------------------------- |
+| Encrypted credential storage        | Implemented                                                                |
+| Google OAuth flow                   | Implemented                                                                |
+| Channel discovery                   | Implemented                                                                |
+| Disconnect and revoke               | Implemented                                                                |
+| YouTube publishing provider         | Implemented                                                                |
+| Resumable upload and reconciliation | Implemented                                                                |
+| Thumbnails, playlists, processing   | Implemented                                                                |
+| A connected YouTube channel         | **Deferred** — no owner Supabase account, no Google client                 |
+| Any live YouTube upload             | **Deferred** — blocked twice over: no connection, and no retrievable media |
+| Authenticated E2E of these screens  | **Deferred** — no owner account to sign in with                            |
+| Instagram, TikTok                   | **Not started**                                                            |
+
+**Nothing in Stage 7 is Live-verified.** Every test mocks Google's HTTP layer,
+and they are named as unit tests because that is what they are — calling them
+YouTube tests would imply a round trip nobody has made.
 
 ---
 
@@ -425,6 +488,38 @@ this system would have to answer a legal question to send.
 
 ---
 
+## Playlists are chosen, never typed
+
+`loadChannelPlaylists` reads the connected channel's playlists through the
+worker credential and the settings form renders them as a `<select>`. A
+free-text playlist id would let a typo become a publish that fails at its last
+step — or, worse, a plausible-looking id belonging to somebody else's playlist.
+
+When nothing is connected the control is disabled and says why. A playlist the
+owner previously chose but the channel no longer returns stays visible and
+labelled, so saving the form cannot silently clear it.
+
+Adding to a playlist happens **after** the video exists and is allowed to fail
+on its own. It also needs the broader `youtube` scope; an upload-only connection
+can publish but cannot file.
+
+## The Publish Queue says what a row is doing
+
+`deriveQueueState` turns the database status into one of: Not connected, Ready,
+Uploading, Uploaded/processing, Posted, Failed, Blocked, Stood down.
+
+Two of those exist because the raw status is not honest enough on its own:
+
+- **Uploaded/processing** — `posted` in the database means YouTube returned an
+  id. It does not mean the video is watchable. Showing both as "Posted" would
+  assert something nobody verified.
+- **Not connected** — a row that cannot go anywhere is not merely "Scheduled".
+  It is waiting on something the owner has to do.
+
+A processing _failure_ still reads as Posted, because the upload genuinely
+happened; the failure belongs on the detail line, not in a claim that the video
+does not exist.
+
 ## Safety, restated
 
 Nothing in Stage 7 weakens Stage 6's guarantees:
@@ -455,3 +550,17 @@ Nothing in Stage 7 weakens Stage 6's guarantees:
 - It does not rotate encryption keys.
 - It does not poll processing status on a schedule; status is read once, after
   an upload.
+
+## Two blockers, and they are independent
+
+It matters that these are separate, because fixing one does not unblock a
+publish:
+
+1. **No owner Supabase account.** Nothing in the dashboard can be opened, so
+   the OAuth flow has never been run and the Connected Accounts page has never
+   been rendered against a real session. Fixed by step 6 above.
+2. **No retrievable media.** Even with a connected channel, the provider
+   refuses at `resolveMediaSource`. Fixed only by a storage integration or a
+   working render pipeline — neither of which is Stage 7's scope.
+
+Both must be gone before a single video reaches YouTube.

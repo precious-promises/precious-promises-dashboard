@@ -8,6 +8,7 @@ import { PublishQueueEntry } from "@/components/publish/queue-entry";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { loadSocialAccounts } from "@/lib/accounts/repository";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { PROVIDER_STATUS } from "@/lib/publishing/providers";
 import {
@@ -60,6 +61,14 @@ export default async function PublishQueuePage() {
   const entries = await loadPublishQueue();
   const grouped = groupQueue(entries);
   const workerReady = isWorkerConfigured();
+
+  // Read once, from real account rows. A row that cannot go anywhere because
+  // nothing is connected must not be shown as merely "Scheduled".
+  const connectedPlatforms = new Set(
+    (await loadSocialAccounts())
+      .filter((account) => account.status === "connected")
+      .map((account) => account.platform),
+  );
 
   return (
     <DashboardShell
@@ -163,7 +172,13 @@ export default async function PublishQueuePage() {
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {sectionEntries.map((entry) => (
-                      <PublishQueueEntry key={entry.post.id} entry={entry} />
+                      <PublishQueueEntry
+                        key={entry.post.id}
+                        entry={entry}
+                        platformConnected={connectedPlatforms.has(
+                          entry.variant.platform,
+                        )}
+                      />
                     ))}
                   </ul>
                 )}

@@ -12,7 +12,10 @@ import {
   SHORTS_GUIDANCE,
   YOUTUBE_LIMITS,
 } from "@/lib/youtube/config";
-import type { YouTubeVideoMetadata } from "@/lib/youtube/types";
+import type {
+  YouTubePlaylist,
+  YouTubeVideoMetadata,
+} from "@/lib/youtube/types";
 
 const FIELD =
   "w-full rounded-lg border border-edge bg-panel-raised/50 px-3.5 py-2.5 text-sm leading-6 text-ink-primary outline-none transition-colors placeholder:text-ink-muted focus-visible:border-highlight focus-visible:ring-2 focus-visible:ring-highlight/35";
@@ -49,17 +52,26 @@ function SaveButton() {
  *    fingerprint, because changing a privacy status or a thumbnail changes
  *    what an audience would see. The form says so rather than surprising
  *    anyone.
+ * 4. **Playlists are chosen, never typed.** The list comes from the connected
+ *    channel. A free-text id would let a typo become a publish that fails at
+ *    the last step — or a plausible-looking id belonging to somebody else.
  */
 export function YouTubeMetadataForm({
   platformVariantId,
   contentItemId,
   metadata,
   imageAssets,
+  playlists,
+  playlistsReason,
 }: {
   platformVariantId: string;
   contentItemId: string;
   metadata: YouTubeVideoMetadata | null;
   imageAssets: MediaAsset[];
+  /** Only playlists the connected channel actually returned. */
+  playlists: YouTubePlaylist[];
+  /** Why the list is empty, when it is. */
+  playlistsReason: string | null;
 }) {
   const [state, formAction] = useActionState(
     saveYouTubeMetadata,
@@ -232,17 +244,36 @@ export function YouTubeMetadataForm({
 
       <div>
         <label htmlFor="playlist_id" className={LABEL}>
-          Playlist id
+          Playlist
         </label>
-        <input
+        <select
           id="playlist_id"
           name="playlist_id"
           defaultValue={metadata?.playlist_id ?? ""}
+          disabled={playlists.length === 0}
           className={FIELD}
-        />
+        >
+          <option value="">No playlist</option>
+          {playlists.map((playlist) => (
+            <option key={playlist.id} value={playlist.id}>
+              {playlist.title}
+              {playlist.itemCount === null
+                ? ""
+                : ` (${playlist.itemCount} videos)`}
+            </option>
+          ))}
+          {/* A previously chosen playlist the channel no longer returns must
+              still be visible, or saving the form would silently clear it. */}
+          {metadata?.playlist_id &&
+          !playlists.some((p) => p.id === metadata.playlist_id) ? (
+            <option value={metadata.playlist_id}>
+              {metadata.playlist_id} — no longer on this channel
+            </option>
+          ) : null}
+        </select>
         <p className="mt-1.5 text-xs text-ink-muted">
-          A playlist on the connected channel. Filing the video happens after
-          the upload and needs the playlist permission.
+          {playlistsReason ??
+            "Only playlists this channel actually has. Filing the video happens after the upload and needs the playlist permission."}
         </p>
       </div>
 
