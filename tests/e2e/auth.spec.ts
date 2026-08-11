@@ -58,12 +58,23 @@ test.describe("authentication", () => {
       "/dashboard/approvals",
       "/dashboard/calendar",
       "/dashboard/publish",
+      "/dashboard/accounts",
     ]) {
       await page.goto(path);
       await expect(page, `${path} must require a session`).toHaveURL(
         /\/login$/,
       );
     }
+  });
+
+  test("refuses an OAuth callback that arrives with no session", async ({
+    page,
+  }) => {
+    // The callback's real defence is its single-use state token, but a
+    // callback with no session is not a flow this application started.
+    await page.goto("/api/oauth/google/callback?code=x&state=y");
+
+    await expect(page).toHaveURL(/\/login$/);
   });
 
   test("keeps the health endpoint reachable without a session", async ({

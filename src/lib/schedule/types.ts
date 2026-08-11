@@ -1,18 +1,21 @@
 import type { ContentType } from "@/lib/content/types";
 import type { VariantPlatform } from "@/lib/variants/types";
+import type { ProcessingStatus } from "@/lib/youtube/types";
 
 import { DEFAULT_TIMEZONE } from "./timezone";
 
 /**
  * Scheduling vocabulary.
  *
- * **Nothing in this product executes a schedule.** No worker reads these rows,
- * no platform integration exists, and the statuses below deliberately stop at
- * `scheduled` — `publishing`, `posted` and `failed` are absent so the
- * interface cannot report an outcome no system produced.
+ * Stage 5 stopped this list at `scheduled`, because nothing executed a
+ * schedule. Stage 6 added the execution statuses and the dispatcher that
+ * drives them, and Stage 7 added the platform's own processing state on top.
  *
- * A scheduled post is an intention with a time attached, and the product says
- * exactly that wherever one is shown.
+ * The rule those additions preserve: **a status is only written when something
+ * genuinely reached it.** `posted` cannot be written without the platform's own
+ * post id — `postedUpdate` returns `null` without one, and the database refuses
+ * the row — and `external_processing_status` is kept separate from it, because
+ * an upload the platform accepted is not yet a video anybody can watch.
  */
 
 export const SCHEDULE_STATUSES = [
@@ -91,6 +94,17 @@ export interface ScheduledPost {
   external_post_url: string | null;
   last_error_code: string | null;
   last_error_message: string | null;
+
+  /**
+   * The platform's own processing state after a successful upload.
+   *
+   * Added in Stage 7. **Uploaded is not published:** YouTube accepts the bytes,
+   * returns an id, and then processes the video — which can fail for a corrupt
+   * file, a copyright claim or a policy rejection. Conflating the two would
+   * assert a video is live when the audience never saw it.
+   */
+  external_processing_status: ProcessingStatus | null;
+  external_processing_checked_at: string | null;
 
   created_at: string;
   updated_at: string;

@@ -8,14 +8,22 @@
 export const LOGIN_PATH = "/login";
 export const DASHBOARD_PATH = "/dashboard";
 
+/** The OAuth redirect target Google sends the owner back to. */
+export const OAUTH_CALLBACK_PREFIX = "/api/oauth";
+
 /**
  * Prefixes that require an authenticated session.
  *
  * Deliberately a short allow-list rather than "everything except /login".
  * The marketing homepage and `GET /api/health` are public and must stay that
  * way; health checks in particular have to answer without a session.
+ *
+ * The OAuth callback is protected too. Its real defence is the single-use
+ * state token — that is what binds a callback to the owner who started the
+ * flow — but a callback arriving with no session at all is not a flow this
+ * application started, and refusing it costs nothing.
  */
-const PROTECTED_PREFIXES = [DASHBOARD_PATH] as const;
+const PROTECTED_PREFIXES = [DASHBOARD_PATH, OAUTH_CALLBACK_PREFIX] as const;
 
 function matchesPrefix(pathname: string, prefix: string): boolean {
   // `/dashboard` and `/dashboard/settings` match; `/dashboards` must not.

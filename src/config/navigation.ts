@@ -43,6 +43,9 @@ export const CALENDAR_PATH = "/dashboard/calendar";
 /** Routes activated in Stage 6. */
 export const PUBLISH_QUEUE_PATH = "/dashboard/publish";
 
+/** Routes activated in Stage 7. */
+export const CONNECTED_ACCOUNTS_PATH = "/dashboard/accounts";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -216,7 +219,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "connected-accounts",
         label: "Connected Accounts",
         icon: Link2,
-        status: "coming-soon",
+        status: "available",
+        href: CONNECTED_ACCOUNTS_PATH,
       },
       {
         id: "rights-licences",

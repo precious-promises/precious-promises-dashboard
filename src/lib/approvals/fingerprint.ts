@@ -61,6 +61,21 @@ export interface ApprovalSubject {
   videoProjectRevision: number | null;
 
   mediaSelections: ApprovalMediaSelection[];
+
+  /**
+   * Platform-specific publishing settings, canonicalised by the platform.
+   *
+   * Added in Stage 7, when settings that genuinely change what an audience
+   * sees stopped being hypothetical: a YouTube variant carries a privacy
+   * status, a made-for-kids declaration, tags and a thumbnail. Approving a
+   * variant and then flipping its privacy or swapping its thumbnail would
+   * otherwise publish something nobody approved.
+   *
+   * `null` for a platform with no such settings, and for a YouTube variant
+   * with none saved yet — so saving them for the first time correctly
+   * invalidates an approval granted before they existed.
+   */
+  platformSettings: string | null;
 }
 
 /**
@@ -88,6 +103,7 @@ const FIELD_ORDER = [
   "videoProjectId",
   "videoProjectRevision",
   "mediaSelections",
+  "platformSettings",
 ] as const;
 
 /**

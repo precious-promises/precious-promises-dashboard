@@ -109,6 +109,7 @@ export async function approveVariant(formData: FormData): Promise<void> {
     item: row.item,
     hasVideo: row.hasVideo,
     mediaCount: row.mediaCount,
+    platformProblems: row.platformProblems,
   });
 
   if (blockers.length > 0) {

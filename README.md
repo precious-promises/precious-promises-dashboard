@@ -16,11 +16,18 @@ The writing half of the workflow is real: Scripture is reviewed and verified,
 scripts are written with full revision history, and per-platform captions are
 drafted — all under Row Level Security.
 
-Still absent: AI generation, video production, rendering, approval execution,
-scheduling, publishing, analytics, and every platform OAuth flow.
+Approval, scheduling and the publishing infrastructure are real as of Stages 5
+and 6. Stage 7 added a genuine Google OAuth 2.0 connection and a YouTube Data
+API v3 publishing provider.
 
-**It cannot publish content to any platform.** Nothing in it reaches YouTube,
-Instagram, TikTok, Google Drive or ElevenLabs.
+Still absent: AI generation, server rendering, media retrieval, analytics, and
+the Instagram and TikTok integrations.
+
+**Nothing has been published to any platform.** The YouTube provider makes real
+requests, but the upload path refuses with `media_source_unavailable`: media is
+stored as metadata describing a file held elsewhere, and no integration
+retrieves the file. Nothing in this repository reaches Instagram, TikTok,
+Google Drive or ElevenLabs at all.
 
 ## Current stack
 
@@ -193,21 +200,25 @@ metadata — all under Row Level Security.
 Everything below is **planned, not built**:
 
 - **No file upload.** Media assets are metadata records; no bytes move.
-- **No functional integrations.** No YouTube, Instagram, TikTok, Google Drive,
-  ElevenLabs or AI provider. The storage seam is declared, not implemented.
-- **No publishing.** Approval and scheduling are real as of Stages 5 and 6,
-  and the publishing infrastructure — queue, atomic claiming, idempotency,
-  attempt history and the execution-time safety gate — is built. **No platform
-  is connected, so nothing can be posted anywhere.** Every attempt is refused
-  before anything is sent, and the refusal is recorded.
+- **One functional integration.** Stage 7 built Google OAuth and a YouTube
+  provider; Instagram, TikTok, Google Drive, ElevenLabs and the AI provider are
+  not implemented. The storage seam is declared, not implemented.
+- **No successful publish.** The publishing infrastructure — queue, atomic
+  claiming, idempotency, attempt history and the execution-time safety gate —
+  is built, and the YouTube adapter is real. **It stops before uploading**,
+  because `resolveMediaSource` cannot obtain the video file and returns
+  `media_source_unavailable`. That refusal is recorded, not papered over.
+- **YouTube cannot upload publicly.** An API client that has not passed Google's
+  compliance audit has its uploads forced to private, so only `private` and
+  `unlisted` are offered. Scheduled release is not offered for the same reason.
 - **No rendering.** The video studio composes and previews; server rendering is
   designed and not connected.
 - **No analytics.** Content, approval and schedule counts are real database
-  queries; publishing metrics stay at zero because no platform is connected.
+  queries; publishing metrics stay at zero because nothing has been published.
   Nothing fabricates views, followers, revenue or engagement.
 - **No AI generation.** The Script Studio's "Generate with AI" control is a
   genuinely disabled button marking where it will go.
-- **8 of 19 navigation areas are unbuilt** and marked as such, with no `href`.
+- **7 of 19 navigation areas are unbuilt** and marked as such, with no `href`.
 - **No user registration, password reset or email flows.**
 
 ### Deferred verification
@@ -239,6 +250,7 @@ configuration is agreed. Their presence does not indicate a working integration.
 | [stage-4-video-studio.md](./docs/stage-4-video-studio.md)                           | Video editor, render model, rendering research  |
 | [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md)             | Approval fingerprint, board, calendar           |
 | [stage-6-publishing-infrastructure.md](./docs/stage-6-publishing-infrastructure.md) | Queue, claiming, idempotency, safety gate       |
+| [stage-7-youtube.md](./docs/stage-7-youtube.md)                                     | Google OAuth, YouTube provider, encryption      |
 
 Each document marks implemented and planned work explicitly. They do not claim
 that future features already work.
@@ -256,8 +268,10 @@ src/
     page.tsx              Public landing page
     globals.css           Design tokens and surface treatments
   components/
+    accounts/             Connected account cards
     approvals/            Approval queue rows and review detail
     publish/              Publish queue rows and attempt history
+    youtube/              YouTube publishing settings form
     calendar/             Month grid, schedule form, recurring slots
     dashboard/            Shell, sidebar, top bar, cards
     content/              Content forms, filters, item picker
@@ -275,6 +289,9 @@ src/
     variants/             Platform variants and validation
     approvals/            Fingerprint, eligibility rules, invalidation
     publishing/           Lifecycle, claim, idempotency, safety gate, providers
+    accounts/             Connected accounts, encrypted credentials, OAuth state
+    crypto/               AES-256-GCM envelope for stored secrets
+    youtube/              Google OAuth, Data API client, publishing provider
     schedule/             Timezones, recurrence, calendar mapping, safety
     audit/                Append-only workflow log
     production/           Workflow stage classification and board data

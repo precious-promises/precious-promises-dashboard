@@ -4,6 +4,8 @@ import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
+import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
+import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
 
 import { classifyProductionStage, type ProductionStage } from "./stage";
 
@@ -174,6 +176,13 @@ export async function loadBoard(): Promise<BoardCard[]> {
     schedulesByVariant.set(post.platform_variant_id, list);
   }
 
+  // The board decides whether each approval is still valid, so it must
+  // recompute the same fingerprint the Approval Queue does — including the
+  // platform's own settings. Loaded once here rather than per row.
+  const youtubeMetadata = await loadYouTubeMetadataFor(
+    variants.filter((v) => v.platform === "youtube").map((v) => v.id),
+  );
+
   return items.map((item) => {
     const itemVariants = variantsByItem.get(item.id) ?? [];
     const video = videoByItem.get(item.id) ?? null;
@@ -199,6 +208,7 @@ export async function loadBoard(): Promise<BoardCard[]> {
             ? { id: video.id, current_revision: video.current_revision }
             : null,
           media,
+          youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
         ),
       );
 

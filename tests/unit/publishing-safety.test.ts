@@ -38,7 +38,7 @@ import {
   postedUpdate,
 } from "@/lib/publishing/lifecycle";
 import {
-  anyProviderAvailable,
+  anyProviderImplemented,
   getPublishingProvider,
   PROVIDER_STATUS,
   providerStatusFor,
@@ -48,11 +48,13 @@ import { SCHEDULE_STATUSES, type ScheduledPost } from "@/lib/schedule/types";
 import type { PlatformVariant } from "@/lib/variants/types";
 
 /**
- * Stage 6's central invariant: **nothing can publish.**
+ * The publishing infrastructure's central invariant: **nothing is published
+ * unless the platform said so.**
  *
- * Not "nothing does" — nothing *can*. No provider exists, the safety gate
- * refuses before anything is sent, and the database refuses `posted` without
- * the platform's own post id. These tests hold all three.
+ * Stage 6 held this by having no provider at all. Stage 7 added a real YouTube
+ * adapter, so the invariant now rests where it always should have: the safety
+ * gate refuses before anything is sent, `posted` cannot be constructed without
+ * the platform's own post id, and the database refuses the row anyway.
  */
 
 const HASH = "a".repeat(64);
@@ -84,6 +86,8 @@ function post(overrides: Partial<ScheduledPost> = {}): ScheduledPost {
     external_post_url: null,
     last_error_code: null,
     last_error_message: null,
+    external_processing_status: null,
+    external_processing_checked_at: null,
     created_at: "2026-08-08T00:00:00Z",
     updated_at: "2026-08-08T00:00:00Z",
     ...overrides,
@@ -154,24 +158,34 @@ function gate(overrides: Partial<GateInput> = {}): GateInput {
   };
 }
 
-describe("no provider exists", () => {
-  it("returns null for every platform", () => {
-    for (const platform of ["youtube", "instagram", "tiktok"] as const) {
+describe("the provider registry", () => {
+  it("has an adapter for YouTube and none for the rest", () => {
+    expect(getPublishingProvider("youtube")).not.toBeNull();
+    for (const platform of ["instagram", "tiktok"] as const) {
       expect(getPublishingProvider(platform), platform).toBeNull();
     }
   });
 
-  it("reports every platform as unavailable, with a reason", () => {
+  it("describes every platform, with a reason", () => {
     expect(PROVIDER_STATUS).toHaveLength(3);
     for (const status of PROVIDER_STATUS) {
-      expect(status.available, status.platform).toBe(false);
       expect(status.detail.length).toBeGreaterThan(10);
     }
-    expect(anyProviderAvailable()).toBe(false);
+    expect(anyProviderImplemented()).toBe(true);
   });
 
-  it("reports an unknown platform as unavailable rather than throwing", () => {
-    expect(providerStatusFor("youtube").available).toBe(false);
+  it("distinguishes an adapter existing from a publish being possible", () => {
+    // The one that matters. "Implemented" is a fact about this repository;
+    // whether a publish would succeed depends on a connected account and on
+    // media that can actually be fetched.
+    const youtube = providerStatusFor("youtube");
+
+    expect(youtube.implemented).toBe(true);
+    expect(youtube.detail).toContain("media_source_unavailable");
+  });
+
+  it("reports an unbuilt platform as unimplemented rather than throwing", () => {
+    expect(providerStatusFor("tiktok").implemented).toBe(false);
   });
 });
 
@@ -735,7 +749,7 @@ describe("the lifecycle as a whole", () => {
   });
 });
 
-describe("no platform is contacted anywhere", () => {
+describe("platform contact is confined to one place", () => {
   const SRC_ROOT = join(process.cwd(), "src");
 
   function sourceFiles(): string[] {
@@ -744,14 +758,32 @@ describe("no platform is contacted anywhere", () => {
       .map((entry) => join(SRC_ROOT, entry));
   }
 
-  it("makes no request to a social platform", () => {
+  it("names a platform host only inside the YouTube module", () => {
+    // Stage 7 made one platform reachable. This guard says where from: a
+    // request to Google may only originate in src/lib/youtube, so a page or an
+    // action cannot start quietly talking to a platform.
     const forbidden =
-      /(googleapis\.com|graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
+      /(googleapis\.com|accounts\.google\.com|graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
+
+    for (const file of sourceFiles()) {
+      if (file.includes(join("src", "lib", "youtube"))) {
+        continue;
+      }
+      expect(
+        readFileSync(file, "utf8"),
+        `${file} contacts a platform directly`,
+      ).not.toMatch(forbidden);
+    }
+  });
+
+  it("still contacts no Instagram or TikTok host anywhere", () => {
+    const forbidden =
+      /(graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
 
     for (const file of sourceFiles()) {
       expect(
         readFileSync(file, "utf8"),
-        `${file} contacts a platform`,
+        `${file} contacts an unbuilt platform`,
       ).not.toMatch(forbidden);
     }
   });

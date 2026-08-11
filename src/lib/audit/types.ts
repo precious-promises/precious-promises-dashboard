@@ -21,6 +21,31 @@ export const AUDIT_ACTIONS = [
   "schedule_cancelled",
   "recurring_rule_created",
   "recurring_rule_updated",
+
+  // Stage 6 — publishing infrastructure. Written by the dispatcher, which runs
+  // outside a request and therefore outside `recordAudit`; they are listed
+  // here so this vocabulary matches the database's constraint exactly.
+  "publish_queued",
+  "publish_claimed",
+  "publish_attempt_started",
+  "publish_attempt_failed",
+  "publish_attempt_succeeded",
+  "publish_blocked",
+  "publish_retried",
+  "publish_reconciled",
+
+  // Stage 7 — YouTube. Note what is absent: nothing records a token, a session
+  // URI or a scope value, because an audit log is exactly where a leaked
+  // secret would persist longest.
+  "youtube_connected",
+  "youtube_reconnected",
+  "youtube_disconnected",
+  "youtube_upload_started",
+  "youtube_upload_completed",
+  "youtube_upload_failed",
+  "youtube_thumbnail_set",
+  "youtube_playlist_added",
+  "youtube_processing_updated",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -36,12 +61,33 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   schedule_cancelled: "Schedule cancelled",
   recurring_rule_created: "Recurring slot created",
   recurring_rule_updated: "Recurring slot updated",
+
+  publish_queued: "Queued for publishing",
+  publish_claimed: "Claimed by a worker",
+  publish_attempt_started: "Publish attempt started",
+  publish_attempt_failed: "Publish attempt failed",
+  publish_attempt_succeeded: "Publish attempt succeeded",
+  publish_blocked: "Publish refused by the safety gate",
+  publish_retried: "Publish retried",
+  publish_reconciled: "Publish reconciled with the platform",
+
+  youtube_connected: "YouTube channel connected",
+  youtube_reconnected: "YouTube channel reconnected",
+  youtube_disconnected: "YouTube channel disconnected",
+  youtube_upload_started: "YouTube upload started",
+  youtube_upload_completed: "YouTube upload completed",
+  youtube_upload_failed: "YouTube upload failed",
+  youtube_thumbnail_set: "YouTube thumbnail set",
+  youtube_playlist_added: "Added to a YouTube playlist",
+  youtube_processing_updated: "YouTube processing status updated",
 };
 
 export const AUDIT_ENTITY_TYPES = [
   "platform_variant",
   "scheduled_post",
   "recurring_schedule_rule",
+  "publish_attempt",
+  "social_account",
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

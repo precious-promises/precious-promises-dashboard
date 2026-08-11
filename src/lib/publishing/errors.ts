@@ -25,6 +25,11 @@ export const ERROR_CATEGORIES = [
   "approval_stale",
   "scripture_unverified",
   "missing_asset",
+  // The asset record exists, but nothing can fetch its bytes. Stage 2 stores
+  // media as *metadata* — a row describing a file that lives somewhere else —
+  // and no storage integration retrieves it. A provider cannot upload a
+  // reference.
+  "media_source_unavailable",
   "invalid_content",
   "provider_not_connected",
   "provider_permission_revoked",
@@ -65,6 +70,8 @@ export const ERROR_CATEGORY_LABELS: Record<ErrorCategory, string> = {
   approval_stale: "Approval no longer matches the content",
   scripture_unverified: "Scripture is not verified",
   missing_asset: "A required media asset or composition is missing",
+  media_source_unavailable:
+    "The media file itself cannot be retrieved, so there is nothing to upload",
   invalid_content: "The content is not valid for this platform",
   provider_not_connected: "No connection to this platform",
   provider_permission_revoked: "Platform permission was revoked",

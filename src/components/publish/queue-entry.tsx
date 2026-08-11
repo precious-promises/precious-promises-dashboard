@@ -6,6 +6,12 @@ import {
   ERROR_CATEGORY_LABELS,
   type ErrorCategory,
 } from "@/lib/publishing/errors";
+import {
+  deriveQueueState,
+  QUEUE_STATE_DETAIL,
+  QUEUE_STATE_LABELS,
+  type QueueState,
+} from "@/lib/publishing/queue-state";
 import type { QueueEntry } from "@/lib/publishing/repository";
 import { ATTEMPT_STATUS_LABELS } from "@/lib/publishing/types";
 import { formatInTimeZone } from "@/lib/schedule/timezone";
@@ -20,18 +26,23 @@ import { PLATFORM_LABELS, REVIEW_STATE_LABELS } from "@/lib/variants/types";
  * A queue that only showed successes would be a queue that never explained
  * anything.
  *
- * An external link appears **only** when a real external post id exists. In
- * Stage 6 none ever does.
+ * An external link appears **only** when a real external post id exists.
+ *
+ * The badge shows the derived queue state rather than the raw database status,
+ * because the two are not the same question. `posted` in the database means the
+ * platform returned an id; it does not mean the video is watchable, and the
+ * row says which of those is true.
  */
 
-const STATUS_TONES: Record<string, StatusTone> = {
-  scheduled: "inactive",
-  queued: "inactive",
-  publishing: "accent",
+const STATE_TONES: Record<QueueState, StatusTone> = {
+  not_connected: "inactive",
+  ready: "inactive",
+  uploading: "accent",
+  uploaded_processing: "accent",
   posted: "configured",
   failed: "accent",
-  paused: "accent",
-  cancelled: "inactive",
+  blocked: "accent",
+  stood_down: "inactive",
 };
 
 function errorLabel(code: string | null): string {
@@ -41,9 +52,22 @@ function errorLabel(code: string | null): string {
   return ERROR_CATEGORY_LABELS[code as ErrorCategory] ?? code;
 }
 
-export function PublishQueueEntry({ entry }: { entry: QueueEntry }) {
+export function PublishQueueEntry({
+  entry,
+  platformConnected = false,
+}: {
+  entry: QueueEntry;
+  /** Whether an account for this row's platform is connected right now. */
+  platformConnected?: boolean;
+}) {
   const { post, variant, item, attempts } = entry;
   const latest = attempts[0] ?? null;
+
+  const state = deriveQueueState({
+    post,
+    latestAttemptStatus: latest?.status ?? null,
+    platformConnected,
+  });
 
   return (
     <li className="rounded-lg border border-edge/70 bg-panel-raised/30 px-3.5 py-3">
@@ -61,12 +85,17 @@ export function PublishQueueEntry({ entry }: { entry: QueueEntry }) {
             {post.timezone})
           </span>
         </span>
-        <StatusBadge tone={STATUS_TONES[post.status] ?? "inactive"}>
-          {SCHEDULE_STATUS_LABELS[post.status]}
+        <StatusBadge tone={STATE_TONES[state]}>
+          {QUEUE_STATE_LABELS[state]}
         </StatusBadge>
       </div>
 
+      <p className="mt-1.5 text-[11px] text-ink-muted">
+        {QUEUE_STATE_DETAIL[state]}
+      </p>
+
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-ink-muted">
+        <span>Schedule: {SCHEDULE_STATUS_LABELS[post.status]}</span>
         <span>Approval: {REVIEW_STATE_LABELS[variant.review_state]}</span>
         <span>
           {post.attempt_count === 1
@@ -145,11 +174,8 @@ export function PublishQueueEntry({ entry }: { entry: QueueEntry }) {
         </details>
       ) : null}
 
-      {latest?.status === "blocked" ? (
-        <p className="mt-2 text-[11px] text-ink-muted">
-          Blocked before anything was sent. Nothing reached a platform.
-        </p>
-      ) : null}
+      {/* "Blocked — nothing reached a platform" used to be repeated here. It
+          now lives on the detail line under the badge, said once. */}
     </li>
   );
 }

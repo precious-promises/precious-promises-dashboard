@@ -67,6 +67,7 @@ function reviewRow(overrides: Partial<ReviewRow> = {}): ReviewRow {
     latestScriptRevision: 2,
     mediaCount: 0,
     schedules: [],
+    platformProblems: [],
     ...overrides,
   };
 }
@@ -97,6 +98,8 @@ function post(overrides: Partial<ScheduledPost> = {}): ScheduledPost {
     external_post_url: null,
     last_error_code: null,
     last_error_message: null,
+    external_processing_status: null,
+    external_processing_checked_at: null,
     created_at: "2026-08-08T00:00:00Z",
     updated_at: "2026-08-08T00:00:00Z",
     ...overrides,

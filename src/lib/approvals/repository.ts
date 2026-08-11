@@ -2,6 +2,11 @@ import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
+import {
+  validateForYouTube,
+  youtubeSettingsDigest,
+} from "@/lib/youtube/metadata";
+import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
 
 import {
   approvalFingerprint,
@@ -38,6 +43,8 @@ export interface ReviewRow {
   latestScriptRevision: number | null;
   mediaCount: number;
   schedules: ScheduledPost[];
+  /** Platform-specific settings problems, in the platform's own words. */
+  platformProblems: string[];
 }
 
 async function requireUserId(): Promise<string | null> {
@@ -188,6 +195,11 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
     schedulesByVariant.set(post.platform_variant_id, list);
   }
 
+  // YouTube's publishing settings are part of what an approval attests to.
+  const youtubeMetadata = await loadYouTubeMetadataFor(
+    variants.filter((v) => v.platform === "youtube").map((v) => v.id),
+  );
+
   const rows: ReviewRow[] = [];
 
   for (const variant of variants) {
@@ -200,11 +212,21 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
     const mediaSelections = mediaByItem.get(item.id) ?? [];
     const hasVideo = video !== null && video.sceneCount > 0;
 
+    const platformProblems =
+      variant.platform === "youtube"
+        ? validateForYouTube({
+            variant,
+            item,
+            metadata: youtubeMetadata.get(variant.id) ?? null,
+          }).map((problem) => problem.message)
+        : [];
+
     const subject = approvalSubjectFrom(
       variant,
       item,
       video ? { id: video.id, current_revision: video.current_revision } : null,
       mediaSelections,
+      youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
     );
     const currentFingerprint = approvalFingerprint(subject);
 
@@ -222,12 +244,14 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
         item,
         hasVideo,
         mediaCount: mediaSelections.length,
+        platformProblems,
       }),
       hasVideo,
       videoProjectId: video?.id ?? null,
       latestScriptRevision: scriptByItem.get(item.id) ?? null,
       mediaCount: mediaSelections.length,
       schedules: schedulesByVariant.get(variant.id) ?? [],
+      platformProblems,
     });
   }
 

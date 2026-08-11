@@ -47,6 +47,8 @@ function post(overrides: Partial<ScheduledPost> = {}): ScheduledPost {
     external_post_url: null,
     last_error_code: null,
     last_error_message: null,
+    external_processing_status: null,
+    external_processing_checked_at: null,
     created_at: "2026-08-08T00:00:00Z",
     updated_at: "2026-08-08T00:00:00Z",
     ...overrides,
@@ -136,7 +138,21 @@ describe("PublishQueueEntry", () => {
     expect(screen.getByText(/YouTube/)).toBeInTheDocument();
     // 18:30 UTC is 19:30 in London during summer.
     expect(screen.getByText(/19:30/)).toBeInTheDocument();
-    expect(screen.getByText("Scheduled")).toBeInTheDocument();
+    expect(screen.getByText("Schedule: Scheduled")).toBeInTheDocument();
+  });
+
+  it("says not connected rather than merely scheduled", () => {
+    // The badge answers "what is this row doing", which a scheduled row with
+    // no connected account cannot answer with "Scheduled".
+    render(<PublishQueueEntry entry={entry()} platformConnected={false} />);
+
+    expect(screen.getByText("Not connected")).toBeInTheDocument();
+  });
+
+  it("says ready once the platform is connected", () => {
+    render(<PublishQueueEntry entry={entry()} platformConnected />);
+
+    expect(screen.getByText("Ready")).toBeInTheDocument();
   });
 
   it("offers no external link when there is no external post", () => {
@@ -197,7 +213,9 @@ describe("PublishQueueEntry", () => {
   it("says plainly that a blocked attempt sent nothing", () => {
     render(<PublishQueueEntry entry={entry({ attempts: [attempt()] })} />);
 
-    expect(screen.getByText(/Nothing reached a platform/i)).toBeInTheDocument();
+    expect(screen.getByText("Blocked")).toBeInTheDocument();
+    // Said once, on the detail line — not repeated further down the row.
+    expect(screen.getAllByText(/Nothing reached a platform/i)).toHaveLength(1);
   });
 
   it("shows no attempt history when there is none", () => {

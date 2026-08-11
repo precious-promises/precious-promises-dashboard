@@ -42,6 +42,7 @@ const SUBJECT: ApprovalSubject = {
     { mediaAssetId: "asset-1", purpose: "primary", sortOrder: 0 },
     { mediaAssetId: "asset-2", purpose: "thumbnail", sortOrder: 1 },
   ],
+  platformSettings: "privacy=private;kids=false",
 };
 
 function withChange(patch: Partial<ApprovalSubject>): ApprovalSubject {
@@ -87,6 +88,7 @@ describe("determinism", () => {
       scriptureText: SUBJECT.scriptureText,
       scriptureReference: SUBJECT.scriptureReference,
       contentItemId: SUBJECT.contentItemId,
+      platformSettings: SUBJECT.platformSettings,
       videoProjectId: SUBJECT.videoProjectId,
       videoProjectRevision: SUBJECT.videoProjectRevision,
     };
@@ -234,6 +236,7 @@ describe("approvalSubjectFrom", () => {
       item,
       { id: "video-1", current_revision: 2 },
       [],
+      null,
     );
 
     expect(subject.contentItemId).toBe("item-1");
@@ -242,7 +245,7 @@ describe("approvalSubjectFrom", () => {
   });
 
   it("records the absence of a video rather than a placeholder", () => {
-    const subject = approvalSubjectFrom(variant, item, null, []);
+    const subject = approvalSubjectFrom(variant, item, null, [], null);
 
     expect(subject.videoProjectId).toBeNull();
     expect(subject.videoProjectRevision).toBeNull();
@@ -250,10 +253,16 @@ describe("approvalSubjectFrom", () => {
 
   it("distinguishes having a video from not having one", () => {
     const without = approvalFingerprint(
-      approvalSubjectFrom(variant, item, null, []),
+      approvalSubjectFrom(variant, item, null, [], null),
     );
     const with1 = approvalFingerprint(
-      approvalSubjectFrom(variant, item, { id: "v", current_revision: 1 }, []),
+      approvalSubjectFrom(
+        variant,
+        item,
+        { id: "v", current_revision: 1 },
+        [],
+        null,
+      ),
     );
 
     expect(without).not.toBe(with1);

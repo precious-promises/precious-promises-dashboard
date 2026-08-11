@@ -28,28 +28,64 @@ This matters because validation errors surface in server logs, crash reporters
 and CI output — places where a leaked secret persists long after the incident
 is resolved. `tests/unit/env.test.ts` asserts this behaviour directly.
 
-The same rule applies everywhere else _(planned)_: no tokens, keys, or
-credentials in log lines, error messages, or telemetry.
+The same rule applies to platform errors — _implemented in Stage 6 and
+extended in Stage 7_. `sanitiseErrorMessage` redacts bearer tokens, Supabase and
+Trigger keys, JWTs and named credentials **before** truncating, so a secret
+cannot survive by sitting past the cut. Google's `error.message` goes through
+the same pass before anything is stored, and `sanitiseMetadata` drops any audit
+key that looks like a credential.
 
-## OAuth _(planned)_
+No token, refresh token, session URI or client secret appears in any log line,
+error message, audit record or telemetry event.
 
-- **State validation.** Every OAuth authorisation request carries a
-  cryptographically random `state` value, bound to the initiating session and
-  verified on callback. Mismatched or missing state is rejected. This is the
-  defence against CSRF on the connect flow.
+## OAuth — _implemented for Google/YouTube in Stage 7_
+
+Every rule below is enforced in code for the YouTube connection, and remains
+the standard any future platform must meet.
+
+- **State validation.** The authorisation request carries 32 random bytes,
+  base64url, stored against the owner with a ten-minute expiry and a uniqueness
+  constraint. It is **consumed before the authorisation code is exchanged**, by
+  a conditional update (`consumed_at is null`) so the database decides which of
+  two racing callbacks wins. A missing, expired or already-used state is
+  refused with a single message — distinguishing "never existed" from "already
+  used" would tell an attacker which of the two they achieved.
+- **The state table has RLS enabled and no policies at all**, so it cannot be
+  read from a browser. A readable state token is a guessable one.
 - **Redirect URIs** are registered per platform and validated as http(s) URLs by
-  the environment schema.
-- **Server-only tokens.** Access and refresh tokens are held server-side and
-  never sent to the browser, embedded in HTML, or exposed through an API
-  response.
-- **Token encryption.** Tokens are encrypted at rest using a key supplied via
-  `TOKEN_ENCRYPTION_KEY`, so a database disclosure does not by itself yield
-  usable platform credentials.
-- **Least privilege.** Request the narrowest scopes that accomplish the task.
-  Do not request write scopes for read-only features.
-- **Revocation and disconnect.** Disconnecting an account revokes the token with
-  the upstream platform where the platform supports it, and deletes the stored
-  credential either way. Disconnect must not leave usable credentials behind.
+  the environment schema. `/api/oauth` requires a session as well.
+- **Server-only tokens.** `SocialAccount` — the type a page renders — has no
+  field that could hold a token, and `social_account_credentials` has RLS
+  enabled with **no policies**, so a session-backed client is refused by the
+  database itself. Only trusted server code holding `SUPABASE_SECRET_KEY` can
+  read it.
+- **Token encryption.** AES-256-GCM via `node:crypto`, keyed by
+  `TOKEN_ENCRYPTION_KEY`, in a versioned envelope (`v1.<iv>.<tag>.<ciphertext>`)
+  with a fresh random IV per encryption. **No cryptography is written by hand**;
+  a test asserts the module uses an authenticated cipher and contains no
+  bit-twiddling of its own. Decryption failures all return the same message.
+- **Resumable upload session URIs are treated as credentials.** Google's session
+  URI is a bearer capability — anyone holding it can push bytes into that
+  upload — so it is encrypted at rest, kept off every type that crosses a
+  boundary, and its table also has RLS enabled with no policies.
+- **Least privilege.** Three scopes: `youtube.upload`, `youtube.readonly` and
+  `youtube`. `youtubepartner` and `force-ssl` are not requested — an unused
+  broad scope is a standing risk with no benefit. If Google grants fewer scopes
+  than asked, the connection is refused rather than recorded as working.
+- **Identity is verified before a connection is recorded.** A token proves
+  somebody authorised something; the channel lookup proves _what_. A connected
+  YouTube row without a channel id is refused by check constraint, and
+  `social_accounts` has **no INSERT policy** at all, so a browser cannot record
+  a connection nobody made.
+- **Revocation and disconnect.** Disconnecting revokes at Google **first**, then
+  deletes the stored credential — the other order would leave a live grant
+  nothing in this interface could see or withdraw. The local delete happens
+  either way, and a revocation Google did not confirm is reported as such rather
+  than presented as a clean disconnect.
+- **Nothing from the provider is echoed back.** OAuth failures redirect with a
+  short reason code from this application's own vocabulary; Google's
+  `error_description` can quote request parameters, and a callback URL ends up
+  in browser history and referrer headers.
 
 ## Authentication — _implemented_
 
@@ -74,7 +110,14 @@ credentials in log lines, error messages, or telemetry.
 
 ## Access control
 
-- **Row Level Security** — _implemented for every table_. All thirteen tables
+- **Three tables are unreachable from the browser by construction** —
+  _implemented in Stage 7_. `social_account_credentials`, `oauth_states` and
+  `youtube_upload_sessions` have RLS **enabled with no policies whatsoever**,
+  plus `revoke all … from authenticated`. With RLS on and no policy, every
+  operation is refused for every row. This is the strongest available statement
+  of "the browser cannot have this", and the Supabase advisor's
+  `rls_enabled_no_policy` INFO notice on each is the intended shape, not a gap.
+- **Row Level Security** — _implemented for every table_. All tables
   have RLS enabled, with one explicit policy per operation, for `authenticated`
   only, restricted to the caller's own rows. No catch-all policy; no `anon`
   policy, and the `anon` grant is revoked on each. Supabase's security advisor

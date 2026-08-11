@@ -8,6 +8,7 @@ import { PublishQueueEntry } from "@/components/publish/queue-entry";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { loadSocialAccounts } from "@/lib/accounts/repository";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { PROVIDER_STATUS } from "@/lib/publishing/providers";
 import {
@@ -18,6 +19,7 @@ import {
 import { SCHEDULE_STATUS_LABELS } from "@/lib/schedule/types";
 import { isWorkerConfigured } from "@/lib/supabase/worker";
 import { PLATFORM_LABELS } from "@/lib/variants/types";
+import { MEDIA_RETRIEVAL_DETAIL } from "@/lib/youtube/media-source";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {
@@ -31,7 +33,7 @@ const SECTION_NOTES: Partial<Record<string, string>> = {
   publishing: "A provider call is in flight.",
   failed: "Stopped, with the reason recorded.",
   posted:
-    "Confirmed live, with the platform's own post id. Empty until a platform integration exists.",
+    "Confirmed live, with the platform's own post id. Nothing reaches here until a video file can actually be uploaded.",
 };
 
 /**
@@ -40,10 +42,11 @@ const SECTION_NOTES: Partial<Record<string, string>> = {
  * Real `scheduled_posts` and `publish_attempts` rows only — there are no
  * fabricated rows anywhere on this page.
  *
- * **Nothing can be published.** No platform provider is connected, so the
- * safety gate refuses every attempt before anything leaves the system, and
- * `Posted` is structurally empty: the database will not accept that status
- * without the platform's own post id.
+ * **Nothing has been published.** Stage 7 added a real YouTube adapter, and it
+ * makes real requests — but it refuses with `media_source_unavailable` before
+ * any upload begins, because no integration can fetch the video file. `Posted`
+ * remains structurally empty either way: the database will not accept that
+ * status without the platform's own post id.
  */
 export default async function PublishQueuePage() {
   const supabase = await createSupabaseServerClient();
@@ -59,6 +62,14 @@ export default async function PublishQueuePage() {
   const grouped = groupQueue(entries);
   const workerReady = isWorkerConfigured();
 
+  // Read once, from real account rows. A row that cannot go anywhere because
+  // nothing is connected must not be shown as merely "Scheduled".
+  const connectedPlatforms = new Set(
+    (await loadSocialAccounts())
+      .filter((account) => account.status === "connected")
+      .map((account) => account.platform),
+  );
+
   return (
     <DashboardShell
       title="Publish Queue"
@@ -71,15 +82,15 @@ export default async function PublishQueuePage() {
             Publish Queue
           </h2>
           <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink-secondary">
-            The publishing infrastructure: claims, attempts and outcomes. No
-            platform is connected, so nothing here can post — every attempt is
-            refused before anything is sent, and the refusal is recorded.
+            The publishing infrastructure: claims, attempts and outcomes. Every
+            attempt runs the safety gate first, and every refusal is recorded
+            with its reason.
           </p>
         </div>
 
         <SectionCard
           title="Platform connections"
-          description="Publishing needs a connected account. None exists."
+          description="Which platforms have an adapter, and what each one can actually do."
         >
           <ul className="flex flex-col gap-2">
             {PROVIDER_STATUS.map((status) => (
@@ -95,7 +106,9 @@ export default async function PublishQueuePage() {
                     {status.detail}
                   </span>
                 </span>
-                <StatusBadge tone="inactive">Not connected</StatusBadge>
+                <StatusBadge tone={status.implemented ? "accent" : "inactive"}>
+                  {status.implemented ? "Adapter built" : "Not built"}
+                </StatusBadge>
               </li>
             ))}
           </ul>
@@ -105,7 +118,18 @@ export default async function PublishQueuePage() {
             {workerReady
               ? "credential configured."
               : "no trusted credential configured, so the dispatcher cannot run."}{" "}
-            Either way, no provider exists to publish with.
+            Manage authorisations in{" "}
+            <Link
+              href="/dashboard/accounts"
+              className="underline decoration-edge-strong underline-offset-2 hover:text-ink-secondary"
+            >
+              Connected Accounts
+            </Link>
+            .
+          </p>
+
+          <p className="mt-2 text-xs text-ink-muted">
+            {MEDIA_RETRIEVAL_DETAIL}
           </p>
         </SectionCard>
 
@@ -114,7 +138,7 @@ export default async function PublishQueuePage() {
             <EmptyState
               icon={Send}
               title="Nothing in the queue."
-              description="Approve a platform variant and give it a time in the Calendar. It will appear here — and stop at the safety gate, because no platform is connected."
+              description="Approve a platform variant and give it a time in the Calendar. It will appear here — and stop before any upload, because no integration can fetch the video file yet."
               action={
                 <Link
                   href="/dashboard/calendar"
@@ -148,7 +172,13 @@ export default async function PublishQueuePage() {
                 ) : (
                   <ul className="flex flex-col gap-2">
                     {sectionEntries.map((entry) => (
-                      <PublishQueueEntry key={entry.post.id} entry={entry} />
+                      <PublishQueueEntry
+                        key={entry.post.id}
+                        entry={entry}
+                        platformConnected={connectedPlatforms.has(
+                          entry.variant.platform,
+                        )}
+                      />
                     ))}
                   </ul>
                 )}
