@@ -159,11 +159,20 @@ function gate(overrides: Partial<GateInput> = {}): GateInput {
 }
 
 describe("the provider registry", () => {
-  it("has an adapter for YouTube and none for the rest", () => {
+  it("has adapters for YouTube and Instagram, and none for TikTok", () => {
     expect(getPublishingProvider("youtube")).not.toBeNull();
-    for (const platform of ["instagram", "tiktok"] as const) {
-      expect(getPublishingProvider(platform), platform).toBeNull();
-    }
+    expect(getPublishingProvider("instagram")).not.toBeNull();
+    expect(getPublishingProvider("tiktok")).toBeNull();
+  });
+
+  it("says plainly which Instagram formats are refused, and why", () => {
+    // Reels upload as bytes; images and carousels would need media exposed on
+    // a publicly reachable URL, which this application will not do.
+    const instagram = providerStatusFor("instagram");
+
+    expect(instagram.implemented).toBe(true);
+    expect(instagram.detail).toMatch(/Reels/);
+    expect(instagram.detail).toMatch(/publicly reachable URL/i);
   });
 
   it("describes every platform, with a reason", () => {
@@ -758,15 +767,22 @@ describe("platform contact is confined to one place", () => {
       .map((entry) => join(SRC_ROOT, entry));
   }
 
-  it("names a platform host only inside the YouTube module", () => {
-    // Stage 7 made one platform reachable. This guard says where from: a
-    // request to Google may only originate in src/lib/youtube, so a page or an
-    // action cannot start quietly talking to a platform.
+  /** The only directories permitted to name a platform host. */
+  const INTEGRATION_DIRS = [
+    join("src", "lib", "youtube"),
+    join("src", "lib", "drive"),
+    join("src", "lib", "instagram"),
+  ];
+
+  it("names a platform host only inside an integration module", () => {
+    // The guard says where a platform request may originate: only from an
+    // integration module, so a page, an action or the scheduler cannot start
+    // quietly talking to a platform.
     const forbidden =
-      /(googleapis\.com|accounts\.google\.com|graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
+      /(googleapis\.com|accounts\.google\.com|graph\.facebook\.com|graph\.instagram\.com|rupload\.facebook\.com|api\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
 
     for (const file of sourceFiles()) {
-      if (file.includes(join("src", "lib", "youtube"))) {
+      if (INTEGRATION_DIRS.some((dir) => file.includes(dir))) {
         continue;
       }
       expect(
@@ -776,15 +792,27 @@ describe("platform contact is confined to one place", () => {
     }
   });
 
-  it("still contacts no Instagram or TikTok host anywhere", () => {
-    const forbidden =
-      /(graph\.facebook\.com|graph\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
+  it("still contacts no TikTok host anywhere", () => {
+    // TikTok has no adapter, so no module has any business naming its hosts.
+    const forbidden = /(api\.tiktok\.com|open-api\.tiktok\.com)/i;
 
     for (const file of sourceFiles()) {
       expect(
         readFileSync(file, "utf8"),
         `${file} contacts an unbuilt platform`,
       ).not.toMatch(forbidden);
+    }
+  });
+
+  it("makes media public nowhere", () => {
+    // The refusal that shaped the whole Instagram design: no code path turns a
+    // Drive file into a publicly reachable URL, and none serves media to the
+    // open internet on Meta's behalf.
+    for (const file of sourceFiles()) {
+      const contents = readFileSync(file, "utf8");
+      expect(contents, `${file} changes Drive sharing`).not.toMatch(
+        /permissions\.create|anyoneWithLink|"anyone"/i,
+      );
     }
   });
 

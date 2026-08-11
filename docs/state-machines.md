@@ -134,7 +134,9 @@ selected video and its revision, the attached media, and (from Stage 7) the
 platform's own settings — is reduced to a SHA-256 fingerprint at the moment of
 approval.
 
-The Stage 7 addition is `platformSettings`. A YouTube variant carries a privacy
+The Stage 7 addition is `platformSettings`, extended in Stage 8 to carry
+Instagram's settings — media type, cover frame and share-to-feed — alongside
+YouTube's. A YouTube variant carries a privacy
 status, a made-for-kids declaration, tags and a thumbnail, all of which change
 what an audience sees; approving a variant and then flipping its privacy would
 otherwise publish something nobody approved. It is `null` for a platform with no
@@ -185,3 +187,30 @@ carry the verse that was actually approved.
 - An edit to an item in `Publishing` does not affect the in-flight attempt; the
   attempt is recorded against the version that was sent.
 - Re-approval is a new approval action, recorded separately in the audit trail.
+
+## Instagram container lifecycle — _implemented in Stage 8_
+
+Meta's publishing is two-phase, and the two phases must never be conflated.
+
+```
+create container ──> in_progress ──> finished ──> published
+                          │              │
+                          ├──> error     └──> (publish call returns a media id)
+                          └──> expired
+```
+
+### Rules
+
+- **A container id is not a post id.** Only the media id returned by
+  `media_publish` is, and only it is ever returned as `externalPostId`.
+- **An unfamiliar status maps to `in_progress`, never `finished`.** `finished`
+  is what permits the publish call, so an unknown value must not reach it.
+- **The container row is written before the publish call.** That is what lets a
+  crashed worker ask Meta about the container rather than creating a second one
+  and posting twice.
+- **`published` requires a media id** — enforced by check constraint, as
+  `posted` is on `scheduled_posts`.
+- A container Meta reports as already published, but for which it returns no
+  media id, produces `incomplete` with an explanation. No id is invented, and
+  no retry is attempted into a possible duplicate.
+- Containers expire. An expired container is a failure, not a silent retry.

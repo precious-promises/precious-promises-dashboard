@@ -103,20 +103,38 @@ describe("parseMediaForm", () => {
 });
 
 describe("storage providers", () => {
-  it("reports every provider as not connected", () => {
-    // No OAuth flow exists and no credential is stored. Anything else here
-    // would claim a capability the product does not have.
+  it("explains every provider, whether or not it has an adapter", () => {
     for (const status of STORAGE_PROVIDER_STATUS) {
-      expect(status.connected).toBe(false);
+      expect(status.detail.length, status.provider).toBeGreaterThan(10);
     }
   });
 
-  it("includes Google Drive as a declared but unconnected provider", () => {
+  it("reports Google Drive as implemented, because Stage 8 built it", () => {
+    // "Implemented" is a fact about this repository. Whether a connection
+    // exists, and whether any given file can be read, are runtime questions
+    // with their own answers.
     const drive = STORAGE_PROVIDER_STATUS.find(
       (status) => status.provider === "google_drive",
     );
 
-    expect(drive).toBeDefined();
-    expect(drive?.connected).toBe(false);
+    expect(drive?.implemented).toBe(true);
+    expect(drive?.detail).toMatch(/approved/i);
+  });
+
+  it("still has no adapter for the other providers", () => {
+    for (const provider of ["supabase_storage", "external"] as const) {
+      const status = STORAGE_PROVIDER_STATUS.find(
+        (entry) => entry.provider === provider,
+      );
+      expect(status?.implemented, provider).toBe(false);
+    }
+  });
+
+  it("refuses to fetch arbitrary external URLs, and says why", () => {
+    const external = STORAGE_PROVIDER_STATUS.find(
+      (status) => status.provider === "external",
+    );
+
+    expect(external?.detail).toMatch(/URL fetcher/i);
   });
 });

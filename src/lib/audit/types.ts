@@ -46,6 +46,20 @@ export const AUDIT_ACTIONS = [
   "youtube_thumbnail_set",
   "youtube_playlist_added",
   "youtube_processing_updated",
+
+  // Stage 8 — Drive media retrieval and Instagram. Note again what is absent:
+  // no token, no Drive access URL, no container access token.
+  "drive_connected",
+  "drive_disconnected",
+  "drive_asset_imported",
+  "drive_asset_rejected",
+  "instagram_connected",
+  "instagram_reconnected",
+  "instagram_disconnected",
+  "instagram_container_created",
+  "instagram_container_finished",
+  "instagram_published",
+  "instagram_publish_failed",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -80,6 +94,18 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   youtube_thumbnail_set: "YouTube thumbnail set",
   youtube_playlist_added: "Added to a YouTube playlist",
   youtube_processing_updated: "YouTube processing status updated",
+
+  drive_connected: "Google Drive connected",
+  drive_disconnected: "Google Drive disconnected",
+  drive_asset_imported: "Drive file imported as a media asset",
+  drive_asset_rejected: "Drive file refused",
+  instagram_connected: "Instagram account connected",
+  instagram_reconnected: "Instagram account reconnected",
+  instagram_disconnected: "Instagram account disconnected",
+  instagram_container_created: "Instagram container created",
+  instagram_container_finished: "Instagram container finished processing",
+  instagram_published: "Published to Instagram",
+  instagram_publish_failed: "Instagram publish failed",
 };
 
 export const AUDIT_ENTITY_TYPES = [
@@ -88,6 +114,7 @@ export const AUDIT_ENTITY_TYPES = [
   "recurring_schedule_rule",
   "publish_attempt",
   "social_account",
+  "media_asset",
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

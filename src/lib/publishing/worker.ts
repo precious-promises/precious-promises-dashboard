@@ -6,6 +6,8 @@ import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createWorkerClient } from "@/lib/supabase/worker";
 import type { PlatformVariant } from "@/lib/variants/types";
+import { instagramSettingsDigest } from "@/lib/instagram/metadata";
+import { loadInstagramMetadataAsWorker } from "@/lib/instagram/repository";
 import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
 import { loadMetadataAsWorker } from "@/lib/youtube/repository";
 
@@ -226,7 +228,11 @@ export async function publishClaimedPost(
       ? youtubeSettingsDigest(
           await loadMetadataAsWorker(client, variant.id, owner),
         )
-      : null;
+      : variant?.platform === "instagram"
+        ? instagramSettingsDigest(
+            await loadInstagramMetadataAsWorker(client, variant.id, owner),
+          )
+        : null;
 
   const currentFingerprint =
     variant && item

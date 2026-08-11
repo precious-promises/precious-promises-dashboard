@@ -4,6 +4,8 @@ import { invalidationPause } from "@/lib/schedule/rules";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
+import { instagramSettingsDigest } from "@/lib/instagram/metadata";
+import { loadInstagramMetadataFor } from "@/lib/instagram/repository";
 import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
 import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
 
@@ -112,12 +114,17 @@ export async function syncApprovalsForItem(
     sortOrder: row.sort_order,
   }));
 
-  // YouTube's own settings are part of what was approved, so a changed privacy
-  // status or thumbnail invalidates an approval exactly as a changed caption
-  // does.
+  // Each platform's own settings are part of what was approved, so a changed
+  // privacy status, thumbnail, media type or cover invalidates an approval
+  // exactly as a changed caption does.
   const youtubeMetadata = await loadYouTubeMetadataFor(
     approved
       .filter((variant) => variant.platform === "youtube")
+      .map((v) => v.id),
+  );
+  const instagramMetadata = await loadInstagramMetadataFor(
+    approved
+      .filter((variant) => variant.platform === "instagram")
       .map((v) => v.id),
   );
 
@@ -130,7 +137,9 @@ export async function syncApprovalsForItem(
           ? { id: video.id, current_revision: video.current_revision }
           : null,
         mediaSelections,
-        youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
+        variant.platform === "instagram"
+          ? instagramSettingsDigest(instagramMetadata.get(variant.id) ?? null)
+          : youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
       ),
     );
 

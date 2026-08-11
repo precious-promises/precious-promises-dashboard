@@ -92,6 +92,12 @@ scheduled on it. See
 function. The database refuses `posted` without the platform's own post id. See
 [stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
 
+**Implemented in Stage 8:** `instagram_media_metadata` and
+`instagram_publish_containers`, plus Drive provenance columns on
+`media_assets`. The container table has RLS enabled with no policies, like the
+YouTube upload sessions it mirrors. See
+[stage-8-media-instagram.md](./stage-8-media-instagram.md).
+
 **Implemented in Stage 7:** `social_accounts`, `social_account_credentials`,
 `oauth_states`, `youtube_video_metadata` and `youtube_upload_sessions`, plus
 platform processing columns on `scheduled_posts`. Three of those tables have RLS
@@ -159,9 +165,10 @@ returns `null` rather than a stub.
 The worker is responsible for:
 
 - Media rendering jobs _(planned)_
-- Publishing to social platforms at scheduled times — **infrastructure built
-  in Stage 6, a real YouTube adapter in Stage 7, and still no successful
-  publish: there is no way to fetch the video file**
+- Publishing to social platforms at scheduled times — **infrastructure in
+  Stage 6, a YouTube adapter in Stage 7, Drive retrieval and an Instagram Reels
+  adapter in Stage 8. Media can now genuinely be fetched; no account has been
+  connected, so nothing has been published.**
 - Retry and backoff on transient failure — _implemented_ as an error
   classification framework
 - Recording every attempt — _implemented_ as `publish_attempts`

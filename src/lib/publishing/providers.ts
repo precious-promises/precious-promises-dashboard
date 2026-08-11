@@ -1,6 +1,7 @@
 import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import type { PlatformVariant, VariantPlatform } from "@/lib/variants/types";
+import { instagramProvider } from "@/lib/instagram/provider";
 import { youtubeProvider } from "@/lib/youtube/provider";
 
 import type { ErrorCategory, SafeError } from "./errors";
@@ -131,9 +132,9 @@ export const PROVIDER_STATUS: readonly ProviderStatus[] = [
   },
   {
     platform: "instagram",
-    implemented: false,
+    implemented: true,
     detail:
-      "No Instagram connection. The Graph API integration and its app review are not built.",
+      "An Instagram adapter exists and publishes Reels by uploading bytes directly to Meta. Images and carousels are refused: Meta fetches those from a publicly reachable URL, and this application will not expose media to the open internet.",
   },
   {
     platform: "tiktok",
@@ -153,6 +154,7 @@ export const PROVIDER_STATUS: readonly ProviderStatus[] = [
 const PROVIDER_REGISTRY: Partial<Record<VariantPlatform, PublishingProvider>> =
   {
     youtube: youtubeProvider,
+    instagram: instagramProvider,
   };
 
 export function getPublishingProvider(

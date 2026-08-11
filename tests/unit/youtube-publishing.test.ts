@@ -79,27 +79,37 @@ function account(overrides: Partial<SocialAccount> = {}): SocialAccount {
   };
 }
 
-describe("no media can be uploaded", () => {
-  it("refuses every storage provider, with the reason each one is blocked", () => {
-    for (const provider of [
-      "google_drive",
-      "supabase_storage",
-      "external",
-    ] as const) {
-      const result = resolveMediaSource(asset({ storage_provider: provider }));
+describe("media resolution after Stage 8", () => {
+  it("refuses a provider with no adapter, and names which", async () => {
+    for (const provider of ["supabase_storage", "external"] as const) {
+      const result = await resolveMediaSource(
+        asset({ storage_provider: provider }),
+      );
 
       expect(result.available, provider).toBe(false);
       if (!result.available) {
         expect(result.error.code, provider).toBe("media_source_unavailable");
-        // Each branch names its own missing piece of work rather than giving
-        // one blanket refusal that hides which is blocking this upload.
         expect(result.error.message.length, provider).toBeGreaterThan(40);
       }
     }
   });
 
-  it("is a non-retryable refusal, because retrying changes nothing", () => {
-    const result = resolveMediaSource(asset());
+  it("refuses to fetch an arbitrary external URL, and says why", async () => {
+    // Fetching whatever a record contained would make this application a URL
+    // fetcher pointed at anything.
+    const result = await resolveMediaSource(
+      asset({ storage_provider: "external" }),
+    );
+
+    if (!result.available) {
+      expect(result.error.message).toMatch(/URL/i);
+    }
+  });
+
+  it("is a non-retryable refusal, because retrying changes nothing", async () => {
+    const result = await resolveMediaSource(
+      asset({ storage_provider: "external" }),
+    );
 
     expect(result.available).toBe(false);
     if (!result.available) {
@@ -107,8 +117,8 @@ describe("no media can be uploaded", () => {
     }
   });
 
-  it("distinguishes a missing asset from an unfetchable one", () => {
-    const missing = resolveMediaSource(null);
+  it("distinguishes a missing asset from an unfetchable one", async () => {
+    const missing = await resolveMediaSource(null);
 
     expect(missing.available).toBe(false);
     if (!missing.available) {
@@ -116,8 +126,8 @@ describe("no media can be uploaded", () => {
     }
   });
 
-  it("refuses an asset of the wrong type", () => {
-    const result = resolveMediaSource(asset({ media_type: "audio" }));
+  it("refuses an asset of the wrong type", async () => {
+    const result = await resolveMediaSource(asset({ media_type: "audio" }));
 
     expect(result.available).toBe(false);
     if (!result.available) {
@@ -125,12 +135,25 @@ describe("no media can be uploaded", () => {
     }
   });
 
-  it("says so once, in one place, so every surface agrees", () => {
-    expect(MEDIA_RETRIEVAL_AVAILABLE).toBe(false);
-    expect(MEDIA_RETRIEVAL_DETAIL).toContain("media_source_unavailable");
+  it("refuses a Drive asset with no Drive id", async () => {
+    const result = await resolveMediaSource(
+      asset({ storage_provider: "google_drive", external_file_id: null }),
+    );
+
+    expect(result.available).toBe(false);
+    if (!result.available) {
+      expect(result.error.code).toBe("missing_asset");
+    }
   });
 
-  it("registers media_source_unavailable as a real, non-retryable category", () => {
+  it("now reports that media retrieval exists", () => {
+    // Stage 7's universal refusal is gone. What replaced it is narrower and
+    // provider-aware, not weaker.
+    expect(MEDIA_RETRIEVAL_AVAILABLE).toBe(true);
+    expect(MEDIA_RETRIEVAL_DETAIL).toMatch(/approved/i);
+  });
+
+  it("keeps media_source_unavailable a real, non-retryable category", () => {
     expect(ERROR_CATEGORIES).toContain("media_source_unavailable");
     expect(isRetryable("media_source_unavailable")).toBe(false);
     expect([...RETRYABLE_CATEGORIES]).not.toContain("media_source_unavailable");

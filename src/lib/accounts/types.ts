@@ -1,6 +1,38 @@
 import type { VariantPlatform } from "@/lib/variants/types";
 
 /**
+ * Every external system this application can hold an authorisation for.
+ *
+ * Wider than `VariantPlatform` since Stage 8: Google Drive is a connection
+ * with encrypted credentials the owner grants and revokes, but it is a
+ * read-only media source and **never** a publishing target. Keeping the two
+ * types distinct is what stops Drive being handed to a publish path by
+ * mistake.
+ */
+export const CONNECTION_PLATFORMS = [
+  "youtube",
+  "instagram",
+  "tiktok",
+  "google_drive",
+] as const;
+
+export type ConnectionPlatform = (typeof CONNECTION_PLATFORMS)[number];
+
+export const CONNECTION_PLATFORM_LABELS: Record<ConnectionPlatform, string> = {
+  youtube: "YouTube",
+  instagram: "Instagram",
+  tiktok: "TikTok",
+  google_drive: "Google Drive",
+};
+
+/** True when this connection is somewhere content can be published. */
+export function isPublishingPlatform(
+  platform: ConnectionPlatform,
+): platform is VariantPlatform {
+  return platform !== "google_drive";
+}
+
+/**
  * Connected external accounts.
  *
  * A `social_accounts` row is **identity only** — which channel, under whose
@@ -41,7 +73,7 @@ export const ACCOUNT_STATUS_DETAIL: Record<AccountStatus, string> = {
 export interface SocialAccount {
   id: string;
   owner_id: string;
-  platform: VariantPlatform;
+  platform: ConnectionPlatform;
   provider_account_id: string;
   display_name: string | null;
   handle: string | null;

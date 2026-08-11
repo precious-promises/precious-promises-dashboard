@@ -116,8 +116,8 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 7", () => {
-  it("activates exactly the twelve built areas", () => {
+describe("navigation after Stage 8", () => {
+  it("activates exactly the thirteen built areas", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -131,6 +131,7 @@ describe("navigation after Stage 7", () => {
       "Caption Studio",
       "Video Creation Studio",
       "Media Assets",
+      "Google Drive Browser",
       "Calendar",
       "Approval Queue",
       "Publish Queue",
@@ -138,12 +139,12 @@ describe("navigation after Stage 7", () => {
     ]);
   });
 
-  it("leaves the remaining 7 areas unbuilt and unlinkable", () => {
+  it("leaves the remaining 6 areas unbuilt and unlinkable", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(7);
+    expect(comingSoon).toHaveLength(6);
     for (const item of comingSoon) {
       expect(item.href, `${item.label} must not be linkable`).toBeUndefined();
     }
