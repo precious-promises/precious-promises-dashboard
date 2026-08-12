@@ -1,8 +1,14 @@
 import { Sparkles } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import {
+  ConcludeExperimentForm,
+  ExperimentForm,
+} from "@/components/growth/experiment-form";
+import { GoalForm } from "@/components/growth/goal-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -25,12 +31,30 @@ import {
   CONFIDENCE_LABELS,
   type ConfidenceLevel,
 } from "@/lib/growth/confidence";
+import {
+  EXPERIMENT_DIMENSION_LABELS,
+  EXPERIMENT_STATUS_DETAIL,
+  EXPERIMENT_STATUS_LABELS,
+  experimentReadiness,
+  OBSERVATIONAL_NOTE,
+} from "@/lib/growth/experiments";
+import {
+  describeProgress,
+  GOAL_METRIC_LABELS,
+  GOAL_STATUS_LABELS,
+  measureGoal,
+} from "@/lib/growth/goals";
 import { buildWeeklyMission, missionAbsenceReason } from "@/lib/growth/mission";
 import {
   findMissingPlatformCandidates,
   findShortsCandidates,
   REPURPOSE_KIND_LABELS,
 } from "@/lib/growth/repurpose";
+import {
+  loadExperimentPosts,
+  loadExperiments,
+  loadGoals,
+} from "@/lib/growth/repository";
 import { DEFAULT_TIMEZONE } from "@/lib/schedule/timezone";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { PLATFORM_LABELS } from "@/lib/variants/types";
@@ -169,6 +193,25 @@ export default async function GrowthCentrePage() {
   };
 
   const mission = buildWeeklyMission(missionInputs);
+
+  const goals = await loadGoals();
+  const experiments = await loadExperiments();
+  const experimentPosts = await loadExperimentPosts(
+    experiments.map((experiment) => experiment.id),
+  );
+
+  // Progress is measured against real observations. A goal whose metric has
+  // never been read shows as unmeasured, never as 0%.
+  const goalProgress = goals.map((goal) =>
+    measureGoal(
+      goal,
+      overview.totals[goal.metric as keyof typeof overview.totals] ?? {
+        available: false as const,
+        metric: goal.metric as never,
+        reason: "not_yet_fetched" as const,
+      },
+    ),
+  );
 
   return (
     <DashboardShell
@@ -370,6 +413,144 @@ export default async function GrowthCentrePage() {
         </SectionCard>
 
         <SectionCard
+          title="Goals"
+          description="Targets you set. Never predictions, and never plotted as observations."
+        >
+          {goalProgress.length > 0 ? (
+            <ul className="mb-5 flex flex-col gap-2">
+              {goalProgress.map((progress) => (
+                <li
+                  key={progress.goal.id}
+                  className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <span className="text-sm font-medium text-ink-primary">
+                      {progress.goal.name}
+                    </span>
+                    <StatusBadge
+                      tone={
+                        progress.goal.status === "achieved"
+                          ? "configured"
+                          : "inactive"
+                      }
+                    >
+                      {GOAL_STATUS_LABELS[progress.goal.status]}
+                    </StatusBadge>
+                  </div>
+
+                  <p className="mt-0.5 text-[11px] text-ink-muted">
+                    {GOAL_METRIC_LABELS[progress.goal.metric]} ·{" "}
+                    {Number(progress.goal.target_value).toLocaleString("en-GB")}{" "}
+                    by {progress.goal.period_end}
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-ink-secondary">
+                    {describeProgress(progress)}
+                  </p>
+
+                  {progress.percent !== null ? (
+                    <div
+                      className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-panel"
+                      role="img"
+                      aria-label={`${Math.round(progress.percent)}% of target measured`}
+                    >
+                      <div
+                        className="h-full rounded-full bg-highlight"
+                        style={{
+                          width: `${Math.min(100, Math.max(0, progress.percent))}%`,
+                        }}
+                      />
+                    </div>
+                  ) : (
+                    // No bar at all rather than one sitting at zero. An empty
+                    // bar reads as "no progress"; the truth is "no reading".
+                    <p className="mt-2 text-[11px] text-gold">
+                      Not measured yet — this is not the same as no progress.
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <GoalForm />
+        </SectionCard>
+
+        <SectionCard
+          title="Experiments"
+          description="Observational, because these platforms offer no randomised simultaneous assignment. No result is ever declared automatically."
+        >
+          {experiments.length > 0 ? (
+            <ul className="mb-5 flex flex-col gap-2">
+              {experiments.map((experiment) => {
+                const posts = experimentPosts.get(experiment.id) ?? [];
+                const perArm = new Map<string, number>();
+                for (const entry of posts) {
+                  perArm.set(entry.arm, (perArm.get(entry.arm) ?? 0) + 1);
+                }
+
+                const readiness = experimentReadiness({
+                  postsPerArm: perArm,
+                  status: experiment.status,
+                });
+
+                return (
+                  <li
+                    key={experiment.id}
+                    className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <span className="text-sm font-medium text-ink-primary">
+                        {experiment.name}
+                      </span>
+                      <StatusBadge
+                        tone={
+                          experiment.status === "observed"
+                            ? "configured"
+                            : "inactive"
+                        }
+                      >
+                        {EXPERIMENT_STATUS_LABELS[experiment.status]}
+                      </StatusBadge>
+                    </div>
+
+                    <p className="mt-0.5 text-[11px] text-ink-muted">
+                      {EXPERIMENT_DIMENSION_LABELS[experiment.dimension]} ·{" "}
+                      {EXPERIMENT_STATUS_DETAIL[experiment.status]}
+                    </p>
+
+                    <p className="mt-1 text-xs leading-5 text-ink-secondary">
+                      {experiment.hypothesis}
+                    </p>
+
+                    {experiment.observation ? (
+                      <p className="mt-1.5 rounded border border-edge/60 bg-panel/50 px-2.5 py-1.5 text-[11px] leading-5 text-ink-secondary">
+                        {experiment.observation}
+                      </p>
+                    ) : null}
+
+                    {experiment.status === "planned" ||
+                    experiment.status === "running" ? (
+                      <ConcludeExperimentForm
+                        experimentId={experiment.id}
+                        canConclude={readiness.canConclude}
+                        readinessReason={readiness.reason}
+                      />
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          ) : null}
+
+          <ExperimentForm />
+
+          <p className="mt-3 text-xs leading-5 text-ink-muted">
+            {OBSERVATIONAL_NOTE}
+          </p>
+        </SectionCard>
+
+        <SectionCard
           title="Repurpose"
           description="Planning suggestions only. Nothing here creates a variant, schedules a post or touches an approval."
         >
@@ -403,6 +584,14 @@ export default async function GrowthCentrePage() {
                   <p className="mt-1 text-xs leading-5 text-ink-secondary">
                     {candidate.reason}
                   </p>
+                  {candidate.contentItemId ? (
+                    <Link
+                      href={`/dashboard/content/${candidate.contentItemId}`}
+                      className="mt-2 inline-flex items-center rounded-lg border border-edge-strong bg-panel-raised/60 px-3 py-1.5 text-[11px] font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                    >
+                      Open the original to plan it
+                    </Link>
+                  ) : null}
                 </li>
               ))}
             </ul>

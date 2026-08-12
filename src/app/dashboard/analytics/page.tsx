@@ -2,6 +2,8 @@ import { TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
+import { ManualEntryForm } from "@/components/analytics/manual-entry-form";
+import { AnalyticsRefreshButton } from "@/components/analytics/refresh-button";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
@@ -21,6 +23,7 @@ import {
 } from "@/lib/analytics/types";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { analyticsSchedulingConnected } from "@/trigger/analytics";
 import { PLATFORM_LABELS } from "@/lib/variants/types";
 
 export const metadata: Metadata = {
@@ -146,19 +149,24 @@ export default async function AnalyticsPage() {
                     <span className="text-sm font-medium text-ink-primary">
                       {PLATFORM_LABELS[entry.platform]}
                     </span>
-                    <StatusBadge
-                      tone={
-                        entry.analyticsAuthorised && entry.blockedBy === null
-                          ? "configured"
-                          : entry.providerImplemented
-                            ? "accent"
-                            : "inactive"
-                      }
-                    >
-                      {entry.blockedBy === null
-                        ? "Analytics available"
-                        : UNAVAILABLE_LABELS[entry.blockedBy]}
-                    </StatusBadge>
+                    <span className="flex items-center gap-2">
+                      <StatusBadge
+                        tone={
+                          entry.analyticsAuthorised && entry.blockedBy === null
+                            ? "configured"
+                            : entry.providerImplemented
+                              ? "accent"
+                              : "inactive"
+                        }
+                      >
+                        {entry.blockedBy === null
+                          ? "Analytics available"
+                          : UNAVAILABLE_LABELS[entry.blockedBy]}
+                      </StatusBadge>
+                      {entry.analyticsAuthorised ? (
+                        <AnalyticsRefreshButton platform={entry.platform} />
+                      ) : null}
+                    </span>
                   </div>
 
                   <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-4">
@@ -194,6 +202,21 @@ export default async function AnalyticsPage() {
                       </dd>
                     </div>
                   </dl>
+
+                  {entry.lastSync && entry.lastSync.status === "failed" ? (
+                    // Shown apart from the last success, never instead of it.
+                    // A failed refresh does not delete the figures it failed to
+                    // update.
+                    <p className="mt-2 rounded-md border border-gold-dim/50 bg-gold/10 px-2.5 py-1.5 text-[11px] leading-5 text-gold">
+                      Latest refresh failed
+                      {entry.lastSync.error_category
+                        ? ` (${entry.lastSync.error_category})`
+                        : ""}
+                      {entry.lastSuccessfulSync
+                        ? `. Figures shown were read ${describeFreshness(entry.lastSuccessfulSync.completed_at ?? entry.lastSuccessfulSync.started_at)}.`
+                        : "."}
+                    </p>
+                  ) : null}
 
                   {entry.blockedBy ? (
                     <p className="mt-2 text-[11px] leading-5 text-ink-muted">
@@ -265,6 +288,33 @@ export default async function AnalyticsPage() {
               </p>
             </>
           )}
+        </SectionCard>
+
+        <SectionCard
+          title="Scheduled synchronisation"
+          description="Whether figures refresh on their own."
+          action={
+            <StatusBadge
+              tone={analyticsSchedulingConnected() ? "configured" : "inactive"}
+            >
+              {analyticsSchedulingConnected()
+                ? "Scheduled"
+                : "Implemented, not running"}
+            </StatusBadge>
+          }
+        >
+          <p className="text-sm leading-6 text-ink-secondary">
+            {analyticsSchedulingConnected()
+              ? "A Trigger.dev project is configured, so the daily sync runs on its own."
+              : "The daily sync task is written and type-checked, but no Trigger.dev project is connected — so nothing runs on a schedule. Refreshing by hand above works regardless, and uses exactly the same code the scheduled run would."}
+          </p>
+        </SectionCard>
+
+        <SectionCard
+          title="Enter a figure by hand"
+          description="Mainly for TikTok, which reports nothing this dashboard can legitimately read. Anything entered here is permanently labelled as entered by hand."
+        >
+          <ManualEntryForm />
         </SectionCard>
 
         <SectionCard

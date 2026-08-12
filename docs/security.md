@@ -121,6 +121,15 @@ the standard any future platform must meet.
   upload completes.
 - **Filenames are sanitised before reaching a header.** Drive names are
   user-supplied and can contain newlines, which in an HTTP header is injection.
+- **No OAuth scope is broadened silently** — _Stage 10_. YouTube analytics needs
+  `yt-analytics.readonly`, which the publishing connection does not carry.
+  Rather than adding it to the existing authorisation request, Connected
+  Accounts offers a separate, explicitly labelled re-consent. Until Dave grants
+  it, analytics reports the missing permission and publishing is unaffected.
+- **Analytics logging carries counts only** — _Stage 10_. Audit metadata for a
+  sync records the platform and how many posts and snapshots were involved. No
+  metric values, no access or refresh tokens, no provider payload dumps, no
+  credential-bearing URLs. The audit log is not a second copy of the data.
 
 ## Authentication — _implemented_
 
@@ -200,6 +209,21 @@ the standard any future platform must meet.
   read in exactly one module, the client is built lazily so no build needs it,
   and a test asserts it appears in no client component. Because it bypasses
   RLS, every worker query filters `owner_id` explicitly.
+- **A browser cannot manufacture API-sourced analytics** — _Stage 10_.
+  `analytics_snapshots` separates read from write: the `authenticated` insert
+  policy is `with check ((select auth.uid()) = owner_id and source = 'manual')`,
+  so a request claiming `youtube_api` or `instagram_api` is refused by Postgres
+  regardless of what the client sends. API rows are written only by the worker
+  credential, which the browser never holds. The manual-entry schema has **no
+  `source` field at all**, so there is no shape of submission that could carry
+  one.
+- **`analytics_sync_runs` has a SELECT policy and nothing else** — _Stage 10_.
+  The owner can read the history of fetch attempts and cannot fabricate one.
+- **Analytics can read publishing records but never write them** — _Stage 10_.
+  When a platform can no longer find a post, only `external_availability` and
+  `external_checked_at` change; `status`, `external_post_id` and `posted_at` are
+  untouched. A third party deleting a video does not unmake the publish, and a
+  test asserts no publish status is written anywhere in `src/lib/analytics/`.
 - **Ownership checks in application code** _(planned)_ for models beyond
   `profiles`, so a bug in one layer cannot widen access on its own. Defence in
   depth: both layers, not one.

@@ -29,6 +29,14 @@ import {
 import { WorkflowPipeline } from "@/components/dashboard/workflow-pipeline";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
+import { loadAnalyticsOverview } from "@/lib/analytics/overview";
+import {
+  describeFreshness,
+  formatReading,
+  METRIC_LABELS,
+  UNAVAILABLE_LABELS,
+  type MetricName,
+} from "@/lib/analytics/types";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { OWNER_NAME } from "@/config/owner";
 import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/routes";
@@ -218,6 +226,9 @@ export default async function DashboardPage() {
   const now = new Date();
   const upcoming = upcomingEntries(scheduleEntries, now, 5);
 
+  // Real observations only. There is no sample data anywhere on this page.
+  const analytics = await loadAnalyticsOverview();
+
   // Stage counts for the pipeline, derived rather than stored.
   const stageCounts: Partial<Record<ProductionStage, number>> = {};
   for (const card of board) {
@@ -273,6 +284,81 @@ export default async function DashboardPage() {
             ))}
           </div>
         </section>
+
+        <SectionCard
+          title="Performance"
+          description="Measured figures only. Where nothing has been measured, this says so rather than showing a zero."
+          action={
+            <Link
+              href="/dashboard/analytics"
+              className="rounded-lg border border-edge-strong bg-panel-raised/60 px-3.5 py-2 text-xs font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+            >
+              Open Analytics
+            </Link>
+          }
+        >
+          {analytics.publishedCount === 0 ? (
+            <p className="text-sm leading-6 text-ink-secondary">
+              Nothing has been published yet, so there is nothing to measure.
+              Once a post genuinely goes out and analytics permission is
+              granted, its figures will appear here — measured, dated and
+              attributed.
+            </p>
+          ) : (
+            <>
+              <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-3">
+                  <dt className="text-xs text-ink-muted">Posts published</dt>
+                  <dd className="mt-1 text-xl font-semibold tabular-nums text-ink-primary">
+                    {analytics.publishedCount}
+                  </dd>
+                </div>
+
+                {(
+                  [
+                    "views_or_plays",
+                    "watch_time_seconds",
+                    "engagements",
+                  ] as MetricName[]
+                ).map((metric) => {
+                  const value = analytics.totals[metric];
+                  return (
+                    <div
+                      key={metric}
+                      className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-3"
+                    >
+                      <dt className="text-xs text-ink-muted">
+                        {METRIC_LABELS[metric]}
+                      </dt>
+                      <dd
+                        className={`mt-1 text-xl font-semibold tabular-nums ${
+                          value?.available
+                            ? "text-ink-primary"
+                            : "text-ink-muted"
+                        }`}
+                      >
+                        {value ? formatReading(value) : "—"}
+                      </dd>
+                      {value && !value.available ? (
+                        <dd className="mt-0.5 text-[11px] text-gold">
+                          {UNAVAILABLE_LABELS[value.reason]}
+                        </dd>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </dl>
+
+              <p className="mt-3 text-xs leading-5 text-ink-muted">
+                {analytics.measuredCount} of {analytics.publishedCount}{" "}
+                published{" "}
+                {analytics.publishedCount === 1 ? "post has" : "posts have"}{" "}
+                been measured. Last fetched{" "}
+                {describeFreshness(analytics.lastFetchedAt).toLowerCase()}.
+              </p>
+            </>
+          )}
+        </SectionCard>
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <SectionCard

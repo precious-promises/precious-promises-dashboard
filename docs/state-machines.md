@@ -285,3 +285,52 @@ publishing ──┬──> posted                       (has a platform post id
   Deliberately separate from `last_error_message` — a video sitting in TikTok's
   drafts is not an error, and merging them would make every successful draft
   upload read as a failure.
+
+## Metric readings — _implemented in Stage 10_
+
+Not a lifecycle but a state space, and the one Stage 10 turns on:
+
+```
+MetricReading ──┬──> measured    (a number, with source, raw name, window, timestamp)
+                └──> unavailable (a reason, with an explanation — never a number)
+```
+
+There is no third shape and no `value: number | null`. A caller cannot read
+`.value` without narrowing on `kind`, so the compiler refuses to let anybody
+treat an absence as a number. `formatReading()` prints a digit for `measured`,
+including a genuine `0`, and an em dash for every `unavailable`.
+
+The seven reasons an absence can have — `platform_not_connected`,
+`analytics_permission_missing`, `provider_not_supported`, `not_yet_fetched`,
+`fetch_failed`, `metric_unsupported`, `post_unavailable` — each produce
+different words on screen and, where relevant, a different thing to do about it.
+
+## Sync run lifecycle — _implemented in Stage 10_
+
+```
+running ──┬──> succeeded   (no error; every window answered)
+          ├──> partial     (some snapshots written, some windows failed)
+          └──> failed      (nothing written)
+```
+
+- **A failure is recorded on the run, never on the data.** No failure branch
+  reaches `recordSnapshot`, and nothing in `src/lib/analytics/` calls
+  `.delete()`. The last known good figure survives an outage, and is shown with
+  its own timestamp so its age is never hidden.
+- `partial` exists because collapsing it into either neighbour would lie:
+  reporting success would imply the missing windows were zero, and reporting
+  failure would discard figures that were genuinely read.
+
+## External availability — _implemented in Stage 10_
+
+A separate axis from the publish lifecycle, and deliberately so:
+
+```
+unknown ──┬──> available    (the platform answered for this post)
+          └──> unavailable  (the platform can no longer find it)
+```
+
+- **This never touches `status`, `external_post_id` or `posted_at`.** The post
+  was published; a third party deleting it later does not unmake it, and a
+  `posted` row whose video has been removed stays `posted` with its
+  availability marked and its full snapshot history intact.

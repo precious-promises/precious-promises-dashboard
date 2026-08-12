@@ -16,6 +16,7 @@ import { LOGIN_PATH } from "@/lib/auth/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { createWorkerClient } from "@/lib/supabase/worker";
 import { DRIVE_SCOPES } from "@/lib/drive/config";
+import { YOUTUBE_ANALYTICS_SCOPE, YOUTUBE_SCOPES } from "@/lib/youtube/config";
 import { buildInstagramAuthorizationUrl } from "@/lib/instagram/oauth";
 import { resolveInstagramConfig } from "@/lib/instagram/server-config";
 import { resolveDriveConfig } from "@/lib/drive/server-config";
@@ -138,6 +139,55 @@ export async function disconnectYouTube(formData: FormData): Promise<void> {
 
   revalidatePath("/dashboard/publish");
   back(revoked ? "disconnected" : "disconnected-not-revoked");
+}
+
+/**
+ * Ask for YouTube analytics permission, explicitly and separately.
+ *
+ * Stage 7 requested upload, readonly and manage. **None of those grants
+ * analytics**, and quietly adding `yt-analytics.readonly` to the ordinary
+ * connect flow would broaden an existing authorisation without saying so — the
+ * kind of change a user consents to without ever being asked.
+ *
+ * So this is its own action, reached from its own button, with the interface
+ * stating what the new permission covers. The publishing scopes are requested
+ * alongside it so re-consenting **preserves publishing** rather than trading
+ * one capability for another, and the new scope is only recorded after Google
+ * genuinely grants it — until then analytics stays `permission_missing`.
+ */
+export async function grantYouTubeAnalytics(): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(LOGIN_PATH);
+  }
+
+  const { config } = resolveYouTubeConfig();
+  if (config === null) {
+    back("not-configured");
+  }
+
+  const { client } = createWorkerClient();
+  if (client === null) {
+    back("no-worker-credential");
+  }
+
+  await pruneExpiredStates(client);
+  const state = await createOAuthState(client, user.id, "youtube");
+
+  if (state === null) {
+    back("state-failed");
+  }
+
+  redirect(
+    buildAuthorizationUrl(config, state, [
+      ...YOUTUBE_SCOPES,
+      YOUTUBE_ANALYTICS_SCOPE,
+    ]),
+  );
 }
 
 /**

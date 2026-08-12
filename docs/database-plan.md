@@ -7,7 +7,9 @@
 > `RenderJob`, `ScheduledPost`, `RecurringScheduleRule`, `AuditLog`,
 > `PublishAttempt`, `SocialAccount`, `SocialAccountCredentials`, `OAuthState`,
 > `YouTubeVideoMetadata`, `YouTubeUploadSession`, `InstagramMediaMetadata` and
-> `InstagramPublishContainer` exist as real tables
+> `InstagramPublishContainer`, `AnalyticsSnapshot`, `AnalyticsMetric`,
+> `AnalyticsSyncRun`, `GrowthGoal`, `GrowthExperiment` and
+> `GrowthExperimentPost` exist as real tables
 > with Row Level Security enforced — see
 > [stage-2-content-library.md](./stage-2-content-library.md) for their columns
 > and policies. Every other model below is still a design sketch: no table, no
@@ -215,7 +217,7 @@ rewritten. `sanitiseMetadata` drops any key that looks like a credential.
 Sign-in, account connection and publish attempts join it with the stages that
 build them.
 
-### AnalyticsSnapshot _(planned)_
+### AnalyticsSnapshot _(implemented in Stage 10 as `analytics_snapshots`)_
 
 A point-in-time capture of platform metrics for a published post — views, likes,
 comments, shares, watch time.
@@ -223,6 +225,52 @@ comments, shares, watch time.
 Stored as periodic snapshots rather than a single mutable "current stats" field,
 so growth over time is measurable and a platform's later restatement of its
 numbers does not erase history.
+
+The individual figures live in `analytics_metrics`, one row per metric, each
+carrying `raw_metric_name` — the platform's own name for it — beside the
+canonical one. `views_or_plays` can therefore always be traced back to whichever
+of `views` or `plays` the platform actually answered with.
+
+Upserted on
+`(owner_id, platform, external_post_id, source, observation_window,
+(observed_at at time zone 'UTC')::date)`, so the same post observed twice in a
+day updates in place and observed tomorrow becomes the next point in the series.
+
+**`source` is part of the key**, which is what keeps a manually entered figure
+from ever overwriting an API one. It is also what the browser write policy
+constrains:
+
+```sql
+create policy "Owners can record manual analytics only"
+  on public.analytics_snapshots for insert to authenticated
+  with check ((select auth.uid()) = owner_id and source = 'manual');
+```
+
+A browser cannot insert a row claiming `youtube_api` or `instagram_api` — those
+are written only by the worker credential. See
+[stage-10-analytics-growth.md](./stage-10-analytics-growth.md).
+
+### AnalyticsSyncRun _(implemented in Stage 10 as `analytics_sync_runs`)_
+
+Every fetch attempt: platform, trigger source, status, counts, error category
+and detail. **A SELECT policy and nothing else** — the owner can read the
+history of attempts and cannot fabricate one.
+
+This is where a failure is recorded. A failed fetch never touches
+`analytics_snapshots`, so the last known good figure survives an outage.
+
+### GrowthGoal, GrowthExperiment, GrowthExperimentPost _(implemented in Stage 10)_
+
+Targets Dave set, hypotheses written before looking, and which posts belong to
+which experiment. Goals are stored apart from measured figures so no chart can
+plot an intention as an observation.
+
+### Two columns on `ScheduledPost` _(added in Stage 10)_
+
+`external_availability` and `external_checked_at`. When a platform can no longer
+find a post, only these change — never `status`, `external_post_id` or
+`posted_at`. The post was published; a third party deleting it later does not
+unmake it.
 
 ## Relationship sketch _(planned)_
 
