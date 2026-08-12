@@ -108,6 +108,17 @@ the standard any future platform must meet.
 - **No arbitrary URL fetching.** The `external` storage provider is refused
   rather than followed. Fetching whatever a record contained would make this
   application an SSRF primitive.
+- **TikTok uses `FILE_UPLOAD`, never `PULL_FROM_URL`** — _Stage 9_.
+  `PULL_FROM_URL` would require verifying domain ownership with TikTok and
+  exposing the video at a publicly reachable URL before it was published. The
+  bytes are streamed from Drive through this server instead, authenticated at
+  both ends. Drive files are never made public to satisfy TikTok, any more than
+  to satisfy Meta.
+- **A TikTok upload URL is treated as a credential** — _Stage 9_. Anyone
+  holding it can push bytes into that upload, so it is sealed in the same
+  AES-256-GCM envelope as an access token, never placed on a type that could be
+  rendered or serialised, never logged or audited, and deleted the moment the
+  upload completes.
 - **Filenames are sanitised before reaching a header.** Drive names are
   user-supplied and can contain newlines, which in an HTTP header is injection.
 
@@ -134,10 +145,10 @@ the standard any future platform must meet.
 
 ## Access control
 
-- **Four tables are unreachable from the browser by construction** —
-  _Stages 7 and 8_. `social_account_credentials`, `oauth_states`,
-  `youtube_upload_sessions` and `instagram_publish_containers` have RLS
-  **enabled with no policies whatsoever**,
+- **Five tables are unreachable from the browser by construction** —
+  _Stages 7, 8 and 9_. `social_account_credentials`, `oauth_states`,
+  `youtube_upload_sessions`, `instagram_publish_containers` and
+  `tiktok_publish_sessions` have RLS **enabled with no policies whatsoever**,
   plus `revoke all … from authenticated`. With RLS on and no policy, every
   operation is refused for every row. This is the strongest available statement
   of "the browser cannot have this", and the Supabase advisor's

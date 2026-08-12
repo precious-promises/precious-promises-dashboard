@@ -22,6 +22,8 @@ export const QUEUE_STATES = [
   "uploading",
   "uploaded_processing",
   "posted",
+  "in_platform_drafts",
+  "awaiting_manual_post",
   "failed",
   "blocked",
   "stood_down",
@@ -35,6 +37,8 @@ export const QUEUE_STATE_LABELS: Record<QueueState, string> = {
   uploading: "Uploading",
   uploaded_processing: "Uploaded, processing",
   posted: "Posted",
+  in_platform_drafts: "In drafts — not posted",
+  awaiting_manual_post: "Post it by hand",
   failed: "Failed",
   blocked: "Blocked",
   stood_down: "Stood down",
@@ -48,10 +52,22 @@ export const QUEUE_STATE_DETAIL: Record<QueueState, string> = {
   uploaded_processing:
     "The platform accepted the upload and is still processing it. Uploaded is not the same as visible.",
   posted: "Confirmed by the platform, with its own post id.",
+  // Stage 9. Both of these look finished and are not — which is exactly why
+  // they are their own states rather than shades of "Posted".
+  in_platform_drafts:
+    "The video reached the platform's drafts. Nobody has seen it: open the platform's own app, review it and publish it there.",
+  awaiting_manual_post:
+    "The caption, settings and media are ready. Nothing was sent to the platform, and nothing will be until you post it yourself.",
   failed: "Stopped, with the reason recorded.",
   blocked: "Refused before anything was sent. Nothing reached a platform.",
   stood_down: "Paused or cancelled by you.",
 };
+
+/** Queue states where something has been done but nothing has been published. */
+export const UNPUBLISHED_QUEUE_STATES: readonly QueueState[] = [
+  "in_platform_drafts",
+  "awaiting_manual_post",
+];
 
 export interface QueueStateInput {
   post: ScheduledPost;
@@ -79,6 +95,17 @@ export function deriveQueueState(input: QueueStateInput): QueueState {
       post.external_processing_status === "processing"
       ? "uploaded_processing"
       : "posted";
+  }
+
+  // Checked before the connection test, and before anything else the owner
+  // might try to fix: the work is done, and what remains is theirs to finish in
+  // the platform's own app.
+  if (post.status === "uploaded_to_platform_draft") {
+    return "in_platform_drafts";
+  }
+
+  if (post.status === "ready_for_manual_post") {
+    return "awaiting_manual_post";
   }
 
   if (post.status === "cancelled" || post.status === "paused") {

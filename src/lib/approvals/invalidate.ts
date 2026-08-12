@@ -4,12 +4,11 @@ import { invalidationPause } from "@/lib/schedule/rules";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
-import { instagramSettingsDigest } from "@/lib/instagram/metadata";
-import { loadInstagramMetadataFor } from "@/lib/instagram/repository";
-import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
-import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
-
 import { approvalFingerprint } from "./fingerprint";
+import {
+  loadPlatformMetadataFor,
+  platformSettingsDigest,
+} from "./platform-settings";
 import { APPROVAL_INVALIDATED_REASON, invalidationUpdate } from "./rules";
 import { approvalSubjectFrom } from "./subject";
 
@@ -117,16 +116,7 @@ export async function syncApprovalsForItem(
   // Each platform's own settings are part of what was approved, so a changed
   // privacy status, thumbnail, media type or cover invalidates an approval
   // exactly as a changed caption does.
-  const youtubeMetadata = await loadYouTubeMetadataFor(
-    approved
-      .filter((variant) => variant.platform === "youtube")
-      .map((v) => v.id),
-  );
-  const instagramMetadata = await loadInstagramMetadataFor(
-    approved
-      .filter((variant) => variant.platform === "instagram")
-      .map((v) => v.id),
-  );
+  const platformMetadata = await loadPlatformMetadataFor(approved);
 
   for (const variant of approved) {
     const current = approvalFingerprint(
@@ -137,9 +127,10 @@ export async function syncApprovalsForItem(
           ? { id: video.id, current_revision: video.current_revision }
           : null,
         mediaSelections,
-        variant.platform === "instagram"
-          ? instagramSettingsDigest(instagramMetadata.get(variant.id) ?? null)
-          : youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
+        platformSettingsDigest(
+          variant.platform,
+          platformMetadata.get(variant.id) ?? null,
+        ),
       ),
     );
 

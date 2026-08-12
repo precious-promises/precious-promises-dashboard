@@ -11,6 +11,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { InstagramMetadataForm } from "@/components/instagram/metadata-form";
+import { TikTokMetadataForm } from "@/components/tiktok/metadata-form";
 import { YouTubeMetadataForm } from "@/components/youtube/metadata-form";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { EMPTY_FILTERS } from "@/lib/content/filters";
@@ -19,6 +20,8 @@ import { listMediaAssets } from "@/lib/media/repository";
 import { listVariantsForItem } from "@/lib/variants/repository";
 import { loadChannelPlaylists } from "@/lib/youtube/channel";
 import { loadInstagramMetadata } from "@/lib/instagram/repository";
+import { loadTikTokCapability } from "@/lib/tiktok/capability";
+import { loadTikTokMetadata } from "@/lib/tiktok/repository";
 import { loadYouTubeMetadata } from "@/lib/youtube/repository";
 import {
   PLATFORM_LABELS,
@@ -89,6 +92,18 @@ export default async function CaptionStudioPage(
     platform === "instagram" && current
       ? await loadInstagramMetadata(current.id)
       : null;
+
+  // The TikTok tab needs more than stored settings: it needs to know what
+  // TikTok currently permits this creator, because the audience options may
+  // only ever be the ones TikTok itself returned. Loaded only for this tab —
+  // it is a live API call, and making it on every page view would be a request
+  // to TikTok for a form nobody opened.
+  const tiktokMetadata =
+    platform === "tiktok" && current
+      ? await loadTikTokMetadata(current.id)
+      : null;
+  const tiktokCapability =
+    platform === "tiktok" && current ? await loadTikTokCapability() : null;
 
   // Playlists come from the connected channel, never from a text field. When
   // nothing is connected this returns an empty list and the reason why.
@@ -215,6 +230,20 @@ export default async function CaptionStudioPage(
                   contentItemId={item.id}
                   metadata={instagramMetadata}
                   imageAssets={imageAssets}
+                />
+              </SectionCard>
+            ) : null}
+
+            {platform === "tiktok" && current && tiktokCapability ? (
+              <SectionCard
+                title="TikTok publishing settings"
+                description="What TikTok itself needs, separate from the wording. The audience options come from TikTok, for your account. Changing any of it withdraws approval."
+              >
+                <TikTokMetadataForm
+                  platformVariantId={current.id}
+                  contentItemId={item.id}
+                  metadata={tiktokMetadata}
+                  capability={tiktokCapability}
                 />
               </SectionCard>
             ) : null}

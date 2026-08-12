@@ -20,12 +20,19 @@ import type { StorageProvider } from "@/lib/media/types";
  * `open()` returns a `Response` so the body can be streamed. A video may be
  * hundreds of megabytes; buffering one into memory to hand it to an upload
  * would work on a developer machine and fall over on a worker.
+ *
+ * `openRange()` reads one inclusive byte range. Stage 9 added it because
+ * TikTok's upload is chunked: it wants a specific slice of the file with a
+ * `Content-Range` naming it, and the alternative would be buffering the whole
+ * video to cut pieces out of it. A platform that wants the whole file simply
+ * calls `open()`.
  */
 export interface StorageMedia {
   contentType: string;
   contentLength: number;
   filename: string;
   open(): Promise<Response>;
+  openRange(start: number, end: number): Promise<Response>;
 }
 
 export interface StorageAdapter {

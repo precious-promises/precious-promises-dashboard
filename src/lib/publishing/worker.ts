@@ -1,15 +1,12 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { approvalFingerprint } from "@/lib/approvals/fingerprint";
+import { platformSettingsDigestAsWorker } from "@/lib/approvals/platform-settings";
 import { approvalSubjectFrom } from "@/lib/approvals/subject";
 import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createWorkerClient } from "@/lib/supabase/worker";
 import type { PlatformVariant } from "@/lib/variants/types";
-import { instagramSettingsDigest } from "@/lib/instagram/metadata";
-import { loadInstagramMetadataAsWorker } from "@/lib/instagram/repository";
-import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
-import { loadMetadataAsWorker } from "@/lib/youtube/repository";
 
 import { holdsClaim, newClaimToken, releaseClaim } from "./claim";
 import { classifyThrown, safeError, type SafeError } from "./errors";
@@ -30,10 +27,10 @@ import {
  * may be slow, rate limited or down, and holding a request open for it would
  * be a request that eventually times out with the post in an unknown state.
  *
- * **Stage 6 cannot publish.** `getPublishingProvider` returns `null` for every
- * platform, so every run ends in a recorded refusal. That refusal is the
- * honest outcome, and recording it is the point: the attempt history is how
- * the system stays trustworthy about what did and did not reach an audience.
+ * Through Stage 6 no adapter existed, so every run ended in a recorded
+ * refusal. Adapters exist now, and the attempt history is still the point: it
+ * is how the system stays trustworthy about what did and did not reach an
+ * audience.
  *
  * The shape of a run:
  *
@@ -41,6 +38,11 @@ import {
  * 2. For each claimed post, **reload everything** and run the safety gate.
  * 3. Record an attempt, then ask the provider — if one exists.
  * 4. Write the outcome. `posted` is only ever written from a real post id.
+ *
+ * Four outcomes, not three. `incomplete` is its own: a video that reached
+ * TikTok's drafts, or a post prepared for Dave to make by hand, neither
+ * succeeded nor failed — and counting it as either would be this system
+ * misreporting what it did.
  */
 
 export interface WorkerRunResult {
@@ -49,6 +51,8 @@ export interface WorkerRunResult {
   blocked: number;
   failed: number;
   posted: number;
+  /** Reached a real state short of publication. Never counted as posted. */
+  incomplete: number;
   /** Why nothing ran, when nothing could. */
   reason: string | null;
 }
@@ -70,6 +74,7 @@ export async function runPublishDispatcher(
     blocked: 0,
     failed: 0,
     posted: 0,
+    incomplete: 0,
     reason: null,
   };
 
@@ -113,6 +118,8 @@ export async function runPublishDispatcher(
       result.posted += 1;
     } else if (outcome === "failed") {
       result.failed += 1;
+    } else if (outcome === "incomplete") {
+      result.incomplete += 1;
     } else {
       result.blocked += 1;
     }
@@ -121,7 +128,7 @@ export async function runPublishDispatcher(
   return result;
 }
 
-export type PublishOutcome = "posted" | "failed" | "blocked";
+export type PublishOutcome = "posted" | "failed" | "blocked" | "incomplete";
 
 /**
  * Publish one claimed post.
@@ -223,16 +230,9 @@ export async function publishClaimedPost(
 
   // 3. Recompute the fingerprint from what is stored right now — including
   //    the platform's own settings, which are part of what was approved.
-  const platformSettings =
-    variant?.platform === "youtube"
-      ? youtubeSettingsDigest(
-          await loadMetadataAsWorker(client, variant.id, owner),
-        )
-      : variant?.platform === "instagram"
-        ? instagramSettingsDigest(
-            await loadInstagramMetadataAsWorker(client, variant.id, owner),
-          )
-        : null;
+  const platformSettings = variant
+    ? await platformSettingsDigestAsWorker(client, variant, owner)
+    : null;
 
   const currentFingerprint =
     variant && item
@@ -391,13 +391,35 @@ export async function publishClaimedPost(
     return "posted";
   }
 
+  // The provider finished, and what it finished is not a post. Recorded as
+  // itself rather than squeezed into success or failure: a video sitting in
+  // TikTok's drafts did not fail, and nobody has seen it either.
   if (outcome.outcome === "incomplete") {
     await client
       .from("scheduled_posts")
-      .update({ status: outcome.state, ...releaseClaim() })
+      .update({
+        status: outcome.state,
+        outcome_detail: outcome.detail,
+        // Cleared: whatever went wrong on an earlier attempt did not go wrong
+        // this time, and leaving it would read as a live error.
+        last_error_code: null,
+        last_error_message: null,
+        ...releaseClaim(),
+      })
       .eq("id", post.id)
       .eq("owner_id", owner);
-    return "blocked";
+
+    await client
+      .from("publish_attempts")
+      .update({
+        status: "incomplete",
+        safe_error_message: outcome.detail,
+        completed_at: now.toISOString(),
+      })
+      .eq("scheduled_post_id", post.id)
+      .eq("attempt_number", attemptNumber);
+
+    return "incomplete";
   }
 
   await applyFailure(
@@ -429,17 +451,28 @@ async function recordAttempt(
     now: Date;
   },
 ): Promise<void> {
+  const platform = post_platform(input.variant);
+
+  // Which adapter was asked. Through Stage 6 this was always 'none', because
+  // no adapter existed — and the database refuses a succeeded attempt from a
+  // 'none' provider, precisely so a fabricated success could not be recorded.
+  //
+  // Now adapters do exist, and leaving it hardcoded would have that same
+  // constraint reject every genuine success. So it names the adapter that was
+  // actually asked, and falls back to 'none' when there is none — which keeps
+  // the guarantee pointing at the case it was written for.
+  const providerName =
+    getPublishingProvider(platform) === null ? "none" : platform;
+
   await client.from("publish_attempts").insert({
     owner_id: input.post.owner_id,
     scheduled_post_id: input.post.id,
     platform_variant_id: input.post.platform_variant_id,
-    platform: post_platform(input.variant),
+    platform,
     attempt_number: input.attemptNumber,
     idempotency_key: input.idempotencyKey,
     status: input.status,
-    // Always 'none' in Stage 6: no adapter is registered, and the database
-    // refuses a succeeded attempt from this provider.
-    provider: "none",
+    provider: providerName,
     retryable: input.error?.retryable ?? null,
     safe_error_code: input.error?.code ?? null,
     safe_error_message: input.error?.message ?? null,

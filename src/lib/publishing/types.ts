@@ -17,6 +17,12 @@ export const ATTEMPT_STATUSES = [
   "failed",
   "blocked",
   "cancelled",
+  // Stage 9. The provider finished, and what it finished is not a post: a
+  // video in the creator's TikTok drafts, or a post prepared for the owner to
+  // make by hand. None of the four above fits — `succeeded` would claim a post
+  // nobody made, `failed` would claim the upload did not work, and `blocked`
+  // means this system refused, which is the opposite of what happened.
+  "incomplete",
 ] as const;
 export type AttemptStatus = (typeof ATTEMPT_STATUSES)[number];
 
@@ -26,6 +32,7 @@ export const ATTEMPT_STATUS_LABELS: Record<AttemptStatus, string> = {
   failed: "Failed",
   blocked: "Blocked",
   cancelled: "Cancelled",
+  incomplete: "Done, but not posted",
 };
 
 /**
@@ -39,6 +46,21 @@ export const ATTEMPT_STATUS_LABELS: Record<AttemptStatus, string> = {
 export const NON_SENDING_ATTEMPT_STATUSES: readonly AttemptStatus[] = [
   "blocked",
   "cancelled",
+];
+
+/**
+ * Attempt statuses that did **not** produce a publication.
+ *
+ * `incomplete` belongs here beside the outright failures for one reason: no
+ * audience saw anything. It is a better outcome than a failure and it is not a
+ * post, and anywhere that counts publications must treat it as neither.
+ */
+export const NON_PUBLISHING_ATTEMPT_STATUSES: readonly AttemptStatus[] = [
+  "started",
+  "failed",
+  "blocked",
+  "cancelled",
+  "incomplete",
 ];
 
 export interface PublishAttempt {

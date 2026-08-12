@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getSecretStore } from "@/lib/crypto/secrets";
+import { TikTokOAuthError, refreshTikTokToken } from "@/lib/tiktok/oauth";
+import { resolveTikTokConfig } from "@/lib/tiktok/server-config";
 import {
   OAuthError,
   refreshAccessToken,
@@ -133,9 +135,13 @@ export async function getLiveCredential(
     };
   }
 
-  const { config, problems } = resolveYouTubeConfig();
-  if (config === null) {
-    return { ok: false, reason: problems.join(" "), needsReconnect: false };
+  const refresher = refresherFor(account.platform);
+  if (refresher.problems.length > 0 || refresher.refresh === null) {
+    return {
+      ok: false,
+      reason: refresher.problems.join(" "),
+      needsReconnect: false,
+    };
   }
 
   let refreshToken: string;
@@ -152,16 +158,12 @@ export async function getLiveCredential(
 
   let tokens: TokenSet;
   try {
-    tokens = await refreshAccessToken(config, refreshToken, fetchImpl, now);
+    tokens = await refresher.refresh(refreshToken, fetchImpl, now);
   } catch (error) {
-    const dead = error instanceof OAuthError && error.code === "invalid_grant";
     return {
       ok: false,
-      reason:
-        error instanceof OAuthError
-          ? error.message
-          : "The access token could not be refreshed.",
-      needsReconnect: dead,
+      reason: refreshFailureReason(error),
+      needsReconnect: grantIsDead(error),
     };
   }
 
@@ -177,6 +179,120 @@ export async function getLiveCredential(
           : (row.granted_scopes ?? []),
     },
   };
+}
+
+/**
+ * How each platform renews an access token.
+ *
+ * Google and TikTok both exchange a refresh token at a token endpoint, but they
+ * are **not** interchangeable: TikTok's parameter is `client_key`, its endpoint
+ * is its own, and it reports failure in a 200 body rather than a status. Using
+ * Google's exchange for a TikTok account produces a rejection whose message
+ * explains nothing.
+ *
+ * Instagram is absent on purpose. Meta issues no refresh token at all — its
+ * long-lived token refreshes itself, which is a different operation on a
+ * different credential, handled by the Instagram provider through
+ * `readStoredAccessToken` and `saveLongLivedConnection`. A row reaching this
+ * path with an Instagram platform means something is already wrong, and saying
+ * so beats attempting a refresh that cannot work.
+ *
+ * Google Drive shares Google's exchange because it *is* a Google grant — the
+ * same client, the same endpoint, a different scope.
+ */
+interface Refresher {
+  refresh:
+    | ((
+        refreshToken: string,
+        fetchImpl: typeof fetch,
+        now: Date,
+      ) => Promise<TokenSet>)
+    | null;
+  problems: string[];
+}
+
+function refresherFor(platform: ConnectionPlatform): Refresher {
+  switch (platform) {
+    case "youtube":
+    case "google_drive": {
+      const { config, problems } = resolveYouTubeConfig();
+      if (config === null) {
+        return { refresh: null, problems };
+      }
+      return {
+        refresh: (refreshToken, fetchImpl, now) =>
+          refreshAccessToken(config, refreshToken, fetchImpl, now),
+        problems: [],
+      };
+    }
+
+    case "tiktok": {
+      const { config, problems } = resolveTikTokConfig();
+      if (config === null) {
+        return { refresh: null, problems };
+      }
+      return {
+        refresh: async (refreshToken, fetchImpl, now) => {
+          const tokens = await refreshTikTokToken(
+            config,
+            refreshToken,
+            fetchImpl,
+            now,
+          );
+          // TikTok rotates the refresh token on every exchange, so the new one
+          // is carried through and stored. Dropping it would leave the next
+          // refresh holding a token TikTok has already retired.
+          return {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            expiresAt: tokens.expiresAt,
+            grantedScopes: tokens.grantedScopes,
+          };
+        },
+        problems: [],
+      };
+    }
+
+    case "instagram":
+      return {
+        refresh: null,
+        problems: [
+          "Instagram connections have no refresh token; the long-lived token is renewed by the Instagram provider instead.",
+        ],
+      };
+
+    default:
+      return {
+        refresh: null,
+        problems: ["No token refresh is implemented for this platform."],
+      };
+  }
+}
+
+/**
+ * Whether a refusal means the grant itself is gone.
+ *
+ * A dead grant will be refused every time, so retrying is pointless and the
+ * account is stood down for reconnection. Anything else — a network blip, a
+ * provider outage — is left alone to be retried.
+ */
+function grantIsDead(error: unknown): boolean {
+  if (error instanceof OAuthError) {
+    return error.code === "invalid_grant";
+  }
+  if (error instanceof TikTokOAuthError) {
+    return (
+      error.code === "invalid_grant" || error.code === "access_token_invalid"
+    );
+  }
+  return false;
+}
+
+function refreshFailureReason(error: unknown): string {
+  if (error instanceof OAuthError || error instanceof TikTokOAuthError) {
+    return error.message;
+  }
+  return "The access token could not be refreshed.";
 }
 
 /**
@@ -276,11 +392,14 @@ export async function saveConnection(
 
   if (input.tokens.refreshToken === null) {
     // Without a refresh token the connection dies at the first expiry, which
-    // would be an hour of working publishing followed by silent failure.
+    // would be a short window of working publishing followed by silent failure.
+    // TikTok's window is a day and Google's an hour; neither is acceptable.
     return {
       ok: false,
       reason:
-        "Google did not return a refresh token. Remove this application's access in your Google Account security settings and connect again, so Google issues a fresh consent.",
+        input.platform === "tiktok"
+          ? "TikTok did not return a refresh token, so the connection would stop working within a day. Remove this application in your TikTok settings and connect again."
+          : "Google did not return a refresh token. Remove this application's access in your Google Account security settings and connect again, so Google issues a fresh consent.",
     };
   }
 

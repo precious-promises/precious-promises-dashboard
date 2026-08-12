@@ -6,9 +6,11 @@ import { describe, expect, it } from "vitest";
 import { AUDIT_ACTIONS, sanitiseMetadata } from "@/lib/audit/types";
 import { classifyProductionStage } from "@/lib/production/stage";
 import { BOARD_STAGES, UNREACHABLE_STAGES } from "@/lib/production/stage";
+import { canTransitionPublish } from "@/lib/publishing/lifecycle";
 import {
-  FUTURE_SCHEDULE_STATUSES,
   SCHEDULE_STATUSES,
+  SCHEDULE_STATUS_LABELS,
+  UNPUBLISHED_OUTCOME_STATUSES,
 } from "@/lib/schedule/types";
 
 /**
@@ -26,12 +28,44 @@ function sourceFiles(): string[] {
     .map((entry) => join(SRC_ROOT, entry));
 }
 
-describe("nothing can publish", () => {
-  it("offers no schedule status that implies an outcome", () => {
-    // publishing, posted and failed would each claim something happened at a
-    // platform. No integration exists, so none of them is available.
-    for (const status of FUTURE_SCHEDULE_STATUSES) {
-      expect([...SCHEDULE_STATUSES], status).not.toContain(status);
+describe("an incomplete outcome is never a publication", () => {
+  /**
+   * Stage 6 held `ready_for_manual_post` and `uploaded_to_platform_draft` out
+   * of the vocabulary because no provider could reach them, and this test
+   * asserted their absence. Stage 9 made both genuinely reachable — TikTok
+   * writes each of them — so the absence check would now be asserting a bug.
+   *
+   * What replaces it is the guarantee that actually matters: these statuses
+   * exist, they are labelled, and **neither can become `posted`**. This system
+   * did not publish them and holds no platform id proving anybody did.
+   */
+  it("names and labels both incomplete outcomes", () => {
+    for (const status of UNPUBLISHED_OUTCOME_STATUSES) {
+      expect([...SCHEDULE_STATUSES], status).toContain(status);
+      expect(SCHEDULE_STATUS_LABELS[status], status).toBeTruthy();
+    }
+  });
+
+  it("refuses to promote an incomplete outcome to posted", () => {
+    for (const status of UNPUBLISHED_OUTCOME_STATUSES) {
+      expect(canTransitionPublish(status, "posted"), status).toBe(false);
+    }
+  });
+
+  it("lets an incomplete outcome be rescheduled or stood down", () => {
+    for (const status of UNPUBLISHED_OUTCOME_STATUSES) {
+      expect(canTransitionPublish(status, "scheduled"), status).toBe(true);
+      expect(canTransitionPublish(status, "cancelled"), status).toBe(true);
+    }
+  });
+
+  it("reaches them only from publishing", () => {
+    for (const status of UNPUBLISHED_OUTCOME_STATUSES) {
+      for (const from of SCHEDULE_STATUSES) {
+        expect(canTransitionPublish(from, status), `${from} -> ${status}`).toBe(
+          from === "publishing",
+        );
+      }
     }
   });
 

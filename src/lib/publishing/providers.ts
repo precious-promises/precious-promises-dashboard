@@ -2,6 +2,7 @@ import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import type { PlatformVariant, VariantPlatform } from "@/lib/variants/types";
 import { instagramProvider } from "@/lib/instagram/provider";
+import { tiktokProvider } from "@/lib/tiktok/provider";
 import { youtubeProvider } from "@/lib/youtube/provider";
 
 import type { ErrorCategory, SafeError } from "./errors";
@@ -9,18 +10,16 @@ import type { ErrorCategory, SafeError } from "./errors";
 /**
  * The publishing provider contract.
  *
- * **YouTube is the only implementation, and Instagram and TikTok have none.**
- * `getPublishingProvider` returns `null` for those two, deliberately and not
- * as a placeholder to be filled with a stub. A stub returning a plausible post
- * id would be indistinguishable from a working integration at the call site —
- * and would put a fabricated success in the database, which is the exact
- * failure the project rules forbid.
+ * All three platforms now have an adapter, and every one of them is real in the
+ * sense that matters: every request is a genuine request to the platform, and
+ * success is reported only when the platform returned an id for the post.
  *
- * The YouTube provider is real in the sense that matters: every request it
- * makes is a genuine request to Google, and it reports success only when
- * YouTube returned a video id. It does not currently reach that point,
- * because no storage integration exists to fetch the video file — it refuses
- * with `media_source_unavailable` instead. See `@/lib/youtube/media-source`.
+ * `getPublishingProvider` still returns `null` for a platform with no adapter,
+ * and callers still have to handle that — which is what made adding each
+ * provider a change to one line here rather than a change everywhere. The
+ * absence was never a placeholder waiting for a stub: a stub returning a
+ * plausible post id would be indistinguishable from a working integration at
+ * the call site, and would put a fabricated success in the database.
  */
 
 /** Everything a provider needs, with no database or HTTP types in it. */
@@ -138,23 +137,25 @@ export const PROVIDER_STATUS: readonly ProviderStatus[] = [
   },
   {
     platform: "tiktok",
-    implemented: false,
-    detail: "No TikTok connection. The Content Posting API is not built.",
+    implemented: true,
+    detail:
+      "A TikTok adapter exists and uses the Content Posting API. It can post directly, upload to your TikTok drafts, or prepare a manual post — and it reports each of those as what it is rather than calling them all success.",
   },
 ] as const;
 
 /**
  * The configured provider for a platform, or `null`.
  *
- * Instagram and TikTok return `null`, and callers must handle the absence —
- * which is what makes "this platform is not connected" impossible to forget at
- * the call site. It has been that way since this registry was written, so
- * adding YouTube changed nothing anywhere else.
+ * Every platform has one now, but the type stays `Partial` and callers still
+ * handle the absence: that is what made "this platform is not connected"
+ * impossible to forget at the call site, and it is what will catch the next
+ * platform added to `VariantPlatform` before an adapter is written for it.
  */
 const PROVIDER_REGISTRY: Partial<Record<VariantPlatform, PublishingProvider>> =
   {
     youtube: youtubeProvider,
     instagram: instagramProvider,
+    tiktok: tiktokProvider,
   };
 
 export function getPublishingProvider(

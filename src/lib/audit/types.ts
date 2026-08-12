@@ -60,6 +60,24 @@ export const AUDIT_ACTIONS = [
   "instagram_container_finished",
   "instagram_published",
   "instagram_publish_failed",
+
+  // Stage 9 — TikTok. Three of these exist because TikTok has three genuinely
+  // different endings, and a log that collapsed them would be the easiest place
+  // for this system to appear to have posted something it only drafted:
+  // `tiktok_post_completed` is a real post, `tiktok_uploaded_to_draft` is a
+  // draft in the creator's app, and `tiktok_manual_post_prepared` never touched
+  // TikTok at all. No token, no upload URL and no publish id appears in any of
+  // them.
+  "tiktok_connected",
+  "tiktok_reconnected",
+  "tiktok_disconnected",
+  "tiktok_upload_started",
+  "tiktok_upload_completed",
+  "tiktok_processing_updated",
+  "tiktok_post_completed",
+  "tiktok_post_failed",
+  "tiktok_uploaded_to_draft",
+  "tiktok_manual_post_prepared",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -106,6 +124,17 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   instagram_container_finished: "Instagram container finished processing",
   instagram_published: "Published to Instagram",
   instagram_publish_failed: "Instagram publish failed",
+
+  tiktok_connected: "TikTok account connected",
+  tiktok_reconnected: "TikTok account reconnected",
+  tiktok_disconnected: "TikTok account disconnected",
+  tiktok_upload_started: "TikTok upload started",
+  tiktok_upload_completed: "TikTok upload completed",
+  tiktok_processing_updated: "TikTok processing status updated",
+  tiktok_post_completed: "Posted to TikTok",
+  tiktok_post_failed: "TikTok post failed",
+  tiktok_uploaded_to_draft: "Uploaded to TikTok drafts — not posted",
+  tiktok_manual_post_prepared: "Prepared for manual TikTok posting",
 };
 
 export const AUDIT_ENTITY_TYPES = [

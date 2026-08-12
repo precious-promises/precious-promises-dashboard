@@ -19,6 +19,11 @@ import { DRIVE_SCOPES } from "@/lib/drive/config";
 import { buildInstagramAuthorizationUrl } from "@/lib/instagram/oauth";
 import { resolveInstagramConfig } from "@/lib/instagram/server-config";
 import { resolveDriveConfig } from "@/lib/drive/server-config";
+import {
+  buildTikTokAuthorizationUrl,
+  revokeTikTokToken,
+} from "@/lib/tiktok/oauth";
+import { resolveTikTokConfig } from "@/lib/tiktok/server-config";
 import { buildAuthorizationUrl, revokeToken } from "@/lib/youtube/oauth";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
 
@@ -318,4 +323,106 @@ export async function disconnectInstagram(formData: FormData): Promise<void> {
 
   revalidatePath("/dashboard/publish");
   back("ig-disconnected");
+}
+
+/**
+ * Start the TikTok connection.
+ *
+ * A third provider, a third authorisation URL — but the same single-use state,
+ * stored against the owner before the redirect happens. TikTok's own parameter
+ * name is `client_key`, which the URL builder handles; nothing here needs to
+ * know that.
+ */
+export async function connectTikTok(): Promise<void> {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(LOGIN_PATH);
+  }
+
+  const { config } = resolveTikTokConfig();
+  if (config === null) {
+    back("tt-not-configured");
+  }
+
+  const { client } = createWorkerClient();
+  if (client === null) {
+    back("no-worker-credential");
+  }
+
+  await pruneExpiredStates(client);
+  const state = await createOAuthState(client, user.id, "tiktok");
+
+  if (state === null) {
+    back("state-failed");
+  }
+
+  redirect(buildTikTokAuthorizationUrl(config, state));
+}
+
+/**
+ * Disconnect TikTok.
+ *
+ * Revokes at TikTok **first**, then clears locally — the same order as Google,
+ * for the same reason: a live grant nobody can see is worse than one that is
+ * visibly still there. TikTok does offer a revocation endpoint, so unlike
+ * Instagram this is a genuine withdrawal rather than simply forgetting a token.
+ *
+ * The local clear happens either way. If TikTok did not confirm, the notice
+ * says so plainly rather than reporting a clean disconnect.
+ *
+ * **Posts already made are never touched.** Disconnecting is about this
+ * application's access, not about content that already reached an audience.
+ */
+export async function disconnectTikTok(formData: FormData): Promise<void> {
+  const accountId = formData.get("account_id");
+  if (typeof accountId !== "string" || accountId === "") {
+    back("unknown-account");
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(LOGIN_PATH);
+  }
+
+  const { client } = createWorkerClient();
+  if (client === null) {
+    back("no-worker-credential");
+  }
+
+  const { data: owned } = await supabase
+    .from("social_accounts")
+    .select("id")
+    .eq("id", accountId)
+    .eq("owner_id", user.id)
+    .eq("platform", "tiktok")
+    .maybeSingle();
+
+  if (!owned) {
+    back("unknown-account");
+  }
+
+  const { config } = resolveTikTokConfig();
+  const token = await takeRefreshTokenForRevocation(client, accountId, user.id);
+
+  const revoked =
+    config === null || token === null
+      ? false
+      : await revokeTikTokToken(config, token);
+
+  await clearConnection(client, accountId, user.id);
+
+  await recordAudit("tiktok_disconnected", "social_account", accountId, {
+    revoked_at_tiktok: revoked,
+  });
+
+  revalidatePath("/dashboard/publish");
+  back(revoked ? "tt-disconnected" : "tt-disconnected-not-revoked");
 }

@@ -3,21 +3,15 @@ import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
 import {
-  instagramSettingsDigest,
-  validateForInstagram,
-} from "@/lib/instagram/metadata";
-import { loadInstagramMetadataFor } from "@/lib/instagram/repository";
-import {
-  validateForYouTube,
-  youtubeSettingsDigest,
-} from "@/lib/youtube/metadata";
-import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
-
-import {
   approvalFingerprint,
   type ApprovalMediaSelection,
   type ApprovalSubject,
 } from "./fingerprint";
+import {
+  loadPlatformMetadataFor,
+  platformSettingsDigest,
+  validateForPlatform,
+} from "./platform-settings";
 import {
   approvalBlockers,
   approvalValidity,
@@ -201,12 +195,7 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
   }
 
   // Each platform's own settings are part of what an approval attests to.
-  const youtubeMetadata = await loadYouTubeMetadataFor(
-    variants.filter((v) => v.platform === "youtube").map((v) => v.id),
-  );
-  const instagramMetadata = await loadInstagramMetadataFor(
-    variants.filter((v) => v.platform === "instagram").map((v) => v.id),
-  );
+  const platformMetadata = await loadPlatformMetadataFor(variants);
 
   const rows: ReviewRow[] = [];
 
@@ -220,27 +209,15 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
     const mediaSelections = mediaByItem.get(item.id) ?? [];
     const hasVideo = video !== null && video.sceneCount > 0;
 
-    const platformProblems =
-      variant.platform === "youtube"
-        ? validateForYouTube({
-            variant,
-            item,
-            metadata: youtubeMetadata.get(variant.id) ?? null,
-          }).map((problem) => problem.message)
-        : variant.platform === "instagram"
-          ? validateForInstagram({
-              variant,
-              item,
-              metadata: instagramMetadata.get(variant.id) ?? null,
-            }).map((problem) => problem.message)
-          : [];
+    const metadata = platformMetadata.get(variant.id) ?? null;
 
-    const platformSettings =
-      variant.platform === "youtube"
-        ? youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null)
-        : variant.platform === "instagram"
-          ? instagramSettingsDigest(instagramMetadata.get(variant.id) ?? null)
-          : null;
+    const platformProblems = validateForPlatform({
+      variant,
+      item,
+      metadata,
+    }).map((problem) => problem.message);
+
+    const platformSettings = platformSettingsDigest(variant.platform, metadata);
 
     const subject = approvalSubjectFrom(
       variant,
