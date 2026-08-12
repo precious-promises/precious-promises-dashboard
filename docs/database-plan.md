@@ -53,9 +53,10 @@ change, not ours.
 Preferences and timezone are **not** implemented; they arrive with the features
 that need them.
 
-### SocialAccount _(planned)_
+### SocialAccount — _implemented in Stage 7, extended in Stages 8 and 9_
 
-A connected external platform account — YouTube, Instagram, TikTok.
+A connected external platform account — YouTube, Instagram, TikTok, and (as a
+read-only media source, never a publishing target) Google Drive.
 
 Stores the platform identifier, the external account id, granted scopes,
 connection status, and the **encrypted** access and refresh tokens. Tokens are

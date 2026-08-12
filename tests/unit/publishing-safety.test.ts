@@ -86,6 +86,7 @@ function post(overrides: Partial<ScheduledPost> = {}): ScheduledPost {
     external_post_url: null,
     last_error_code: null,
     last_error_message: null,
+    outcome_detail: null,
     external_processing_status: null,
     external_processing_checked_at: null,
     created_at: "2026-08-08T00:00:00Z",
@@ -159,10 +160,13 @@ function gate(overrides: Partial<GateInput> = {}): GateInput {
 }
 
 describe("the provider registry", () => {
-  it("has adapters for YouTube and Instagram, and none for TikTok", () => {
+  it("has an adapter for every platform it names", () => {
+    // Stage 9 filled the last gap. The registry still returns null for a
+    // platform with no adapter — that is what the type allows and what callers
+    // handle — there simply is not one any more.
     expect(getPublishingProvider("youtube")).not.toBeNull();
     expect(getPublishingProvider("instagram")).not.toBeNull();
-    expect(getPublishingProvider("tiktok")).toBeNull();
+    expect(getPublishingProvider("tiktok")).not.toBeNull();
   });
 
   it("says plainly which Instagram formats are refused, and why", () => {
@@ -193,8 +197,24 @@ describe("the provider registry", () => {
     expect(youtube.detail).toContain("media_source_unavailable");
   });
 
-  it("reports an unbuilt platform as unimplemented rather than throwing", () => {
-    expect(providerStatusFor("tiktok").implemented).toBe(false);
+  it("reports an unnamed platform as unimplemented rather than throwing", () => {
+    // Not a platform this product supports. The registry answers honestly
+    // rather than throwing, which is what stops an unknown platform reading as
+    // a working one.
+    const unknown = providerStatusFor(
+      "threads" as Parameters<typeof providerStatusFor>[0],
+    );
+
+    expect(unknown.implemented).toBe(false);
+    expect(unknown.detail).toBeTruthy();
+  });
+
+  it("says plainly that a TikTok draft is not a post", () => {
+    const tiktok = providerStatusFor("tiktok");
+
+    expect(tiktok.implemented).toBe(true);
+    expect(tiktok.detail).toMatch(/draft/i);
+    expect(tiktok.detail).toMatch(/manual/i);
   });
 });
 

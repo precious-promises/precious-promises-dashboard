@@ -153,9 +153,11 @@ describe("duplicate detection", () => {
 
 describe("schedule state machine", () => {
   it("offers the lifecycle the worker needs", () => {
-    // Stage 6 made the execution states real. `posted` is in the vocabulary
-    // because the worker needs somewhere to land — but nothing can reach it,
-    // which tests/unit/publishing-safety.test.ts proves.
+    // Stage 6 made the execution states real. Stage 9 added the two incomplete
+    // outcomes, which had been named in the database since Stage 6 and held
+    // out of this list until a provider could genuinely reach them — TikTok
+    // now writes both. Neither can become `posted`, which
+    // tests/unit/workflow-safety.test.ts proves.
     expect([...SCHEDULE_STATUSES]).toEqual([
       "scheduled",
       "paused",
@@ -164,6 +166,8 @@ describe("schedule state machine", () => {
       "posted",
       "failed",
       "cancelled",
+      "ready_for_manual_post",
+      "uploaded_to_platform_draft",
     ]);
   });
 

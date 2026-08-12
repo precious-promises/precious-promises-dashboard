@@ -10,9 +10,11 @@ import type { ScheduleStatus } from "@/lib/schedule/types";
  * ```
  * scheduled ──▶ queued ──▶ publishing ──▶ posted
  *     │            │            │
- *     │            └────────────┴──▶ failed
- *     │            │
- *     └────────────┴──▶ paused ──▶ scheduled
+ *     │            │            ├──▶ uploaded_to_platform_draft ─┐
+ *     │            │            ├──▶ ready_for_manual_post ──────┤
+ *     │            └────────────┴──▶ failed                      │
+ *     │            │                                             │
+ *     └────────────┴──▶ paused ──▶ scheduled ◀───────────────────┘
  *     │            │
  *     └────────────┴──▶ cancelled   (terminal)
  * ```
@@ -20,6 +22,12 @@ import type { ScheduleStatus } from "@/lib/schedule/types";
  * **`posted` is reachable only from `publishing`.** A job nothing ever ran
  * cannot become a finished post, and the database additionally refuses
  * `posted` without the platform's own post id.
+ *
+ * The two incomplete outcomes are reachable from `publishing` too, and are
+ * deliberately **not terminal**: a draft that Dave finishes in the platform's
+ * app, or a manual post he makes by hand, may need the row rescheduled or
+ * stood down. What they can never do is become `posted` — this system did not
+ * publish them and has no platform id proving anybody did.
  */
 
 const TRANSITIONS: Record<ScheduleStatus, readonly ScheduleStatus[]> = {
@@ -29,13 +37,24 @@ const TRANSITIONS: Record<ScheduleStatus, readonly ScheduleStatus[]> = {
   queued: ["publishing", "failed", "paused", "cancelled"],
   // Once a provider call is in flight, only its outcome may follow. Pausing
   // here would leave a request the system had stopped tracking.
-  publishing: ["posted", "failed"],
+  publishing: [
+    "posted",
+    "failed",
+    "ready_for_manual_post",
+    "uploaded_to_platform_draft",
+  ],
   // A failed attempt does not end the post: it can be rescheduled by the
   // owner, which returns it to `scheduled`.
   failed: ["scheduled", "cancelled"],
   paused: ["scheduled", "cancelled"],
   posted: [],
   cancelled: [],
+  // Note what is absent from both: `posted`. A draft in TikTok's app and a
+  // caption prepared for manual posting are things a human still has to
+  // finish, and this system holds no platform post id for either. Allowing the
+  // transition would let a row claim a publication nobody can point at.
+  ready_for_manual_post: ["scheduled", "cancelled"],
+  uploaded_to_platform_draft: ["scheduled", "cancelled"],
 };
 
 export function canTransitionPublish(

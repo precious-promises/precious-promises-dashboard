@@ -135,8 +135,22 @@ platform's own settings — is reduced to a SHA-256 fingerprint at the moment of
 approval.
 
 The Stage 7 addition is `platformSettings`, extended in Stage 8 to carry
-Instagram's settings — media type, cover frame and share-to-feed — alongside
-YouTube's. A YouTube variant carries a privacy
+Instagram's settings — media type, cover frame and share-to-feed — and in
+Stage 9 to carry TikTok's: delivery mode, audience, the three interaction flags
+and all three commercial-disclosure flags. TikTok's **delivery mode** is the
+sharpest of them: switching a variant from a draft upload to a direct post turns
+it from something Dave publishes into something this system publishes for him,
+and an approval given before that change did not agree to it.
+
+Stage 9 also moved the platform dispatch into
+`src/lib/approvals/platform-settings.ts`. Four places recompute a fingerprint —
+the approval queue, the invalidation sweep, the production board and the
+publishing worker — and each previously carried its own branch over the
+platforms. With three platforms, adding one to three sites and missing the
+fourth would make the worker and the queue disagree, which either blocks a valid
+approval or lets a stale one through.
+
+A YouTube variant carries a privacy
 status, a made-for-kids declaration, tags and a thumbnail, all of which change
 what an audience sees; approving a variant and then flipping its privacy would
 otherwise publish something nobody approved. It is `null` for a platform with no
@@ -214,3 +228,60 @@ create container ──> in_progress ──> finished ──> published
   media id, produces `incomplete` with an explanation. No id is invented, and
   no retry is attempted into a possible duplicate.
 - Containers expire. An expired container is a failure, not a silent retry.
+
+## TikTok publish lifecycle — _implemented in Stage 9_
+
+TikTok's flow has three endings, and only one of them is a post.
+
+```
+init ──> uploading ──> processing ──┬──> published          (direct_post only)
+                                    ├──> uploaded_to_draft  (inbox only)
+                                    ├──> failed
+                                    └──> expired
+
+manual ──> (nothing is sent)  ──────────> ready_for_manual_post
+```
+
+### Rules
+
+- **A draft is not a post.** The same `PUBLISH_COMPLETE` from TikTok maps to
+  `published` for a direct post and `uploaded_to_draft` for an inbox upload.
+  A check constraint refuses an `inbox` session that reaches `published`.
+- **An unfamiliar status maps to `processing`, never `published`.** `published`
+  is what permits writing `posted`, and a guess there would claim a post nobody
+  has seen.
+- **`published` requires TikTok's own post id** — enforced by check constraint,
+  and `uploaded_to_draft` is constrained to carry none.
+- **The session row is written before a single byte is sent.** TikTok has
+  already allocated a `publish_id` by then, and losing it would leave a retry no
+  way to ask what happened — it would open a second upload and, for a direct
+  post, produce a second post. If the row cannot be written, the provider
+  refuses to upload at all.
+- **An interrupted upload resumes** from `chunks_sent` into the same session,
+  rather than restarting or reporting failure.
+- A publish TikTok reports as complete but for which it returns no post id
+  produces `incomplete` with an explanation and a warning against retrying. No
+  id is invented.
+
+## Incomplete publish outcomes — _implemented in Stage 9_
+
+`ready_for_manual_post` and `uploaded_to_platform_draft` were named in the
+database from Stage 6 and held out of the TypeScript vocabulary until a provider
+could genuinely reach them. Stage 9 brought them in.
+
+```
+publishing ──┬──> posted                       (has a platform post id)
+             ├──> uploaded_to_platform_draft ──┐
+             ├──> ready_for_manual_post ───────┼──> scheduled | cancelled
+             └──> failed ─────────────────────-┘
+```
+
+- **Neither incomplete outcome can transition to `posted`.** This system did not
+  publish them and holds no platform id proving anybody did.
+- Both are reachable **only** from `publishing`.
+- Both are non-terminal: the row can be rescheduled or stood down once Dave has
+  finished the post in the platform's own app.
+- `scheduled_posts.outcome_detail` carries the provider's explanation.
+  Deliberately separate from `last_error_message` — a video sitting in TikTok's
+  drafts is not an error, and merging them would make every successful draft
+  upload read as a failure.

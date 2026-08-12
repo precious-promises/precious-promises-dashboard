@@ -215,31 +215,32 @@ harder to change safely.
 
 ## What exists today
 
-| Piece                                       | State                          |
-| ------------------------------------------- | ------------------------------ |
-| Next.js App Router shell                    | Implemented                    |
-| TypeScript strict mode                      | Implemented                    |
-| Tailwind CSS styling                        | Implemented                    |
-| Typed environment validation                | Implemented                    |
-| `GET /api/health`                           | Implemented                    |
-| Unit, component and E2E test setup          | Implemented                    |
-| CI workflow                                 | Implemented                    |
-| Supabase project and SSR clients            | Implemented                    |
-| Email/password sign-in, sign-out            | Implemented                    |
-| Protected `/dashboard`, private `/login`    | Implemented                    |
-| `profiles` table with RLS                   | Implemented                    |
-| Premium dashboard shell and navigation      | Implemented                    |
-| Content, script and caption models with RLS | Implemented                    |
-| Video studio models with RLS                | Implemented                    |
-| Video editor and browser preview            | Implemented                    |
-| Approval workflow and fingerprinting        | Implemented                    |
-| Production Board, Calendar, scheduling      | Implemented                    |
-| Audit log                                   | Implemented                    |
-| Publishing infrastructure and safety gate   | Implemented                    |
-| Trigger.dev task foundation (not deployed)  | Implemented                    |
-| Google OAuth and YouTube provider           | Implemented                    |
-| Encrypted credential storage                | Implemented                    |
-| A successful external publish               | **Blocked on media retrieval** |
-| Instagram and TikTok providers              | **Not started**                |
-| Server rendering                            | **Not started**                |
-| Google Drive and media retrieval            | **Not started**                |
+| Piece                                       | State                        |
+| ------------------------------------------- | ---------------------------- |
+| Next.js App Router shell                    | Implemented                  |
+| TypeScript strict mode                      | Implemented                  |
+| Tailwind CSS styling                        | Implemented                  |
+| Typed environment validation                | Implemented                  |
+| `GET /api/health`                           | Implemented                  |
+| Unit, component and E2E test setup          | Implemented                  |
+| CI workflow                                 | Implemented                  |
+| Supabase project and SSR clients            | Implemented                  |
+| Email/password sign-in, sign-out            | Implemented                  |
+| Protected `/dashboard`, private `/login`    | Implemented                  |
+| `profiles` table with RLS                   | Implemented                  |
+| Premium dashboard shell and navigation      | Implemented                  |
+| Content, script and caption models with RLS | Implemented                  |
+| Video studio models with RLS                | Implemented                  |
+| Video editor and browser preview            | Implemented                  |
+| Approval workflow and fingerprinting        | Implemented                  |
+| Production Board, Calendar, scheduling      | Implemented                  |
+| Audit log                                   | Implemented                  |
+| Publishing infrastructure and safety gate   | Implemented                  |
+| Trigger.dev task foundation (not deployed)  | Implemented                  |
+| Google OAuth and YouTube provider           | Implemented                  |
+| Encrypted credential storage                | Implemented                  |
+| Google Drive media retrieval                | Implemented                  |
+| Instagram (Reels) provider                  | Implemented                  |
+| TikTok provider (3 delivery modes)          | Implemented                  |
+| A successful external publish               | **No account connected yet** |
+| Server rendering                            | **Not started**              |

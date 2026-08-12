@@ -40,6 +40,11 @@ const STATE_TONES: Record<QueueState, StatusTone> = {
   uploading: "accent",
   uploaded_processing: "accent",
   posted: "configured",
+  // Deliberately not "configured". These two are finished as far as this
+  // system is concerned and unpublished as far as an audience is concerned,
+  // and a green badge beside "Posted" would read as the same thing.
+  in_platform_drafts: "accent",
+  awaiting_manual_post: "accent",
   failed: "accent",
   blocked: "accent",
   stood_down: "inactive",
@@ -117,6 +122,15 @@ export function PublishQueueEntry({
           )
         ) : null}
       </div>
+
+      {post.outcome_detail ? (
+        // Not styled as a warning. This is the provider explaining what it
+        // genuinely did and what the owner has to do next, and dressing it as
+        // an error would misreport a step that worked.
+        <p className="mt-2 rounded-md border border-edge bg-panel-raised/50 px-2.5 py-1.5 text-[11px] leading-5 text-ink-secondary">
+          {post.outcome_detail}
+        </p>
+      ) : null}
 
       {post.last_error_code ? (
         <p className="mt-2 flex items-start gap-2 rounded-md border border-gold-dim/50 bg-gold/10 px-2.5 py-1.5 text-[11px] text-gold">

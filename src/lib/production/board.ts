@@ -4,10 +4,10 @@ import type { ContentItem } from "@/lib/content/types";
 import type { ScheduledPost } from "@/lib/schedule/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { PlatformVariant } from "@/lib/variants/types";
-import { instagramSettingsDigest } from "@/lib/instagram/metadata";
-import { loadInstagramMetadataFor } from "@/lib/instagram/repository";
-import { youtubeSettingsDigest } from "@/lib/youtube/metadata";
-import { loadYouTubeMetadataFor } from "@/lib/youtube/repository";
+import {
+  loadPlatformMetadataFor,
+  platformSettingsDigest,
+} from "@/lib/approvals/platform-settings";
 
 import { classifyProductionStage, type ProductionStage } from "./stage";
 
@@ -181,12 +181,7 @@ export async function loadBoard(): Promise<BoardCard[]> {
   // The board decides whether each approval is still valid, so it must
   // recompute the same fingerprint the Approval Queue does — including the
   // platform's own settings. Loaded once here rather than per row.
-  const youtubeMetadata = await loadYouTubeMetadataFor(
-    variants.filter((v) => v.platform === "youtube").map((v) => v.id),
-  );
-  const instagramMetadata = await loadInstagramMetadataFor(
-    variants.filter((v) => v.platform === "instagram").map((v) => v.id),
-  );
+  const platformMetadata = await loadPlatformMetadataFor(variants);
 
   return items.map((item) => {
     const itemVariants = variantsByItem.get(item.id) ?? [];
@@ -213,9 +208,10 @@ export async function loadBoard(): Promise<BoardCard[]> {
             ? { id: video.id, current_revision: video.current_revision }
             : null,
           media,
-          variant.platform === "instagram"
-            ? instagramSettingsDigest(instagramMetadata.get(variant.id) ?? null)
-            : youtubeSettingsDigest(youtubeMetadata.get(variant.id) ?? null),
+          platformSettingsDigest(
+            variant.platform,
+            platformMetadata.get(variant.id) ?? null,
+          ),
         ),
       );
 

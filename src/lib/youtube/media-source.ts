@@ -34,6 +34,14 @@ export interface MediaSource {
   contentLength: number;
   filename: string;
   open(): Promise<BodyInit>;
+  /**
+   * One inclusive byte range, for platforms that upload in chunks.
+   *
+   * Added in Stage 9 for TikTok, which asks for a specific slice and a
+   * `Content-Range` naming it. Buffering the whole video to cut pieces out of
+   * it would defeat the point of streaming in the first place.
+   */
+  openRange(start: number, end: number): Promise<BodyInit>;
 }
 
 export type MediaSourceResult =
@@ -160,6 +168,13 @@ async function resolveFromDrive(asset: MediaAsset): Promise<MediaSourceResult> {
         const response = await media.open();
         if (response.body === null) {
           throw new Error("Google Drive returned no body for that file.");
+        }
+        return response.body as unknown as BodyInit;
+      },
+      openRange: async (start: number, end: number) => {
+        const response = await media.openRange(start, end);
+        if (response.body === null) {
+          throw new Error("Google Drive returned no body for that range.");
         }
         return response.body as unknown as BodyInit;
       },

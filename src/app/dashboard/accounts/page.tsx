@@ -29,15 +29,23 @@ import {
 } from "@/lib/instagram/config";
 import { resolveInstagramConfig } from "@/lib/instagram/server-config";
 import { resolveDriveConfig } from "@/lib/drive/server-config";
+import {
+  DELIVERY_MODE_DETAIL,
+  PULL_FROM_URL_REFUSAL,
+  TIKTOK_SCOPES,
+} from "@/lib/tiktok/config";
+import { resolveTikTokConfig } from "@/lib/tiktok/server-config";
 import { MEDIA_RETRIEVAL_DETAIL } from "@/lib/youtube/media-source";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
 
 import {
   connectGoogleDrive,
   connectInstagram,
+  connectTikTok,
   connectYouTube,
   disconnectGoogleDrive,
   disconnectInstagram,
+  disconnectTikTok,
   disconnectYouTube,
 } from "./actions";
 
@@ -115,6 +123,30 @@ const NOTICES: Record<string, string> = {
     "Google Drive disconnected, and the authorisation was revoked at Google. Imported assets were left alone.",
   "drive-disconnected-not-revoked":
     "Google Drive disconnected locally, but Google did not confirm the revocation. Remove this application manually under your Google Account security settings.",
+
+  "tt-connected":
+    "The TikTok account is connected, with permission to post directly and to send to drafts.",
+  "tt-connected-drafts":
+    "The TikTok account is connected, but only with draft-upload permission. Videos can be sent to your TikTok drafts; nothing can be posted directly. Reconnect and leave every permission ticked if you want direct posting.",
+  "tt-declined": "Authorisation was declined at TikTok. Nothing was connected.",
+  "tt-refused": "TikTok refused the authorisation. Nothing was connected.",
+  "tt-invalid-callback": "That authorisation link was incomplete. Start again.",
+  "tt-not-configured":
+    "TikTok credentials are not configured on the server, so TikTok cannot be connected.",
+  "tt-exchange-failed":
+    "TikTok would not exchange the authorisation. Start again.",
+  "tt-scope-refused":
+    "Neither upload nor publish permission was granted, so nothing could be sent to TikTok. Connect again and leave every permission ticked.",
+  "tt-account-lookup-failed":
+    "The TikTok account could not be read back, so nothing was recorded.",
+  "tt-no-account":
+    "That authorisation returned no TikTok account, so nothing was recorded.",
+  "tt-save-failed":
+    "The TikTok connection could not be saved. Nothing was recorded.",
+  "tt-disconnected":
+    "TikTok disconnected, and the authorisation was revoked at TikTok.",
+  "tt-disconnected-not-revoked":
+    "TikTok disconnected locally, but TikTok did not confirm the revocation. Remove this application manually under your TikTok account settings.",
 };
 
 /**
@@ -168,6 +200,18 @@ export default async function ConnectedAccountsPage(
   );
   const { problems: driveProblems } = resolveDriveConfig();
   const canConnectDrive = driveProblems.length === 0 && workerReady;
+
+  const tiktokAccounts = accounts.filter(
+    (account) => account.platform === "tiktok",
+  );
+  const { problems: tiktokProblems } = resolveTikTokConfig();
+  const canConnectTikTok = tiktokProblems.length === 0 && workerReady;
+
+  // Every publishing platform now has an adapter, so this list is empty in
+  // practice. It stays because it is generated from the registry rather than
+  // hand-maintained: the day a fourth platform is named without one, it says so
+  // by itself.
+  const unimplemented = PROVIDER_STATUS.filter((status) => !status.implemented);
 
   return (
     <DashboardShell
@@ -472,32 +516,137 @@ export default async function ConnectedAccountsPage(
         </SectionCard>
 
         <SectionCard
-          title="Other platforms"
-          description="Nothing is connected, and no adapter exists to connect it with."
+          title="TikTok"
+          description="TikTok Login Kit with the Content Posting API."
+          action={
+            <StatusBadge tone={canConnectTikTok ? "configured" : "inactive"}>
+              {canConnectTikTok ? "Ready to connect" : "Not configured"}
+            </StatusBadge>
+          }
         >
-          <ul className="flex flex-col gap-2">
-            {PROVIDER_STATUS.filter(
-              (status) =>
-                status.platform !== "youtube" &&
-                status.platform !== "instagram",
-            ).map((status) => (
-              <li
-                key={status.platform}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
-              >
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-ink-primary">
-                    {PLATFORM_LABELS[status.platform]}
-                  </span>
-                  <span className="block text-xs text-ink-muted">
-                    {status.detail}
-                  </span>
-                </span>
-                <StatusBadge tone="coming-soon">Coming soon</StatusBadge>
-              </li>
-            ))}
+          {tiktokProblems.length > 0 ? (
+            <div className="mb-4">
+              <p className="text-sm text-ink-secondary">
+                Connecting TikTok needs the following first:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted">
+                {tiktokProblems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {tiktokAccounts.length === 0 ? (
+            <EmptyState
+              icon={Link2}
+              title="No TikTok account connected."
+              description="Connecting sends you to TikTok to authorise this dashboard. It asks to identify the account, to upload to your drafts, and to post — nothing about comments, messages or analytics."
+            />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {tiktokAccounts.map((account) => (
+                <li key={account.id}>
+                  <AccountCard
+                    account={account}
+                    disconnectAction={disconnectTikTok}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form action={connectTikTok} className="mt-4">
+            <button
+              type="submit"
+              disabled={!canConnectTikTok}
+              className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {tiktokAccounts.length === 0
+                ? "Connect TikTok"
+                : "Reconnect TikTok"}
+            </button>
+          </form>
+
+          <ul className="mt-4 flex flex-col gap-3 text-sm text-ink-secondary">
+            <li>
+              <span className="font-medium text-ink-primary">
+                Permissions requested
+              </span>
+              <ul className="mt-1 flex flex-wrap gap-1.5">
+                {TIKTOK_SCOPES.map((scope) => (
+                  <li
+                    key={scope}
+                    className="rounded border border-edge/70 px-1.5 py-0.5 font-mono text-[11px] text-ink-muted"
+                  >
+                    {scope}
+                  </li>
+                ))}
+              </ul>
+            </li>
+            <li>
+              <span className="font-medium text-ink-primary">
+                Posting directly
+              </span>
+              <p className="mt-0.5 text-ink-muted">
+                {DELIVERY_MODE_DETAIL.direct_post} The audience is chosen from
+                the options TikTok returns for your own account, read fresh each
+                time — this dashboard never offers one TikTok has not confirmed.
+              </p>
+            </li>
+            <li>
+              <span className="font-medium text-ink-primary">
+                Sending to drafts
+              </span>
+              <p className="mt-0.5 text-ink-muted">
+                {DELIVERY_MODE_DETAIL.inbox}
+              </p>
+            </li>
+            <li>
+              <span className="font-medium text-ink-primary">
+                Media is streamed, never exposed
+              </span>
+              <p className="mt-0.5 text-ink-muted">{PULL_FROM_URL_REFUSAL}</p>
+            </li>
+            <li>
+              <span className="font-medium text-ink-primary">
+                The connection refreshes itself
+              </span>
+              <p className="mt-0.5 text-ink-muted">
+                A TikTok access token lasts a day and is renewed automatically
+                before each use. The refresh token lasts a year of inactivity —
+                revoking this app in your TikTok settings ends it immediately,
+                and reconnecting is the only way back.
+              </p>
+            </li>
           </ul>
         </SectionCard>
+
+        {unimplemented.length > 0 ? (
+          <SectionCard
+            title="Other platforms"
+            description="Nothing is connected, and no adapter exists to connect it with."
+          >
+            <ul className="flex flex-col gap-2">
+              {unimplemented.map((status) => (
+                <li
+                  key={status.platform}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                >
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-ink-primary">
+                      {PLATFORM_LABELS[status.platform]}
+                    </span>
+                    <span className="block text-xs text-ink-muted">
+                      {status.detail}
+                    </span>
+                  </span>
+                  <StatusBadge tone="coming-soon">Coming soon</StatusBadge>
+                </li>
+              ))}
+            </ul>
+          </SectionCard>
+        ) : null}
       </div>
     </DashboardShell>
   );

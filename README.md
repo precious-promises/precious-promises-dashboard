@@ -19,15 +19,22 @@ drafted — all under Row Level Security.
 Approval, scheduling and the publishing infrastructure are real as of Stages 5
 and 6. Stage 7 added Google OAuth and a YouTube provider. Stage 8 added Google
 Drive media retrieval — which unblocked YouTube uploads — and an Instagram
-Reels provider.
+Reels provider. Stage 9 added a TikTok provider.
 
-Still absent: AI generation, server rendering, analytics, and TikTok.
+Still absent: AI generation, server rendering, and analytics.
 
-**Nothing has been published to any platform yet.** Both providers make real
-requests and both can now obtain real media, but no account has been connected
-and no post has been created. Instagram publishes **Reels only**: images,
-carousels and Stories need media on a publicly reachable URL, and this
-application will not expose media to the open internet.
+**Nothing has been published to any platform yet.** All three providers make
+real requests and can obtain real media, but no account has been connected and
+no post has been created.
+
+Two refusals are deliberate and permanent. Instagram publishes **Reels only**:
+images, carousels and Stories need media on a publicly reachable URL, and this
+application will not expose media to the open internet. TikTok streams bytes
+rather than using `PULL_FROM_URL`, for the same reason.
+
+TikTok can also reach two states that are **not** publications — a video in the
+creator's drafts, and a post prepared for Dave to make by hand. Both are
+reported as what they are, never as success.
 
 ## Current stack
 
@@ -200,11 +207,15 @@ metadata — all under Row Level Security.
 Everything below is **planned, not built**:
 
 - **No file upload.** Media assets are metadata records; no bytes move.
-- **Three functional integrations.** Google Drive (read-only), YouTube and
-  Instagram. TikTok, ElevenLabs and the AI provider are not implemented.
-- **No successful publish.** The infrastructure is built, both adapters are
-  real, and media can now genuinely be retrieved from Drive — but no account
-  has been connected, so nothing has been posted.
+- **Four functional integrations.** Google Drive (read-only), YouTube,
+  Instagram and TikTok. ElevenLabs and the AI provider are not implemented.
+- **No successful publish.** The infrastructure is built, all three publishing
+  adapters are real, and media can genuinely be retrieved from Drive — but no
+  account has been connected, so nothing has been posted.
+- **TikTok direct posting needs TikTok's audit.** Until it passes, an
+  unaudited client can only post `SELF_ONLY` — visible to Dave alone. Draft
+  uploads and manual posting work regardless, and the interface never offers an
+  audience TikTok has not confirmed.
 - **Drive access is broader than the folder it uses.** Google offers no
   folder-scoped read scope, so the boundary is enforced in application logic
   and is stated as such rather than presented as a Google guarantee.

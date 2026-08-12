@@ -16,7 +16,13 @@
 > reachable URL, and this application will not expose media to the open
 > internet.
 >
-> TikTok, ElevenLabs and the AI caption provider remain unimplemented.
+> Stage 9 added a TikTok provider with three delivery modes — direct post,
+> upload to the creator's drafts, and manual posting. Only the first can ever
+> report success, and only with TikTok's own post id. TikTok media is streamed
+> as `FILE_UPLOAD`; `PULL_FROM_URL` is refused for the same reason Instagram
+> images are. See [stage-9-tiktok.md](./stage-9-tiktok.md).
+>
+> ElevenLabs and the AI caption provider remain unimplemented.
 
 ## Verify the documentation before you build
 
@@ -67,9 +73,12 @@ only be driven as far as a draft or that need the owner to finish by hand.
 Forcing that third case into "succeeded" would claim something went live that
 did not.
 
-**`getPublishingProvider` returns `null` for Instagram and TikTok.** No stub
-exists, deliberately: a stub returning a plausible post id would be
-indistinguishable from a working integration at the call site. See
+**`getPublishingProvider` still returns `null` for a platform with no adapter**,
+and callers must handle that — which is what made adding each provider a change
+to one line in the registry rather than a change everywhere. As of Stage 9 all
+three platforms have one. The absence was never a placeholder waiting for a
+stub: a stub returning a plausible post id would be indistinguishable from a
+working integration at the call site. See
 [stage-6-publishing-infrastructure.md](./stage-6-publishing-infrastructure.md).
 
 `PROVIDER_STATUS` distinguishes `implemented` — a fact about this repository —
@@ -118,6 +127,32 @@ Instagram API with Instagram Login. `src/lib/instagram/` holds the integration.
 - A container is not a post. Only the media id from `media_publish` can produce
   `posted`.
 
+### TikTok — _implemented in Stage 9_
+
+TikTok Login Kit with the Content Posting API. `src/lib/tiktok/` holds the
+integration.
+
+- **Three delivery modes**, and only one of them publishes. `direct_post`
+  creates a real post; `inbox` puts the video in the creator's TikTok drafts;
+  `manual` sends nothing at all. The same `PUBLISH_COMPLETE` status means a live
+  post for the first and a finished **draft** for the second.
+- **The audience comes from TikTok**, per creator, read live. An API client
+  TikTok has not audited is restricted to `SELF_ONLY`, and for such a client
+  TikTok does not return the public options at all — so this application never
+  offers one it has not been told is available, and `privacy_level` has no
+  default anywhere.
+- **Media is streamed as `FILE_UPLOAD`.** `PULL_FROM_URL` would require domain
+  verification and a publicly reachable video, which is refused. Chunk sizes
+  follow TikTok's documented rules, including `total_chunk_count` rounding
+  **down** so the final chunk carries the remainder.
+- **Tokens:** access tokens last 24 hours and refresh tokens 365 days of
+  inactivity, rotated on every exchange. Refreshing on nearly every publish is
+  normal, not exceptional.
+- **A session row is written before any byte is sent**, so a crashed worker
+  reconciles rather than posting twice. An `init` is never called twice for the
+  same approved operation.
+- An unrecognised status maps to "still processing", never to success.
+
 ### Google Drive — _implemented in Stage 8_
 
 Read-only retrieval from an approved folder, via Drive API v3.
@@ -129,13 +164,6 @@ Read-only retrieval from an approved folder, via Drive API v3.
   folder-scoped read scope. Every read proves containment first, and fails
   closed.
 - Nothing writes, deletes, or changes sharing.
-
-### TikTok _(planned)_
-
-Publishing and metrics for TikTok.
-
-Developer program requirements, the publishing flow, media constraints and
-approval status: **to be verified at implementation time.**
 
 ### ElevenLabs _(planned)_
 

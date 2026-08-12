@@ -165,6 +165,20 @@ export class GoogleDriveStorageProvider {
             externalFileId,
           );
         },
+        // One inclusive slice, for platforms that upload in chunks. Each range
+        // re-authenticates for the same reason `open` does: a chunked upload of
+        // a large video can outlive the access token it started with.
+        openRange: async (start: number, end: number) => {
+          const fresh = await getLiveCredential(client, account);
+          if (!fresh.ok) {
+            throw new Error("The Drive authorisation is no longer usable.");
+          }
+          return openFileStream(
+            { accessToken: fresh.credential.accessToken },
+            externalFileId,
+            { start, end },
+          );
+        },
       },
     };
   }

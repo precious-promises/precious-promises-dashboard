@@ -26,6 +26,19 @@ export const SCHEDULE_STATUSES = [
   "posted",
   "failed",
   "cancelled",
+  // Stage 9 moved these two out of the future and into the vocabulary. Both
+  // were named in the database's check constraint from Stage 6, deliberately
+  // held out of this list until a provider could genuinely reach them.
+  //
+  // TikTok reaches both: `inbox` puts a video in the creator's drafts, and
+  // `manual` prepares a post nothing was sent for. Instagram reaches the draft
+  // state while Meta is still processing a container.
+  //
+  // Leaving them out any longer had become the bug rather than the safeguard —
+  // the worker was already writing these values, and an interface reading them
+  // back had no label to show for them.
+  "ready_for_manual_post",
+  "uploaded_to_platform_draft",
 ] as const;
 export type ScheduleStatus = (typeof SCHEDULE_STATUSES)[number];
 
@@ -37,33 +50,40 @@ export const SCHEDULE_STATUS_LABELS: Record<ScheduleStatus, string> = {
   posted: "Posted",
   failed: "Failed",
   cancelled: "Cancelled",
+  ready_for_manual_post: "Ready to post by hand",
+  uploaded_to_platform_draft: "In the platform's drafts",
 };
 
 /**
  * Statuses the *interface* may show as an outcome.
  *
- * `posted` is in the vocabulary because the worker lifecycle needs somewhere
- * to land — but nothing can reach it in Stage 6: no provider exists, and the
- * database refuses `posted` without the platform's own post id.
+ * The two new ones are outcomes in the sense that the worker has finished with
+ * them — but neither is a publication, and the labels say so. `posted` remains
+ * the only status that means something reached an audience, and the database
+ * still refuses it without the platform's own post id.
  */
 export const OUTCOME_SCHEDULE_STATUSES: readonly ScheduleStatus[] = [
   "posted",
   "failed",
+  "ready_for_manual_post",
+  "uploaded_to_platform_draft",
 ];
 
 /**
- * States a future provider will need, kept out of the live vocabulary.
+ * Statuses that stopped short of a publication.
  *
- * A provider that can only reach a platform's draft, or that requires the
- * owner to finish the post by hand, needs somewhere honest to stop. Both are
- * named in the database's check constraint so the shape is agreed — and
- * **neither is in `SCHEDULE_STATUSES`**, so nothing can be written into one
- * until the provider that needs it exists.
+ * Named as a set because the distinction matters everywhere it is read: these
+ * rows look finished and are not. Something still has to happen in the
+ * platform's own app before anybody sees the post.
  */
-export const FUTURE_SCHEDULE_STATUSES = [
+export const UNPUBLISHED_OUTCOME_STATUSES: readonly ScheduleStatus[] = [
   "ready_for_manual_post",
   "uploaded_to_platform_draft",
-] as const;
+];
+
+export function isUnpublishedOutcome(status: ScheduleStatus): boolean {
+  return UNPUBLISHED_OUTCOME_STATUSES.includes(status);
+}
 
 export interface ScheduledPost {
   id: string;
@@ -94,6 +114,16 @@ export interface ScheduledPost {
   external_post_url: string | null;
   last_error_code: string | null;
   last_error_message: string | null;
+
+  /**
+   * Why a post stopped short of publication.
+   *
+   * Added in Stage 9, and deliberately **not** `last_error_message`. A video
+   * sitting in TikTok's drafts is not an error: the upload worked, and what
+   * remains is something the owner does in the platform's own app. Merging the
+   * two would make every successful draft upload read as a failure.
+   */
+  outcome_detail: string | null;
 
   /**
    * The platform's own processing state after a successful upload.
