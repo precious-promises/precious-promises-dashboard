@@ -1,5 +1,6 @@
 import { HardDrive, Images } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
@@ -36,7 +37,9 @@ function ProviderRow({ status }: { status: StorageProviderStatus }) {
           <span className="block text-xs text-ink-muted">{status.detail}</span>
         </span>
       </span>
-      <StatusBadge tone="inactive">Not connected</StatusBadge>
+      <StatusBadge tone={status.implemented ? "configured" : "inactive"}>
+        {status.implemented ? "Adapter built" : "No adapter"}
+      </StatusBadge>
     </li>
   );
 }
@@ -107,7 +110,7 @@ export default async function MediaAssetsPage() {
 
         <SectionCard
           title="Storage providers"
-          description="Where media files are held. None is connected."
+          description="Where media files are held, and which of them this application can actually read."
         >
           <ul className="flex flex-col gap-2.5">
             {STORAGE_PROVIDER_STATUS.map((status) => (
@@ -115,10 +118,23 @@ export default async function MediaAssetsPage() {
             ))}
           </ul>
           <p className="mt-4 text-xs leading-5 text-ink-muted">
-            Google Drive remains the planned primary library for large media. No
-            OAuth flow exists, no credential is stored, and nothing in this
-            application has contacted Drive. Large binaries are never stored in
-            Postgres.
+            Google Drive is the primary library for large media, and Stage 8
+            implemented reading from it — confined to the approved Precious
+            Promises Content folder. Connect it under{" "}
+            <Link
+              href="/dashboard/accounts"
+              className="underline decoration-edge-strong underline-offset-2 hover:text-ink-secondary"
+            >
+              Connected Accounts
+            </Link>
+            , then import files in the{" "}
+            <Link
+              href="/dashboard/drive"
+              className="underline decoration-edge-strong underline-offset-2 hover:text-ink-secondary"
+            >
+              Drive Browser
+            </Link>
+            . Large binaries are never stored in Postgres.
           </p>
         </SectionCard>
       </div>

@@ -6,7 +6,8 @@
 > `PlatformVariant`, `VideoProject`, `VideoScene`, `ProductionAsset` and
 > `RenderJob`, `ScheduledPost`, `RecurringScheduleRule`, `AuditLog`,
 > `PublishAttempt`, `SocialAccount`, `SocialAccountCredentials`, `OAuthState`,
-> `YouTubeVideoMetadata` and `YouTubeUploadSession` exist as real tables
+> `YouTubeVideoMetadata`, `YouTubeUploadSession`, `InstagramMediaMetadata` and
+> `InstagramPublishContainer` exist as real tables
 > with Row Level Security enforced — see
 > [stage-2-content-library.md](./stage-2-content-library.md) for their columns
 > and policies. Every other model below is still a design sketch: no table, no

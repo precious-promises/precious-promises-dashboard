@@ -10,6 +10,7 @@ import { VariantForm } from "@/components/variants/variant-form";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { InstagramMetadataForm } from "@/components/instagram/metadata-form";
 import { YouTubeMetadataForm } from "@/components/youtube/metadata-form";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { EMPTY_FILTERS } from "@/lib/content/filters";
@@ -17,6 +18,7 @@ import { getContentItem, listContentItems } from "@/lib/content/repository";
 import { listMediaAssets } from "@/lib/media/repository";
 import { listVariantsForItem } from "@/lib/variants/repository";
 import { loadChannelPlaylists } from "@/lib/youtube/channel";
+import { loadInstagramMetadata } from "@/lib/instagram/repository";
 import { loadYouTubeMetadata } from "@/lib/youtube/repository";
 import {
   PLATFORM_LABELS,
@@ -77,12 +79,16 @@ export default async function CaptionStudioPage(
     platform === "youtube" && current
       ? await loadYouTubeMetadata(current.id)
       : null;
-  const imageAssets =
-    platform === "youtube" && current
-      ? (await listMediaAssets()).filter(
-          (asset) => asset.media_type === "image",
-        )
-      : [];
+  const needsImageAssets =
+    (platform === "youtube" || platform === "instagram") && current !== null;
+  const imageAssets = needsImageAssets
+    ? (await listMediaAssets()).filter((asset) => asset.media_type === "image")
+    : [];
+
+  const instagramMetadata =
+    platform === "instagram" && current
+      ? await loadInstagramMetadata(current.id)
+      : null;
 
   // Playlists come from the connected channel, never from a text field. When
   // nothing is connected this returns an empty list and the reason why.
@@ -198,6 +204,20 @@ export default async function CaptionStudioPage(
                 variant={current}
               />
             </SectionCard>
+
+            {platform === "instagram" && current ? (
+              <SectionCard
+                title="Instagram publishing settings"
+                description="What Meta itself needs, separate from the wording. Changing any of it withdraws approval."
+              >
+                <InstagramMetadataForm
+                  platformVariantId={current.id}
+                  contentItemId={item.id}
+                  metadata={instagramMetadata}
+                  imageAssets={imageAssets}
+                />
+              </SectionCard>
+            ) : null}
 
             {platform === "youtube" && current ? (
               <SectionCard

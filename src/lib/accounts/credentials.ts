@@ -1,7 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getSecretStore } from "@/lib/crypto/secrets";
-import type { VariantPlatform } from "@/lib/variants/types";
 import {
   OAuthError,
   refreshAccessToken,
@@ -9,7 +8,11 @@ import {
 } from "@/lib/youtube/oauth";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
 
-import { needsRefresh, type SocialAccount } from "./types";
+import {
+  needsRefresh,
+  type ConnectionPlatform,
+  type SocialAccount,
+} from "./types";
 
 /**
  * Stored OAuth credentials.
@@ -236,7 +239,7 @@ export async function markNeedsReconnect(
 
 export interface ConnectionInput {
   ownerId: string;
-  platform: VariantPlatform;
+  platform: ConnectionPlatform;
   providerAccountId: string;
   displayName: string | null;
   handle: string | null;
@@ -406,4 +409,138 @@ export async function clearConnection(
     })
     .eq("id", accountId)
     .eq("owner_id", ownerId);
+}
+
+/**
+ * Store a connection whose platform issues no refresh token.
+ *
+ * Meta's model has no refresh token: a long-lived access token is the
+ * credential and refreshes itself before it expires. `saveConnection` refuses
+ * a missing refresh token — correctly, for Google, where its absence means the
+ * connection will die within the hour — so Instagram uses this path instead.
+ *
+ * The difference is deliberate and narrow. Everything else is identical: the
+ * same tables, the same AES-256-GCM envelope, the same account row, the same
+ * revocation path. What is **not** shared is the pretence that a refresh token
+ * exists.
+ */
+export async function saveLongLivedConnection(
+  client: SupabaseClient,
+  input: {
+    ownerId: string;
+    platform: ConnectionPlatform;
+    providerAccountId: string;
+    displayName: string | null;
+    handle: string | null;
+    accessToken: string;
+    expiresAt: Date;
+    grantedScopes: string[];
+  },
+  now: Date = new Date(),
+): Promise<{ ok: true; accountId: string } | { ok: false; reason: string }> {
+  const store = getSecretStore();
+  if (store === null) {
+    return {
+      ok: false,
+      reason:
+        "No token encryption key is configured, so the credential cannot be stored.",
+    };
+  }
+
+  const { data: accountRow, error: accountError } = await client
+    .from("social_accounts")
+    .upsert(
+      {
+        owner_id: input.ownerId,
+        platform: input.platform,
+        provider_account_id: input.providerAccountId,
+        display_name: input.displayName,
+        handle: input.handle,
+        channel_id: null,
+        channel_title: null,
+        status: "connected",
+        granted_scopes: input.grantedScopes,
+        connected_at: now.toISOString(),
+        disconnected_at: null,
+        token_expires_at: input.expiresAt.toISOString(),
+      },
+      { onConflict: "owner_id,platform,provider_account_id" },
+    )
+    .select("id")
+    .single();
+
+  if (accountError || !accountRow) {
+    return { ok: false, reason: "The connection could not be saved." };
+  }
+
+  const accountId = (accountRow as { id: string }).id;
+
+  const { error: credentialError } = await client
+    .from("social_account_credentials")
+    .upsert(
+      {
+        owner_id: input.ownerId,
+        social_account_id: accountId,
+        encrypted_access_token: store.seal(input.accessToken),
+        // Null on purpose. There is no refresh token to store, and writing a
+        // copy of the access token here would invent a second credential.
+        encrypted_refresh_token: null,
+        access_token_expires_at: input.expiresAt.toISOString(),
+        granted_scopes: input.grantedScopes,
+      },
+      { onConflict: "social_account_id" },
+    );
+
+  if (credentialError) {
+    await client
+      .from("social_accounts")
+      .update({ status: "disconnected", disconnected_at: now.toISOString() })
+      .eq("id", accountId)
+      .eq("owner_id", input.ownerId);
+
+    return { ok: false, reason: "The credential could not be stored." };
+  }
+
+  return { ok: true, accountId };
+}
+
+/**
+ * Read a stored access token, without refreshing it.
+ *
+ * For platforms whose refresh is not Google's grant exchange. The caller owns
+ * the decision about whether the token is still usable and how to renew it.
+ */
+export async function readStoredAccessToken(
+  client: SupabaseClient,
+  account: SocialAccount,
+): Promise<{ accessToken: string; expiresAt: string | null } | null> {
+  const store = getSecretStore();
+  if (store === null) {
+    return null;
+  }
+
+  const { data } = await client
+    .from("social_account_credentials")
+    .select("encrypted_access_token, access_token_expires_at")
+    .eq("social_account_id", account.id)
+    .eq("owner_id", account.owner_id)
+    .maybeSingle();
+
+  const row = data as {
+    encrypted_access_token: string | null;
+    access_token_expires_at: string | null;
+  } | null;
+
+  if (!row?.encrypted_access_token) {
+    return null;
+  }
+
+  try {
+    return {
+      accessToken: store.open(row.encrypted_access_token),
+      expiresAt: row.access_token_expires_at,
+    };
+  } catch {
+    return null;
+  }
 }

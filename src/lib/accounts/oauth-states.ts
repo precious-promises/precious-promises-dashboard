@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { VariantPlatform } from "@/lib/variants/types";
+import type { ConnectionPlatform } from "./types";
 import { isStateUsable, newStateToken, stateExpiry } from "@/lib/youtube/oauth";
 
 /**
@@ -21,7 +21,7 @@ import { isStateUsable, newStateToken, stateExpiry } from "@/lib/youtube/oauth";
 export interface OAuthStateRow {
   id: string;
   owner_id: string;
-  platform: VariantPlatform;
+  platform: ConnectionPlatform;
   state: string;
   expires_at: string;
   consumed_at: string | null;
@@ -31,7 +31,7 @@ export interface OAuthStateRow {
 export async function createOAuthState(
   client: SupabaseClient,
   ownerId: string,
-  platform: VariantPlatform,
+  platform: ConnectionPlatform,
   now: Date = new Date(),
 ): Promise<string | null> {
   const state = newStateToken();
@@ -47,7 +47,7 @@ export async function createOAuthState(
 }
 
 export type StateConsumption =
-  | { ok: true; ownerId: string; platform: VariantPlatform }
+  | { ok: true; ownerId: string; platform: ConnectionPlatform }
   | { ok: false; reason: string };
 
 /**

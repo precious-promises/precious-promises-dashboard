@@ -87,6 +87,30 @@ the standard any future platform must meet.
   `error_description` can quote request parameters, and a callback URL ends up
   in browser history and referrer headers.
 
+## Media retrieval — _implemented in Stage 8_
+
+- **Google Drive is read-only.** The scope requested is `drive.readonly`, and
+  no code path writes, deletes or changes sharing on a file.
+- **No media is ever made public.** There is no function that creates a Drive
+  permission or an anyone-with-link share, and a source-wide test fails if one
+  appears. Exposing media publicly to satisfy a platform's fetch model was
+  considered and refused — see
+  [stage-8-media-instagram.md](./stage-8-media-instagram.md).
+- **The folder boundary is enforced in application logic, not by Google.**
+  Google offers no folder-scoped read scope, so `drive.readonly` grants more
+  than this application uses. Every listing and every read proves the target
+  descends from `GOOGLE_DRIVE_ROOT_FOLDER_ID` first, walking parents
+  breadth-first and **failing closed** on anything it cannot prove. A
+  compromised server could read beyond the root; that limitation is stated
+  rather than hidden.
+- **Containment is re-proved at publish time**, not trusted from import — a
+  file can be moved in Drive after it was imported.
+- **No arbitrary URL fetching.** The `external` storage provider is refused
+  rather than followed. Fetching whatever a record contained would make this
+  application an SSRF primitive.
+- **Filenames are sanitised before reaching a header.** Drive names are
+  user-supplied and can contain newlines, which in an HTTP header is injection.
+
 ## Authentication — _implemented_
 
 - **Email and password only**, through Supabase Auth. There is no public
@@ -110,9 +134,10 @@ the standard any future platform must meet.
 
 ## Access control
 
-- **Three tables are unreachable from the browser by construction** —
-  _implemented in Stage 7_. `social_account_credentials`, `oauth_states` and
-  `youtube_upload_sessions` have RLS **enabled with no policies whatsoever**,
+- **Four tables are unreachable from the browser by construction** —
+  _Stages 7 and 8_. `social_account_credentials`, `oauth_states`,
+  `youtube_upload_sessions` and `instagram_publish_containers` have RLS
+  **enabled with no policies whatsoever**,
   plus `revoke all … from authenticated`. With RLS on and no policy, every
   operation is refused for every row. This is the strongest available statement
   of "the browser cannot have this", and the Supabase advisor's

@@ -83,13 +83,21 @@ export function isStateUsable(
 export function buildAuthorizationUrl(
   config: GoogleOAuthConfig,
   state: string,
+  /**
+   * The scopes to request.
+   *
+   * A parameter rather than a constant since Stage 8, because Drive and
+   * YouTube are separate connections with separate grants. Asking for both at
+   * once would mean connecting a channel also handed over the whole Drive.
+   */
+  scopes: readonly string[] = YOUTUBE_SCOPES,
 ): string {
   const url = new URL(GOOGLE_AUTH_ENDPOINT);
 
   url.searchParams.set("client_id", config.clientId);
   url.searchParams.set("redirect_uri", config.redirectUri);
   url.searchParams.set("response_type", "code");
-  url.searchParams.set("scope", YOUTUBE_SCOPES.join(" "));
+  url.searchParams.set("scope", scopes.join(" "));
   url.searchParams.set("state", state);
   // Without both of these there is no refresh token, and the connection dies
   // the first time an access token expires.

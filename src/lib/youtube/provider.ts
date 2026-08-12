@@ -54,21 +54,18 @@ import { watchUrl, type YouTubeVideoMetadata } from "./types";
  * branch that reports success without a video id from YouTube. If the upload
  * happens, the id comes from YouTube; if it does not, this reports why.
  *
- * ## Why nothing publishes yet, and why that is not a stub
+ * ## What Stage 8 changed
  *
- * The upload path stops at `resolveMediaSource`, which returns
- * `media_source_unavailable` for every asset this system currently holds.
- * That is the truth about the system, not a placeholder: Stage 2 stores media
- * as metadata describing a file held elsewhere, and no storage integration
- * exists to fetch the bytes. A provider cannot upload a reference.
+ * Through Stage 7 the upload path stopped at `resolveMediaSource`, which
+ * refused every asset because nothing could fetch a file. Stage 8 implemented
+ * Google Drive retrieval, so a video stored in the approved Precious Promises
+ * Content folder now resolves to real, streaming bytes and this provider can
+ * genuinely upload it.
  *
- * The alternative — invent bytes, or report a success — is precisely what the
- * project rules forbid, and it would put a fabricated post id in the database
- * where nothing downstream could tell it from a real one.
- *
- * Everything after the media check is written, typed and tested against a
- * fake `fetch`. When a storage integration lands, this provider uploads; no
- * part of it is waiting to be filled in.
+ * That removed a blocker; it removed no safety. A file outside the approved
+ * folder, in the bin, of an unsupported type, or in a provider with no adapter
+ * is still refused — and inventing bytes remains the one thing this path will
+ * never do.
  *
  * ## Order of operations
  *
@@ -176,7 +173,7 @@ export class YouTubeProvider implements PublishingProvider {
     );
 
     const media = await this.loadPrimaryVideoAsset(client, request);
-    const source = resolveMediaSource(media);
+    const source = await resolveMediaSource(media);
     if (!source.available) {
       problems.push({
         code: source.error.code,
@@ -316,7 +313,7 @@ export class YouTubeProvider implements PublishingProvider {
     //    1,600 of 10,000 daily quota units, and there is nothing to spend it
     //    on if there are no bytes.
     const asset = await this.loadPrimaryVideoAsset(client, request);
-    const media = resolveMediaSource(asset);
+    const media = await resolveMediaSource(asset);
     if (!media.available) {
       return { outcome: "failed", error: media.error };
     }
@@ -571,7 +568,7 @@ export class YouTubeProvider implements PublishingProvider {
 
     // The same wall the video hits: a thumbnail is a metadata record too, and
     // there is no integration that fetches its bytes.
-    const source = resolveMediaSource(asset, "image");
+    const source = await resolveMediaSource(asset, "image");
     if (!source.available) {
       return;
     }

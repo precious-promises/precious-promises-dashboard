@@ -17,17 +17,17 @@ scripts are written with full revision history, and per-platform captions are
 drafted — all under Row Level Security.
 
 Approval, scheduling and the publishing infrastructure are real as of Stages 5
-and 6. Stage 7 added a genuine Google OAuth 2.0 connection and a YouTube Data
-API v3 publishing provider.
+and 6. Stage 7 added Google OAuth and a YouTube provider. Stage 8 added Google
+Drive media retrieval — which unblocked YouTube uploads — and an Instagram
+Reels provider.
 
-Still absent: AI generation, server rendering, media retrieval, analytics, and
-the Instagram and TikTok integrations.
+Still absent: AI generation, server rendering, analytics, and TikTok.
 
-**Nothing has been published to any platform.** The YouTube provider makes real
-requests, but the upload path refuses with `media_source_unavailable`: media is
-stored as metadata describing a file held elsewhere, and no integration
-retrieves the file. Nothing in this repository reaches Instagram, TikTok,
-Google Drive or ElevenLabs at all.
+**Nothing has been published to any platform yet.** Both providers make real
+requests and both can now obtain real media, but no account has been connected
+and no post has been created. Instagram publishes **Reels only**: images,
+carousels and Stories need media on a publicly reachable URL, and this
+application will not expose media to the open internet.
 
 ## Current stack
 
@@ -200,14 +200,18 @@ metadata — all under Row Level Security.
 Everything below is **planned, not built**:
 
 - **No file upload.** Media assets are metadata records; no bytes move.
-- **One functional integration.** Stage 7 built Google OAuth and a YouTube
-  provider; Instagram, TikTok, Google Drive, ElevenLabs and the AI provider are
-  not implemented. The storage seam is declared, not implemented.
-- **No successful publish.** The publishing infrastructure — queue, atomic
-  claiming, idempotency, attempt history and the execution-time safety gate —
-  is built, and the YouTube adapter is real. **It stops before uploading**,
-  because `resolveMediaSource` cannot obtain the video file and returns
-  `media_source_unavailable`. That refusal is recorded, not papered over.
+- **Three functional integrations.** Google Drive (read-only), YouTube and
+  Instagram. TikTok, ElevenLabs and the AI provider are not implemented.
+- **No successful publish.** The infrastructure is built, both adapters are
+  real, and media can now genuinely be retrieved from Drive — but no account
+  has been connected, so nothing has been posted.
+- **Drive access is broader than the folder it uses.** Google offers no
+  folder-scoped read scope, so the boundary is enforced in application logic
+  and is stated as such rather than presented as a Google guarantee.
+- **Instagram publishes Reels only.** Images, carousels and Stories are
+  refused: Meta fetches those from a publicly reachable URL, and building an
+  endpoint to serve Dave\u2019s media to the open internet is not a trade worth
+  making.
 - **YouTube cannot upload publicly.** An API client that has not passed Google's
   compliance audit has its uploads forced to private, so only `private` and
   `unlisted` are offered. Scheduled release is not offered for the same reason.
@@ -218,7 +222,7 @@ Everything below is **planned, not built**:
   Nothing fabricates views, followers, revenue or engagement.
 - **No AI generation.** The Script Studio's "Generate with AI" control is a
   genuinely disabled button marking where it will go.
-- **7 of 19 navigation areas are unbuilt** and marked as such, with no `href`.
+- **6 of 19 navigation areas are unbuilt** and marked as such, with no `href`.
 - **No user registration, password reset or email flows.**
 
 ### Deferred verification
@@ -251,6 +255,7 @@ configuration is agreed. Their presence does not indicate a working integration.
 | [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md)             | Approval fingerprint, board, calendar           |
 | [stage-6-publishing-infrastructure.md](./docs/stage-6-publishing-infrastructure.md) | Queue, claiming, idempotency, safety gate       |
 | [stage-7-youtube.md](./docs/stage-7-youtube.md)                                     | Google OAuth, YouTube provider, encryption      |
+| [stage-8-media-instagram.md](./docs/stage-8-media-instagram.md)                     | Drive retrieval, root isolation, Instagram      |
 
 Each document marks implemented and planned work explicitly. They do not claim
 that future features already work.
@@ -291,6 +296,8 @@ src/
     publishing/           Lifecycle, claim, idempotency, safety gate, providers
     accounts/             Connected accounts, encrypted credentials, OAuth state
     crypto/               AES-256-GCM envelope for stored secrets
+    drive/                Google Drive retrieval and folder-root isolation
+    instagram/            Meta OAuth, container lifecycle, Reels provider
     youtube/              Google OAuth, Data API client, publishing provider
     schedule/             Timezones, recurrence, calendar mapping, safety
     audit/                Append-only workflow log

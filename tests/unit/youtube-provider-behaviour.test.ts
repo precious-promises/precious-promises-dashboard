@@ -64,6 +64,11 @@ function makeClient(tables: Record<string, unknown>) {
   return { from: (table: string) => builder(table) };
 }
 
+// The provider reads server config once it gets past the media check. Setting
+// this lets the "media no longer blocks" test reach that far without an
+// environment error masking the result.
+process.env.APP_URL ||= "http://localhost:3000";
+
 let clientTables: Record<string, unknown> = {};
 let configured = true;
 
@@ -73,6 +78,20 @@ vi.mock("@/lib/supabase/worker", () => ({
     reason: configured ? null : "not configured",
   }),
   isWorkerConfigured: () => configured,
+}));
+
+let driveResult: unknown = {
+  ok: false,
+  refusal: "not_connected",
+};
+
+vi.mock("@/lib/drive/storage", () => ({
+  driveStorage: {
+    open: async () => driveResult,
+    describe: async () => driveResult,
+    isConnected: async () => driveResult !== null,
+  },
+  GoogleDriveStorageProvider: class {},
 }));
 
 vi.mock("@/lib/youtube/server-config", () => ({
@@ -217,36 +236,79 @@ function fullyReady(): Record<string, unknown> {
   };
 }
 
+/** A Drive file that genuinely resolves to streamable bytes. */
+const RESOLVED_DRIVE_MEDIA = {
+  ok: true,
+  value: {
+    contentType: "video/mp4",
+    contentLength: 12_000_000,
+    filename: "promise-short.mp4",
+    open: async () => new Response("video-bytes"),
+  },
+};
+
 beforeEach(() => {
   configured = true;
   clientTables = fullyReady();
+  driveResult = { ok: false, refusal: "not_connected" };
 });
 
-describe("the refusal that defines Stage 7", () => {
-  it("refuses a fully connected, fully valid publish because the file cannot be fetched", async () => {
+describe("media resolution decides whether an upload happens", () => {
+  it("refuses when Drive is not connected", async () => {
     const result = await youtubeProvider.publish(REQUEST);
 
     expect(result.outcome).toBe("failed");
     if (result.outcome === "failed") {
-      expect(result.error.code).toBe("media_source_unavailable");
+      expect(result.error.code).toBe("provider_not_connected");
       expect(result.error.retryable).toBe(false);
     }
   });
 
-  it("names the missing integration rather than giving a blanket refusal", async () => {
+  it("refuses a file outside the approved Drive folder", async () => {
+    // The boundary that matters most: a media asset can be edited to point at
+    // any Drive id, so containment is re-proved at publish time.
+    driveResult = { ok: false, refusal: "outside_root" };
+
     const result = await youtubeProvider.publish(REQUEST);
 
+    expect(result.outcome).toBe("failed");
     if (result.outcome === "failed") {
-      expect(result.error.message).toMatch(/Drive integration/i);
+      expect(result.error.message).toMatch(/approved/i);
     }
   });
 
-  it("reports the same problem through validateReadiness, before anything runs", async () => {
+  it("refuses a file that has been put in the Drive bin", async () => {
+    driveResult = { ok: false, refusal: "trashed" };
+
+    const result = await youtubeProvider.publish(REQUEST);
+
+    expect(result.outcome).toBe("failed");
+  });
+
+  it("reports the problem through validateReadiness too, before anything runs", async () => {
+    driveResult = { ok: false, refusal: "outside_root" };
+
     const problems = await youtubeProvider.validateReadiness(REQUEST);
 
-    expect(problems.map((problem) => problem.code)).toContain(
-      "media_source_unavailable",
-    );
+    expect(problems.length).toBeGreaterThan(0);
+  });
+
+  it("gets past the media check entirely once Drive resolves real bytes", async () => {
+    // Stage 8's whole point. With a genuine media source the provider stops
+    // refusing on media and moves on to credentials — which are absent in this
+    // test environment, so it fails there instead. That the failure moved is
+    // the assertion: media is no longer what blocks a YouTube upload.
+    driveResult = RESOLVED_DRIVE_MEDIA;
+
+    const result = await youtubeProvider.publish(REQUEST);
+
+    expect(result.outcome).toBe("failed");
+    if (result.outcome === "failed") {
+      expect(result.error.code).not.toBe("media_source_unavailable");
+      expect(result.error.code).not.toBe("missing_asset");
+      // It reached the credential step.
+      expect(result.error.code).toBe("provider_not_connected");
+    }
   });
 });
 

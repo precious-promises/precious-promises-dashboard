@@ -46,6 +46,9 @@ export const PUBLISH_QUEUE_PATH = "/dashboard/publish";
 /** Routes activated in Stage 7. */
 export const CONNECTED_ACCOUNTS_PATH = "/dashboard/accounts";
 
+/** Routes activated in Stage 8. */
+export const DRIVE_BROWSER_PATH = "/dashboard/drive";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -159,7 +162,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "google-drive-browser",
         label: "Google Drive Browser",
         icon: FolderOpen,
-        status: "coming-soon",
+        status: "available",
+        href: DRIVE_BROWSER_PATH,
       },
     ],
   },

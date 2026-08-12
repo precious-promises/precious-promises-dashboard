@@ -14,12 +14,32 @@ import {
  * the parent item come from the server, and a variant cannot carry a verse.
  */
 
+/**
+ * An optional text field, read from a `FormData`.
+ *
+ * Three inputs all mean "not provided", and all three must reach the schema as
+ * `undefined`:
+ *
+ * - `null` — what `FormData.get` returns for a field that was **not submitted
+ *   at all**. This was the bug: `null` fell straight through to `z.string()`,
+ *   which rejected it, so a form that legitimately omitted an optional field
+ *   failed validation with a confusing message about the wrong type.
+ * - `""` — submitted but left blank.
+ * - whitespace only — submitted, blank in every way that matters.
+ *
+ * Everything else is passed through untouched, so a real value is still
+ * trimmed and length-checked exactly as before.
+ */
 const optionalText = (max: number) =>
-  z.preprocess(
-    (value) =>
-      typeof value === "string" && value.trim() === "" ? undefined : value,
-    z.string().trim().max(max).optional(),
-  );
+  z.preprocess((value) => {
+    if (value === null || value === undefined) {
+      return undefined;
+    }
+    if (typeof value === "string" && value.trim() === "") {
+      return undefined;
+    }
+    return value;
+  }, z.string().trim().max(max).optional());
 
 /**
  * Hashtags arrive as one free-text field and are split here.

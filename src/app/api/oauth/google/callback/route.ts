@@ -4,7 +4,14 @@ import { saveConnection } from "@/lib/accounts/credentials";
 import { consumeOAuthState } from "@/lib/accounts/oauth-states";
 import { createWorkerClient } from "@/lib/supabase/worker";
 import { fetchMyChannel } from "@/lib/youtube/api";
-import { canUpload, exchangeCode } from "@/lib/youtube/oauth";
+import { getFile } from "@/lib/drive/api";
+import {
+  DRIVE_ROOT_NAME,
+  DRIVE_SCOPE,
+  FOLDER_MIME_TYPE,
+} from "@/lib/drive/config";
+import { resolveDriveConfig } from "@/lib/drive/server-config";
+import { canUpload, exchangeCode, type TokenSet } from "@/lib/youtube/oauth";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
 
 /**
@@ -72,7 +79,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return back(request, "no-worker-credential");
   }
 
-  // 1. State, consumed before anything else happens.
+  // 1. State, consumed before anything else happens. It also tells us which
+  //    connection this callback is for — YouTube and Drive share one OAuth
+  //    client and one redirect URI, but are separate grants.
   const consumed = await consumeOAuthState(client, state);
   if (!consumed.ok) {
     return back(request, "state-refused");
@@ -84,6 +93,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     tokens = await exchangeCode(config, code);
   } catch {
     return back(request, "exchange-failed");
+  }
+
+  if (consumed.platform === "google_drive") {
+    return completeDriveConnection(request, client, consumed.ownerId, tokens);
   }
 
   if (!canUpload(tokens.grantedScopes)) {
@@ -127,4 +140,63 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   }
 
   return back(request, "connected");
+}
+
+/**
+ * Finish a Drive connection.
+ *
+ * The equivalent of the channel lookup: a token proves somebody authorised
+ * something, and **reading the approved root folder proves what**. A Drive
+ * connection recorded without checking the root would present as working and
+ * then refuse every file, for a reason nobody could see.
+ */
+async function completeDriveConnection(
+  request: NextRequest,
+  client: ReturnType<typeof createWorkerClient>["client"],
+  ownerId: string,
+  tokens: TokenSet,
+): Promise<NextResponse> {
+  if (client === null) {
+    return back(request, "no-worker-credential");
+  }
+
+  const { rootFolderId } = resolveDriveConfig();
+  if (rootFolderId === null) {
+    return back(request, "drive-not-configured");
+  }
+
+  if (!tokens.grantedScopes.includes(DRIVE_SCOPE)) {
+    return back(request, "drive-scope-refused");
+  }
+
+  let root;
+  try {
+    root = await getFile({ accessToken: tokens.accessToken }, rootFolderId);
+  } catch {
+    return back(request, "drive-root-unreadable");
+  }
+
+  if (root === null || root.mimeType !== FOLDER_MIME_TYPE || root.trashed) {
+    return back(request, "drive-root-missing");
+  }
+
+  const saved = await saveConnection(client, {
+    ownerId,
+    platform: "google_drive",
+    providerAccountId: rootFolderId,
+    displayName: root.name || DRIVE_ROOT_NAME,
+    handle: null,
+    channelId: null,
+    channelTitle: null,
+    tokens,
+  });
+
+  if (!saved.ok) {
+    return back(
+      request,
+      tokens.refreshToken === null ? "no-refresh-token" : "save-failed",
+    );
+  }
+
+  return back(request, "drive-connected");
 }

@@ -21,10 +21,25 @@ import {
   UPLOADS_PER_DEFAULT_QUOTA,
   YOUTUBE_SCOPES,
 } from "@/lib/youtube/config";
+import { DRIVE_ROOT_NAME } from "@/lib/drive/config";
+import {
+  LONG_LIVED_TOKEN_DAYS,
+  MEDIA_DELIVERY,
+  STORIES_SUPPORTED,
+} from "@/lib/instagram/config";
+import { resolveInstagramConfig } from "@/lib/instagram/server-config";
+import { resolveDriveConfig } from "@/lib/drive/server-config";
 import { MEDIA_RETRIEVAL_DETAIL } from "@/lib/youtube/media-source";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
 
-import { connectYouTube, disconnectYouTube } from "./actions";
+import {
+  connectGoogleDrive,
+  connectInstagram,
+  connectYouTube,
+  disconnectGoogleDrive,
+  disconnectInstagram,
+  disconnectYouTube,
+} from "./actions";
 
 export const metadata: Metadata = {
   title: "Connected Accounts · Precious Promises",
@@ -65,6 +80,41 @@ const NOTICES: Record<string, string> = {
   "disconnected-not-revoked":
     "Disconnected locally, but Google did not confirm the revocation. Remove this application manually under your Google Account security settings.",
   "unknown-account": "That account could not be found.",
+
+  "ig-connected": "The Instagram account is connected.",
+  "ig-declined":
+    "Authorisation was declined at Instagram. Nothing was connected.",
+  "ig-refused": "Meta refused the authorisation. Nothing was connected.",
+  "ig-invalid-callback": "That authorisation link was incomplete. Start again.",
+  "ig-not-configured":
+    "Meta credentials are not configured on the server, so Instagram cannot be connected.",
+  "ig-exchange-failed":
+    "Meta would not exchange the authorisation. Start again.",
+  "ig-scope-refused":
+    "Content-publishing permission was not granted, so nothing could be posted. Connect again and leave every permission ticked.",
+  "ig-long-lived-failed":
+    "Meta issued a short-lived token but would not upgrade it to a long-lived one, so the connection would have died within the hour. Nothing was recorded.",
+  "ig-account-lookup-failed":
+    "The Instagram account could not be read back, so nothing was recorded.",
+  "ig-no-account":
+    "That authorisation returned no Instagram professional account. Instagram publishing needs a Business or Creator account.",
+  "ig-disconnected":
+    "Instagram disconnected and the stored credential deleted. Meta issues no revocation endpoint for this token type — remove this app under Instagram\u2019s connected-apps settings if you also want it withdrawn there.",
+
+  "drive-connected":
+    "Google Drive is connected, and the approved folder was read back successfully.",
+  "drive-not-configured":
+    "Google Drive is not configured on the server. GOOGLE_DRIVE_ROOT_FOLDER_ID must name the approved folder.",
+  "drive-scope-refused":
+    "Read permission for Drive was not granted, so the media library cannot be read. Connect again and leave the permission ticked.",
+  "drive-root-unreadable":
+    "The approved folder could not be read back from Drive, so nothing was recorded.",
+  "drive-root-missing":
+    "GOOGLE_DRIVE_ROOT_FOLDER_ID does not name a folder this account can see. Check the id and that the folder is not in the bin.",
+  "drive-disconnected":
+    "Google Drive disconnected, and the authorisation was revoked at Google. Imported assets were left alone.",
+  "drive-disconnected-not-revoked":
+    "Google Drive disconnected locally, but Google did not confirm the revocation. Remove this application manually under your Google Account security settings.",
 };
 
 /**
@@ -106,6 +156,18 @@ export default async function ConnectedAccountsPage(
   const { problems } = resolveYouTubeConfig();
   const workerReady = isWorkerConfigured();
   const canConnect = problems.length === 0 && workerReady;
+
+  const instagramAccounts = accounts.filter(
+    (account) => account.platform === "instagram",
+  );
+  const { problems: instagramProblems } = resolveInstagramConfig();
+  const canConnectInstagram = instagramProblems.length === 0 && workerReady;
+
+  const driveAccounts = accounts.filter(
+    (account) => account.platform === "google_drive",
+  );
+  const { problems: driveProblems } = resolveDriveConfig();
+  const canConnectDrive = driveProblems.length === 0 && workerReady;
 
   return (
     <DashboardShell
@@ -245,12 +307,179 @@ export default async function ConnectedAccountsPage(
         </SectionCard>
 
         <SectionCard
+          title="Instagram"
+          description="Instagram API with Instagram Login, for a professional (Business or Creator) account."
+          action={
+            <StatusBadge tone={canConnectInstagram ? "configured" : "inactive"}>
+              {canConnectInstagram ? "Ready to connect" : "Not configured"}
+            </StatusBadge>
+          }
+        >
+          {instagramProblems.length > 0 ? (
+            <div className="mb-4">
+              <p className="text-sm text-ink-secondary">
+                Connecting Instagram needs the following first:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted">
+                {instagramProblems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {instagramAccounts.length === 0 ? (
+            <EmptyState
+              icon={Link2}
+              title="No Instagram account connected."
+              description="Connecting sends you to Instagram to authorise this dashboard. It asks to identify the account and to publish content — nothing else."
+            />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {instagramAccounts.map((account) => (
+                <li key={account.id}>
+                  <AccountCard
+                    account={account}
+                    disconnectAction={disconnectInstagram}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form action={connectInstagram} className="mt-4">
+            <button
+              type="submit"
+              disabled={!canConnectInstagram}
+              className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {instagramAccounts.length === 0
+                ? "Connect Instagram"
+                : "Reconnect Instagram"}
+            </button>
+          </form>
+
+          <ul className="mt-4 flex flex-col gap-3 text-sm text-ink-secondary">
+            <li>
+              <span className="font-medium text-ink-primary">
+                Reels can be published
+              </span>
+              <p className="mt-0.5 text-ink-muted">
+                {MEDIA_DELIVERY.reels.detail}
+              </p>
+            </li>
+            <li>
+              <span className="font-medium text-ink-primary">
+                Images and carousels cannot
+              </span>
+              <p className="mt-0.5 text-ink-muted">
+                {MEDIA_DELIVERY.image.detail}
+              </p>
+            </li>
+            {STORIES_SUPPORTED ? null : (
+              <li>
+                <span className="font-medium text-ink-primary">
+                  Stories are not implemented
+                </span>
+                <p className="mt-0.5 text-ink-muted">
+                  They use the same URL-fetch delivery as images, so they carry
+                  the same refusal.
+                </p>
+              </li>
+            )}
+            <li>
+              <span className="font-medium text-ink-primary">
+                The connection expires
+              </span>
+              <p className="mt-0.5 text-ink-muted">
+                Meta issues no refresh token. A long-lived token lasts{" "}
+                {LONG_LIVED_TOKEN_DAYS} days and is refreshed when it is used —
+                so a connection left completely unused for{" "}
+                {LONG_LIVED_TOKEN_DAYS} days dies and has to be reconnected.
+              </p>
+            </li>
+            <li>
+              <span className="font-medium text-ink-primary">App Review</span>
+              <p className="mt-0.5 text-ink-muted">
+                Publishing needs the content-publishing permission, which Meta
+                grants only after App Review. Before that, the app can act only
+                for users who hold a role on it.
+              </p>
+            </li>
+          </ul>
+        </SectionCard>
+
+        <SectionCard
+          title="Google Drive"
+          description={`Read-only access to the approved ${DRIVE_ROOT_NAME} folder. This is where publishable media is read from.`}
+          action={
+            <StatusBadge tone={canConnectDrive ? "configured" : "inactive"}>
+              {canConnectDrive ? "Ready to connect" : "Not configured"}
+            </StatusBadge>
+          }
+        >
+          {driveProblems.length > 0 ? (
+            <div className="mb-4">
+              <p className="text-sm text-ink-secondary">
+                Connecting Drive needs the following first:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-ink-muted">
+                {driveProblems.map((problem) => (
+                  <li key={problem}>{problem}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+
+          {driveAccounts.length === 0 ? (
+            <EmptyState
+              icon={Link2}
+              title="Drive is not connected."
+              description="This is a separate authorisation from YouTube. Connecting a channel does not hand over the media library, and disconnecting one does not take the other with it."
+            />
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {driveAccounts.map((account) => (
+                <li key={account.id}>
+                  <AccountCard
+                    account={account}
+                    disconnectAction={disconnectGoogleDrive}
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form action={connectGoogleDrive} className="mt-4">
+            <button
+              type="submit"
+              disabled={!canConnectDrive}
+              className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {driveAccounts.length === 0
+                ? "Connect Google Drive"
+                : "Reconnect Google Drive"}
+            </button>
+          </form>
+
+          <p className="mt-3 text-xs leading-5 text-ink-muted">
+            Google offers no folder-scoped read scope, so this asks for
+            read-only access to your Drive and confines itself to the approved
+            folder in application logic. Every listing and every read proves
+            containment first. The connection cannot write, delete or change
+            sharing on anything.
+          </p>
+        </SectionCard>
+
+        <SectionCard
           title="Other platforms"
           description="Nothing is connected, and no adapter exists to connect it with."
         >
           <ul className="flex flex-col gap-2">
             {PROVIDER_STATUS.filter(
-              (status) => status.platform !== "youtube",
+              (status) =>
+                status.platform !== "youtube" &&
+                status.platform !== "instagram",
             ).map((status) => (
               <li
                 key={status.platform}

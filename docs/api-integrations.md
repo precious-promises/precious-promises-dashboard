@@ -1,6 +1,6 @@
 # API integrations
 
-> **Status: one integration implemented — YouTube.**
+> **Status: three integrations implemented — Google Drive, YouTube, Instagram.**
 >
 > Stage 7 built a genuine Google OAuth 2.0 connection and a YouTube Data API v3
 > publishing provider. Every request it makes is a real request to Google.
@@ -10,9 +10,13 @@
 > storage integration retrieves the file. See
 > [stage-7-youtube.md](./stage-7-youtube.md).
 >
-> Instagram, TikTok, Google Drive, ElevenLabs and the AI caption provider remain
-> unimplemented. No adapter, client, credential or API call exists for any of
-> them.
+> Stage 8 added Google Drive media retrieval (read-only, confined to an
+> approved folder) and an Instagram Reels provider. Instagram images, carousels
+> and Stories are **blocked by design** — Meta fetches those from a publicly
+> reachable URL, and this application will not expose media to the open
+> internet.
+>
+> TikTok, ElevenLabs and the AI caption provider remain unimplemented.
 
 ## Verify the documentation before you build
 
@@ -100,12 +104,31 @@ Verified at implementation time, with provenance recorded in
 What is _not_ asserted: the Shorts duration threshold, which is a product rule
 that has changed more than once. It is shown as guidance, not enforced.
 
-### Instagram _(planned)_
+### Instagram — _implemented in Stage 8 (Reels only)_
 
-Publishing and metrics for Instagram, via Meta's platform APIs.
+Instagram API with Instagram Login. `src/lib/instagram/` holds the integration.
 
-Account type requirements, the publishing flow, media constraints and app-review
-requirements: **to be verified at implementation time.**
+- **Reels are published** by creating a resumable container and uploading the
+  bytes directly to `rupload.facebook.com`. No public URL is involved.
+- **Images, carousels and Stories are refused.** They are documented only with
+  publicly accessible URLs, and there is no binary upload path for them.
+- **Tokens:** no refresh token exists. A short-lived token is exchanged for a
+  60-day long-lived token that refreshes itself. An unused connection dies.
+- **App Review** is required for `instagram_business_content_publish`.
+- A container is not a post. Only the media id from `media_publish` can produce
+  `posted`.
+
+### Google Drive — _implemented in Stage 8_
+
+Read-only retrieval from an approved folder, via Drive API v3.
+
+- **Scope:** `drive.readonly` — the narrowest scope that can both list a folder
+  and download its contents. `drive.metadata.readonly` cannot download;
+  `drive.file` cannot see pre-existing files.
+- **The folder boundary is application-enforced**, because Google has no
+  folder-scoped read scope. Every read proves containment first, and fails
+  closed.
+- Nothing writes, deletes, or changes sharing.
 
 ### TikTok _(planned)_
 
@@ -113,15 +136,6 @@ Publishing and metrics for TikTok.
 
 Developer program requirements, the publishing flow, media constraints and
 approval status: **to be verified at implementation time.**
-
-### Google Drive _(planned)_
-
-Large media storage — the bytes for source video, rendered exports and audio.
-The database stores references; Drive stores the files. See
-[architecture.md](./architecture.md).
-
-Scopes, folder permission model and upload mechanics: **to be verified at
-implementation time.**
 
 ### ElevenLabs _(planned)_
 

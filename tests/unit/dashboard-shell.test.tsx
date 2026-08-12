@@ -48,6 +48,7 @@ describe("SidebarNav", () => {
       "/dashboard/captions",
       "/dashboard/video",
       "/dashboard/media",
+      "/dashboard/drive",
       "/dashboard/calendar",
       "/dashboard/approvals",
       "/dashboard/publish",

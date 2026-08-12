@@ -1,39 +1,38 @@
+import { driveStorage } from "@/lib/drive/storage";
+import { refusalMessage, type DriveRefusal } from "@/lib/drive/types";
 import type { MediaAsset, MediaType } from "@/lib/media/types";
-import { safeError, type SafeError } from "@/lib/publishing/errors";
+import {
+  safeError,
+  type ErrorCategory,
+  type SafeError,
+} from "@/lib/publishing/errors";
 
 /**
  * Where the bytes of a video actually come from.
  *
- * **They do not, yet.** This is the honest centre of Stage 7, so it is worth
- * being precise about why.
+ * **Stage 8 changed the answer.** Through Stage 7 this module refused
+ * everything: media was stored as metadata describing a file held elsewhere,
+ * and nothing could fetch it. Google Drive retrieval now exists, so an asset
+ * whose file lives in the approved Precious Promises Content folder resolves
+ * to real, streamable bytes.
  *
- * Stage 2 stores media as *metadata*: a `media_assets` row records a name, a
- * type, a size and an external id or URL for a file that lives somewhere else
- * — usually Google Drive. No Drive integration exists, no storage adapter is
- * implemented, and Stage 4's render pipeline produces a render *job*, not a
- * rendered file. So for every asset this system currently holds, there is a
- * record of a video and no way to obtain the video.
- *
- * A provider cannot upload a reference. Faced with that, there are two
- * options: report the truth, or invent a success. This module reports the
- * truth — `media_source_unavailable`, a non-retryable refusal — and the
- * publish stops there.
- *
- * **This is not a stub.** A stub would return plausible bytes and let an
- * upload appear to work. The refusal below is the actual state of the system,
- * and it will stop being returned when a storage integration genuinely lands,
- * not before.
+ * What has **not** changed is the shape of the refusals. Every other storage
+ * provider still returns `media_source_unavailable`, because no adapter exists
+ * for them — and inventing bytes remains the one thing this module will never
+ * do. The difference between "no integration exists" and "this particular file
+ * cannot be used" is now visible in the error code, which it was not before.
  */
 
 /**
  * A resolved, uploadable file.
  *
- * `open()` is a function rather than a buffer so a large video need not be
- * held in memory in one piece when a real source arrives.
+ * `open()` returns a streaming `Response` body rather than a buffer, so a
+ * large video is never held in memory in one piece.
  */
 export interface MediaSource {
   contentType: string;
   contentLength: number;
+  filename: string;
   open(): Promise<BodyInit>;
 }
 
@@ -42,16 +41,34 @@ export type MediaSourceResult =
   | { available: false; error: SafeError };
 
 /**
+ * Which refusals mean "this file is wrong" versus "nothing can fetch it".
+ *
+ * The distinction decides what the owner is being asked to do: swap the file,
+ * or wait for an integration that does not exist.
+ */
+const REFUSAL_CATEGORIES: Record<DriveRefusal, ErrorCategory> = {
+  not_connected: "provider_not_connected",
+  not_configured: "provider_not_connected",
+  outside_root: "missing_asset",
+  not_found: "missing_asset",
+  trashed: "missing_asset",
+  is_folder: "missing_asset",
+  unsupported_type: "invalid_content",
+  no_size: "missing_asset",
+  unreadable: "media_source_unavailable",
+};
+
+/**
  * Resolve the bytes for an asset, or explain why they cannot be resolved.
  *
- * Every branch returns `available: false` today. They are written out
- * separately anyway, because each one is a different missing piece of work and
- * a single blanket refusal would hide which one is blocking a given upload.
+ * Ownership is a required argument, not an assumption. The storage adapter
+ * runs under the worker credential, which bypasses RLS, so the owner is proved
+ * explicitly at every step.
  */
-export function resolveMediaSource(
+export async function resolveMediaSource(
   asset: MediaAsset | null,
   expected: MediaType = "video",
-): MediaSourceResult {
+): Promise<MediaSourceResult> {
   if (asset === null) {
     return {
       available: false,
@@ -74,20 +91,14 @@ export function resolveMediaSource(
 
   switch (asset.storage_provider) {
     case "google_drive":
-      return {
-        available: false,
-        error: safeError(
-          "media_source_unavailable",
-          "This file is recorded as living in Google Drive, but no Drive integration exists to fetch it. The video cannot be uploaded until one does.",
-        ),
-      };
+      return resolveFromDrive(asset);
 
     case "supabase_storage":
       return {
         available: false,
         error: safeError(
           "media_source_unavailable",
-          "This file is recorded as living in Supabase Storage, but no storage adapter is implemented to read it.",
+          "This file is recorded as living in Supabase Storage, and no adapter is implemented to read it.",
         ),
       };
 
@@ -96,7 +107,7 @@ export function resolveMediaSource(
         available: false,
         error: safeError(
           "media_source_unavailable",
-          "This file is a reference to somewhere outside this system. Nothing here fetches external files, so there are no bytes to upload.",
+          "This file is a reference to somewhere outside this system. Nothing here fetches arbitrary external URLs, and adding that would make this application a URL fetcher pointed at whatever a record contained.",
         ),
       };
 
@@ -111,13 +122,59 @@ export function resolveMediaSource(
   }
 }
 
+async function resolveFromDrive(asset: MediaAsset): Promise<MediaSourceResult> {
+  if (!asset.external_file_id) {
+    return {
+      available: false,
+      error: safeError(
+        "missing_asset",
+        "This asset is recorded as a Drive file but has no Drive id.",
+      ),
+    };
+  }
+
+  const resolved = await driveStorage.open(
+    asset.external_file_id,
+    asset.owner_id,
+  );
+
+  if (!resolved.ok) {
+    return {
+      available: false,
+      error: safeError(
+        REFUSAL_CATEGORIES[resolved.refusal],
+        refusalMessage(resolved.refusal, resolved.detail),
+      ),
+    };
+  }
+
+  const media = resolved.value;
+
+  return {
+    available: true,
+    source: {
+      contentType: media.contentType,
+      contentLength: media.contentLength,
+      filename: media.filename,
+      open: async () => {
+        const response = await media.open();
+        if (response.body === null) {
+          throw new Error("Google Drive returned no body for that file.");
+        }
+        return response.body as unknown as BodyInit;
+      },
+    },
+  };
+}
+
 /**
  * Whether any storage integration exists at all.
  *
- * A single place for the interface to ask, so the Connected Accounts page and
- * the Publish Queue say the same thing about the same limitation.
+ * True since Stage 8. It says an adapter is implemented — **not** that a
+ * connection exists or that any particular file can be read, which are
+ * runtime questions with their own answers.
  */
-export const MEDIA_RETRIEVAL_AVAILABLE = false;
+export const MEDIA_RETRIEVAL_AVAILABLE = true;
 
 export const MEDIA_RETRIEVAL_DETAIL =
-  "Media is stored as metadata only: this system records where a file lives, but no integration retrieves it. Until one exists, a YouTube upload will refuse with media_source_unavailable rather than send an empty or invented file.";
+  "Media is retrieved from the approved Precious Promises Content folder in Google Drive. A file outside that folder, or in an unconnected provider, is refused rather than fetched.";
