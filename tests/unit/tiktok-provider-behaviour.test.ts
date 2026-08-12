@@ -185,6 +185,30 @@ vi.mock("@/lib/tiktok/api", () => ({
   }),
 }));
 
+/**
+ * The audit log.
+ *
+ * Stage 6 declared publish actions that nothing ever wrote, because the worker
+ * runs outside a request and the session-backed writer silently no-ops there.
+ * These assertions exist so the TikTok vocabulary cannot become decorative in
+ * the same way.
+ */
+const recordAuditAsWorker = vi.fn(async () => undefined);
+
+vi.mock("@/lib/audit/repository", () => ({
+  recordAuditAsWorker: (...args: unknown[]) =>
+    recordAuditAsWorker(...(args as [])),
+  recordAudit: async () => undefined,
+  listAuditForEntity: async () => [],
+}));
+
+/** Every audit action written during the last publish, in order. */
+function auditActions(): string[] {
+  return recordAuditAsWorker.mock.calls.map(
+    (call) => (call as unknown as [unknown, string, string])[2],
+  );
+}
+
 /** The session row the provider writes before any byte is sent. */
 let recordedSessionId: string | null = "session-1";
 const recordSession = vi.fn(async () => recordedSessionId);
@@ -720,5 +744,83 @@ describe("readiness", () => {
       expect(result.error.code).toBe("provider_permission_revoked");
       expect(result.error.message).toMatch(/reconnect/i);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Audit
+// ---------------------------------------------------------------------------
+
+describe("the audit log records what actually happened", () => {
+  it("records a manual preparation as preparation, not a post", () => {
+    storedMetadata = settings({ delivery_mode: "manual", privacy_level: null });
+
+    return tiktokProvider.publish(REQUEST).then(() => {
+      expect(auditActions()).toEqual(["tiktok_manual_post_prepared"]);
+    });
+  });
+
+  it("records a draft upload as a draft, never as a completed post", async () => {
+    storedMetadata = settings({ delivery_mode: "inbox", privacy_level: null });
+    api.status = {
+      status: "PUBLISH_COMPLETE",
+      postIds: [],
+      failReason: null,
+      uploadedBytes: 1_000_000,
+    };
+
+    await tiktokProvider.publish(REQUEST);
+
+    expect(auditActions()).toContain("tiktok_uploaded_to_draft");
+    expect(auditActions()).not.toContain("tiktok_post_completed");
+  });
+
+  it("records a genuine post, with the id that proves it", async () => {
+    await tiktokProvider.publish(REQUEST);
+
+    expect(auditActions()).toEqual([
+      "tiktok_upload_started",
+      "tiktok_upload_completed",
+      "tiktok_post_completed",
+    ]);
+
+    const completed = recordAuditAsWorker.mock.calls.find(
+      (call) =>
+        (call as unknown as [unknown, string, string])[2] ===
+        "tiktok_post_completed",
+    ) as unknown as [
+      unknown,
+      string,
+      string,
+      string,
+      string,
+      Record<string, unknown>,
+    ];
+
+    expect(completed[5]).toEqual({ external_post_id: "7300000000000000000" });
+  });
+
+  it("records a rejection with TikTok's reason", async () => {
+    api.status = {
+      status: "FAILED",
+      postIds: [],
+      failReason: "duration_check_failed",
+      uploadedBytes: 1_000_000,
+    };
+
+    await tiktokProvider.publish(REQUEST);
+
+    expect(auditActions()).toContain("tiktok_post_failed");
+    expect(auditActions()).not.toContain("tiktok_post_completed");
+  });
+
+  it("never writes a token, an upload URL or a publish id", async () => {
+    await tiktokProvider.publish(REQUEST);
+
+    const written = JSON.stringify(recordAuditAsWorker.mock.calls);
+
+    expect(written).not.toContain("at-1");
+    expect(written).not.toContain("upload.tiktok.example");
+    expect(written).not.toContain("p-direct");
   });
 });

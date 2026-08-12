@@ -96,10 +96,15 @@ function entry(overrides: Partial<QueueEntry> = {}): QueueEntry {
 
 describe("queue grouping", () => {
   it("shows the sections the lifecycle can produce", () => {
+    // The two incomplete outcomes sit before `posted` from Stage 9. A status
+    // missing from this list is a row nobody can see, and both of these were
+    // invisible until TikTok gave them somewhere to appear.
     expect([...QUEUE_SECTIONS]).toEqual([
       "scheduled",
       "queued",
       "publishing",
+      "ready_for_manual_post",
+      "uploaded_to_platform_draft",
       "failed",
       "posted",
     ]);

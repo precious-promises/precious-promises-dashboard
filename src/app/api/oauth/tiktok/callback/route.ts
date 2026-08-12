@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { saveConnection } from "@/lib/accounts/credentials";
 import { consumeOAuthState } from "@/lib/accounts/oauth-states";
+import { recordAudit } from "@/lib/audit/repository";
 import { createWorkerClient } from "@/lib/supabase/worker";
 import { fetchCreatorInfo, fetchUser } from "@/lib/tiktok/api";
 import {
@@ -115,6 +116,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     handle = null;
   }
 
+  // Whether this is a first connection or a reconnection, decided before the
+  // upsert overwrites the answer. The two are genuinely different events: one
+  // grants access that did not exist, the other restores access that lapsed.
+  const { data: existing } = await client
+    .from("social_accounts")
+    .select("id")
+    .eq("owner_id", consumed.ownerId)
+    .eq("platform", "tiktok")
+    .eq("provider_account_id", user.openId)
+    .maybeSingle();
+
   const saved = await saveConnection(client, {
     ownerId: consumed.ownerId,
     platform: "tiktok",
@@ -136,6 +148,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
   if (!saved.ok) {
     return back(request, "tt-save-failed");
   }
+
+  // No token, no scope values, no open id — only which account row changed and
+  // whether direct posting is now possible at all.
+  await recordAudit(
+    existing ? "tiktok_reconnected" : "tiktok_connected",
+    "social_account",
+    saved.accountId,
+    { can_direct_post: canDirectPost(tokens.grantedScopes) },
+  );
 
   return back(
     request,

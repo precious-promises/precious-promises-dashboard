@@ -6,6 +6,22 @@ meanings apart.
 
 ---
 
+## 0. Status, in the five words that must never be merged
+
+| Status            | TikTok, as of this stage                                                                                                                                                                                                                                                                               |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **IMPLEMENTED**   | Yes. OAuth, account discovery, creator capability, all three delivery modes, chunked `FILE_UPLOAD`, status polling, reconciliation, settings UI, manual fallback, audit events. Covered by 103 unit tests.                                                                                             |
+| **CONNECTED**     | **No.** No TikTok account has been authorised. `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` and `TIKTOK_REDIRECT_URI` are unset, and no owner Supabase Auth account exists yet.                                                                                                                         |
+| **LIVE-VERIFIED** | **No.** Every test runs against a fake TikTok. No request has reached `open.tiktokapis.com`, and no TikTok post, draft or upload session has ever existed.                                                                                                                                             |
+| **BLOCKED**       | Direct public posting is blocked by TikTok's **content-posting audit**, which this application has not applied for or received. Until it passes, an unaudited client is restricted to `SELF_ONLY`. Connecting at all is blocked until Dave creates the TikTok app and the owner Supabase Auth account. |
+| **DEFERRED**      | `PULL_FROM_URL` (refused on security grounds, not postponed). TikTok photo mode. Comment, message and analytics access. A dashboard media-download endpoint — the manual fallback names the Drive file instead of re-serving it. Webhooks.                                                             |
+
+These are five different questions and this document never answers one with
+another. "Implemented" is a fact about this repository. "Connected" is a fact
+about Dave's TikTok account. "Live-verified" is a fact about what an external
+platform actually did — and it is the only one that could ever justify the word
+_posted_.
+
 ## 1. The three outcomes
 
 | Mode          | What happens                                   | Reported as                                 |
@@ -311,6 +327,41 @@ disconnect. **Posts already made are never touched.**
    without explanation.
 6. For direct posting, apply for TikTok's **content-posting audit**. Until it
    passes, expect `SELF_ONLY` only, and use draft uploads or manual posting.
+
+---
+
+## 12A. The manual fallback
+
+TikTok's direct posting needs an audit this application does not have, and a
+connection can be granted without the publish scope at all. Neither is a reason
+to leave Dave with nothing, so a `manual` variant produces a **posting kit** on
+its Publish Queue row rather than a dead end.
+
+The kit carries:
+
+- the media **filename** and where it lives — named, never linked
+- the **caption**, built by the _same_ function the provider would have used
+- the hashtags, listed separately for a composer that wants them apart
+- every **setting to match by hand**, with the commercial-content declarations
+  marked as declarations rather than preferences
+- an ordered **checklist**, ending with "check the Scripture reads exactly as
+  approved" and "mark it posted by hand — this dashboard did not publish it"
+
+The copy button exists for one reason: a retyped Scripture quotation is a
+**silently altered** one, which is the failure this project most needs not to
+happen. The caption reaches TikTok by clipboard, not by memory.
+
+### What the kit deliberately does not contain
+
+**No download link, and no URL of any kind.** The file stays in Drive, already
+reachable by whoever is signed into that account. A link here would be either
+useless (a Drive URL only works for someone already signed in) or a permanent
+public exposure this application refuses to create. A server-authorised
+streaming endpoint was considered and judged unnecessary: the manual poster is
+Dave, on a device already signed into the Drive account the file lives in.
+
+`ready_for_manual_post` is **not success**, and nothing on the panel says
+otherwise.
 
 ---
 

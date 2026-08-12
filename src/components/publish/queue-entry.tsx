@@ -16,6 +16,7 @@ import type { QueueEntry } from "@/lib/publishing/repository";
 import { ATTEMPT_STATUS_LABELS } from "@/lib/publishing/types";
 import { formatInTimeZone } from "@/lib/schedule/timezone";
 import { SCHEDULE_STATUS_LABELS } from "@/lib/schedule/types";
+import { ManualPostKitPanel } from "@/components/tiktok/manual-post-kit";
 import { PLATFORM_LABELS, REVIEW_STATE_LABELS } from "@/lib/variants/types";
 
 /**
@@ -65,7 +66,7 @@ export function PublishQueueEntry({
   /** Whether an account for this row's platform is connected right now. */
   platformConnected?: boolean;
 }) {
-  const { post, variant, item, attempts } = entry;
+  const { post, variant, item, attempts, manualKit } = entry;
   const latest = attempts[0] ?? null;
 
   const state = deriveQueueState({
@@ -142,6 +143,8 @@ export function PublishQueueEntry({
           {post.last_error_message ? ` — ${post.last_error_message}` : ""}
         </p>
       ) : null}
+
+      {manualKit ? <ManualPostKitPanel kit={manualKit} /> : null}
 
       {attempts.length > 0 ? (
         <details className="mt-2">

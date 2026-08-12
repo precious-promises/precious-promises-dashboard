@@ -31,6 +31,10 @@ const SECTION_NOTES: Partial<Record<string, string>> = {
   scheduled: "Waiting for their time. The dispatcher claims them when due.",
   queued: "Claimed by a worker and waiting to be sent.",
   publishing: "A provider call is in flight.",
+  ready_for_manual_post:
+    "Prepared for you to post by hand. Nothing was sent to the platform, and nothing will be until you post it yourself.",
+  uploaded_to_platform_draft:
+    "The platform has the video in its own drafts. Nobody has seen it — open the platform's app, review it and publish it there.",
   failed: "Stopped, with the reason recorded.",
   posted:
     "Confirmed live, with the platform's own post id. Nothing reaches here until a video file can actually be uploaded.",

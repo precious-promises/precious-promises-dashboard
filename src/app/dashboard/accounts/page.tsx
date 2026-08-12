@@ -31,9 +31,11 @@ import { resolveInstagramConfig } from "@/lib/instagram/server-config";
 import { resolveDriveConfig } from "@/lib/drive/server-config";
 import {
   DELIVERY_MODE_DETAIL,
+  PRIVACY_LEVEL_LABELS,
   PULL_FROM_URL_REFUSAL,
   TIKTOK_SCOPES,
 } from "@/lib/tiktok/config";
+import { loadTikTokCapability } from "@/lib/tiktok/capability";
 import { resolveTikTokConfig } from "@/lib/tiktok/server-config";
 import { MEDIA_RETRIEVAL_DETAIL } from "@/lib/youtube/media-source";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
@@ -206,6 +208,16 @@ export default async function ConnectedAccountsPage(
   );
   const { problems: tiktokProblems } = resolveTikTokConfig();
   const canConnectTikTok = tiktokProblems.length === 0 && workerReady;
+
+  // Connected and "can post directly" are different questions, and this page
+  // exists to answer both honestly. Direct posting needs the publish scope AND
+  // TikTok's audit — and the only way to know the second is to ask TikTok what
+  // audiences this creator may actually use. Loaded only when an account
+  // exists, so a page with nothing connected makes no API call.
+  const tiktokCapability =
+    tiktokAccounts.length > 0 ? await loadTikTokCapability() : null;
+  const tiktokDirectPost =
+    tiktokCapability?.availableModes.includes("direct_post") ?? false;
 
   // Every publishing platform now has an adapter, so this list is empty in
   // practice. It stays because it is generated from the registry rather than
@@ -534,6 +546,43 @@ export default async function ConnectedAccountsPage(
                   <li key={problem}>{problem}</li>
                 ))}
               </ul>
+            </div>
+          ) : null}
+
+          {tiktokCapability ? (
+            <div className="mb-4 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5">
+              <p className="flex flex-wrap items-center gap-2 text-sm text-ink-primary">
+                Direct posting
+                <StatusBadge
+                  tone={tiktokDirectPost ? "configured" : "inactive"}
+                >
+                  {tiktokDirectPost ? "Available" : "Not available"}
+                </StatusBadge>
+              </p>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">
+                Connected is not the same as approved to post. A connection can
+                be granted without the publish permission, and TikTok restricts
+                an API client it has not audited to private posts — so this line
+                is read from TikTok, for this account, rather than assumed from
+                the fact that a connection exists.
+              </p>
+              {tiktokCapability.problems.length > 0 ? (
+                <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-muted">
+                  {tiktokCapability.problems.map((problem) => (
+                    <li key={problem}>{problem}</li>
+                  ))}
+                </ul>
+              ) : null}
+              {tiktokDirectPost &&
+              tiktokCapability.privacyLevelOptions.length > 0 ? (
+                <p className="mt-2 text-xs text-ink-muted">
+                  Audiences TikTok currently offers this account:{" "}
+                  {tiktokCapability.privacyLevelOptions
+                    .map((level) => PRIVACY_LEVEL_LABELS[level])
+                    .join(", ")}
+                  .
+                </p>
+              ) : null}
             </div>
           ) : null}
 

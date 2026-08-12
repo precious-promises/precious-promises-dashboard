@@ -4,6 +4,7 @@ import {
   getLiveCredential,
   markNeedsReconnect,
 } from "@/lib/accounts/credentials";
+import { recordAuditAsWorker } from "@/lib/audit/repository";
 import type { SocialAccount } from "@/lib/accounts/types";
 import type { MediaAsset } from "@/lib/media/types";
 import {
@@ -257,6 +258,15 @@ export class TikTokProvider implements PublishingProvider {
     // 2. Manual posting sends nothing. It is a real outcome, not a failure —
     //    and reporting it as success would claim a post that does not exist.
     if (metadata.delivery_mode === "manual") {
+      await recordAuditAsWorker(
+        client,
+        owner,
+        "tiktok_manual_post_prepared",
+        "scheduled_post",
+        request.scheduledPost.id,
+        { variant_id: request.variant.id },
+      );
+
       return {
         outcome: "incomplete",
         state: "ready_for_manual_post",
@@ -386,6 +396,7 @@ export class TikTokProvider implements PublishingProvider {
           existing.publish_id,
           mode,
           account,
+          request.scheduledPost.id,
         );
       }
 
@@ -476,6 +487,21 @@ export class TikTokProvider implements PublishingProvider {
         };
       }
 
+      await recordAuditAsWorker(
+        client,
+        owner,
+        "tiktok_upload_started",
+        "scheduled_post",
+        request.scheduledPost.id,
+        // No publish id, no upload URL, no token. Only what this row is and
+        // how big the job was.
+        {
+          delivery_mode: mode,
+          total_chunk_count: plan.totalChunks,
+          video_size_bytes: media.source.contentLength,
+        },
+      );
+
       // 10. The bytes.
       await this.sendChunks(
         client,
@@ -483,6 +509,15 @@ export class TikTokProvider implements PublishingProvider {
         source.uploadUrl,
         media.source,
         plan,
+      );
+
+      await recordAuditAsWorker(
+        client,
+        owner,
+        "tiktok_upload_completed",
+        "scheduled_post",
+        request.scheduledPost.id,
+        { delivery_mode: mode },
       );
 
       // 11. Ask TikTok what it did with them.
@@ -493,6 +528,7 @@ export class TikTokProvider implements PublishingProvider {
         source.publishId,
         mode,
         account,
+        request.scheduledPost.id,
       );
     } catch (error) {
       return { outcome: "failed", error: this.classifyError(error) };
@@ -641,13 +677,23 @@ export class TikTokProvider implements PublishingProvider {
     publishId: string,
     mode: "direct_post" | "inbox",
     account: SocialAccount,
+    scheduledPostId: string,
   ): Promise<PublishResult> {
+    const owner = account.owner_id;
     const status = await fetchPublishStatus(context, publishId);
     const mapped: PublishStatus = mapPublishStatus(status.status, mode);
     const postId = status.postIds[0] ?? null;
 
     if (mapped === "failed") {
       await updateSessionStatus(client, sessionId, "failed", status.failReason);
+      await recordAuditAsWorker(
+        client,
+        owner,
+        "tiktok_post_failed",
+        "scheduled_post",
+        scheduledPostId,
+        { delivery_mode: mode, fail_reason: status.failReason },
+      );
       return {
         outcome: "failed",
         error: safeError(
@@ -661,6 +707,14 @@ export class TikTokProvider implements PublishingProvider {
 
     if (mapped === "uploaded_to_draft") {
       await recordUploadedToDraft(client, sessionId);
+      await recordAuditAsWorker(
+        client,
+        owner,
+        "tiktok_uploaded_to_draft",
+        "scheduled_post",
+        scheduledPostId,
+        {},
+      );
       return {
         outcome: "incomplete",
         state: "uploaded_to_platform_draft",
@@ -686,6 +740,17 @@ export class TikTokProvider implements PublishingProvider {
       }
 
       await recordPublished(client, sessionId, postId);
+      await recordAuditAsWorker(
+        client,
+        owner,
+        "tiktok_post_completed",
+        "scheduled_post",
+        scheduledPostId,
+        // The post id is TikTok's public identifier for something now visible.
+        // It is not a credential, and it is the one value that makes this
+        // entry checkable against the account itself.
+        { external_post_id: postId },
+      );
       return {
         outcome: "succeeded",
         externalPostId: postId,
@@ -696,6 +761,14 @@ export class TikTokProvider implements PublishingProvider {
     // Still in flight. Not a failure: the next run finds this same session by
     // its idempotency key and asks again rather than uploading a second copy.
     await updateSessionStatus(client, sessionId, "processing");
+    await recordAuditAsWorker(
+      client,
+      owner,
+      "tiktok_processing_updated",
+      "scheduled_post",
+      scheduledPostId,
+      { delivery_mode: mode },
+    );
     return {
       outcome: "incomplete",
       state: "uploaded_to_platform_draft",
