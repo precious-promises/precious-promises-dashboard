@@ -64,6 +64,25 @@ export type YouTubeScope = (typeof YOUTUBE_SCOPES)[number];
 export const UPLOAD_SCOPE: YouTubeScope =
   "https://www.googleapis.com/auth/youtube.upload";
 
+/**
+ * The YouTube Analytics API, and the scope that opens it.
+ *
+ * A different service from the Data API this module otherwise describes, and
+ * deliberately **not** in `YOUTUBE_SCOPES`: Stage 7 asked for upload, readonly
+ * and manage, none of which grants analytics. Adding it there would silently
+ * widen an existing consent screen, so it lives apart and Stage 10 asks for it
+ * as an explicit, separate grant.
+ *
+ * Both constants live here rather than in `src/lib/analytics` because every
+ * platform hostname in this codebase is confined to its integration module —
+ * a property `tests/unit/workflow-safety.test.ts` enforces across the tree.
+ */
+export const YOUTUBE_ANALYTICS_BASE =
+  "https://youtubeanalytics.googleapis.com/v2/reports";
+
+export const YOUTUBE_ANALYTICS_SCOPE =
+  "https://www.googleapis.com/auth/yt-analytics.readonly";
+
 /** The scope `playlistItems.insert` needs. */
 export const PLAYLIST_SCOPE: YouTubeScope =
   "https://www.googleapis.com/auth/youtube";

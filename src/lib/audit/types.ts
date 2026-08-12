@@ -78,6 +78,20 @@ export const AUDIT_ACTIONS = [
   "tiktok_post_failed",
   "tiktok_uploaded_to_draft",
   "tiktok_manual_post_prepared",
+
+  // Stage 10 — analytics and growth. Note what is absent: metric values. The
+  // audit log records that a sync happened and how much it wrote, never what
+  // it wrote, because a second copy of the data that drifts from the first is
+  // worse than no copy at all.
+  "analytics_sync_started",
+  "analytics_sync_completed",
+  "analytics_sync_failed",
+  "analytics_permission_required",
+  "analytics_manual_entry_recorded",
+  "growth_goal_created",
+  "growth_goal_updated",
+  "growth_experiment_created",
+  "growth_experiment_completed",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -135,6 +149,16 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   tiktok_post_failed: "TikTok post failed",
   tiktok_uploaded_to_draft: "Uploaded to TikTok drafts — not posted",
   tiktok_manual_post_prepared: "Prepared for manual TikTok posting",
+
+  analytics_sync_started: "Analytics sync started",
+  analytics_sync_completed: "Analytics sync completed",
+  analytics_sync_failed: "Analytics sync failed",
+  analytics_permission_required: "Analytics permission needed",
+  analytics_manual_entry_recorded: "Analytics entered by hand",
+  growth_goal_created: "Growth goal set",
+  growth_goal_updated: "Growth goal updated",
+  growth_experiment_created: "Experiment started",
+  growth_experiment_completed: "Experiment concluded",
 };
 
 export const AUDIT_ENTITY_TYPES = [
@@ -144,6 +168,9 @@ export const AUDIT_ENTITY_TYPES = [
   "publish_attempt",
   "social_account",
   "media_asset",
+  "analytics_sync_run",
+  "growth_goal",
+  "growth_experiment",
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

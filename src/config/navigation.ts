@@ -49,6 +49,10 @@ export const CONNECTED_ACCOUNTS_PATH = "/dashboard/accounts";
 /** Routes activated in Stage 8. */
 export const DRIVE_BROWSER_PATH = "/dashboard/drive";
 
+/** Routes activated in Stage 10. */
+export const ANALYTICS_PATH = "/dashboard/analytics";
+export const GROWTH_CENTRE_PATH = "/dashboard/growth";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -206,13 +210,15 @@ export const NAVIGATION: NavGroup[] = [
         id: "growth-centre",
         label: "Growth Centre",
         icon: Sparkles,
-        status: "coming-soon",
+        status: "available",
+        href: GROWTH_CENTRE_PATH,
       },
       {
         id: "analytics",
         label: "Analytics",
         icon: TrendingUp,
-        status: "coming-soon",
+        status: "available",
+        href: ANALYTICS_PATH,
       },
     ],
   },
