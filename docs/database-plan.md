@@ -233,8 +233,9 @@ of `views` or `plays` the platform actually answered with.
 
 Upserted on
 `(owner_id, platform, external_post_id, source, observation_window,
-(observed_at at time zone 'UTC')::date)`, so the same post observed twice in a
-day updates in place and observed tomorrow becomes the next point in the series.
+observed_on_utc)` — the last a stored generated column holding the UTC day of
+`observed_at` — so the same post observed twice in a day updates in place and
+observed tomorrow becomes the next point in the series.
 
 **`source` is part of the key**, which is what keeps a manually entered figure
 from ever overwriting an API one. It is also what the browser write policy

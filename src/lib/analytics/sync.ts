@@ -258,6 +258,10 @@ export async function syncPlatformAnalytics(input: {
   let written = 0;
   let lastError: AnalyticsErrorCategory | null = null;
   let lastDetail: string | null = null;
+  // Fetched but not stored is a failure too. Left uncounted, a database
+  // refusal would let a run report "succeeded, 0 written" — stale data
+  // dressed as fresh, which is the one lie this stage exists to prevent.
+  let writeFailures = 0;
 
   // Group by window so each fetch asks one coherent question.
   const windows = new Map<ObservationWindow, typeof posts>();
@@ -296,6 +300,26 @@ export async function syncPlatformAnalytics(input: {
         }
       }
       continue;
+    }
+
+    // A provider may read most of a batch and lose individual posts — Meta
+    // answers per media. Those partial failures surface here so the run is
+    // recorded as partial, and a post the platform says is gone is marked
+    // unreachable exactly as a whole-batch refusal would mark it.
+    for (const failure of result.failures ?? []) {
+      lastError = failure.category;
+      lastDetail = `Some posts could not be read (${failure.category}). Figures for the rest were fetched.`;
+
+      if (POST_GONE_ERRORS.includes(failure.category)) {
+        const post = byId.get(failure.externalPostId);
+        if (post !== undefined) {
+          await markExternalAvailability(
+            client,
+            post.scheduledPostId,
+            "unavailable",
+          );
+        }
+      }
     }
 
     for (const fetched of result.metrics) {
@@ -339,8 +363,15 @@ export async function syncPlatformAnalytics(input: {
           post.scheduledPostId,
           "available",
         );
+      } else {
+        writeFailures += 1;
       }
     }
+  }
+
+  if (writeFailures > 0) {
+    lastError = "unknown";
+    lastDetail = `${writeFailures} fetched ${writeFailures === 1 ? "observation" : "observations"} could not be stored. The run is reported as incomplete rather than pretending otherwise.`;
   }
 
   const status =

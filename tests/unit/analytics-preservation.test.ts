@@ -87,6 +87,48 @@ describe("a failed fetch never destroys a good figure", () => {
       /lastError === null \? "succeeded" : written > 0 \? "partial" : "failed"/,
     );
   });
+
+  it("counts a fetched-but-unstored observation as a failure, never as silence", () => {
+    const sync = source("src/lib/analytics/sync.ts");
+
+    // recordSnapshot returning null means the database refused the write. If
+    // that were swallowed, a run could report "succeeded, 0 written" — stale
+    // data dressed as fresh.
+    expect(sync).toMatch(/writeFailures \+= 1/);
+    expect(sync).toMatch(/if \(writeFailures > 0\) \{\s*lastError = "unknown"/);
+  });
+
+  it("surfaces a provider's per-post failures into the run", () => {
+    const sync = source("src/lib/analytics/sync.ts");
+
+    // Meta answers per media, so a batch can half-succeed. Those failures must
+    // reach lastError (making the run partial) and mark a gone post
+    // unreachable, exactly as a whole-batch refusal would.
+    expect(sync).toMatch(/for \(const failure of result\.failures \?\? \[\]\)/);
+    expect(sync).toMatch(
+      /POST_GONE_ERRORS\.includes\(failure\.category\)[\s\S]{0,400}?"unavailable"/,
+    );
+  });
+
+  it("names every column of the observation guard in the conflict target", () => {
+    // The unique observation index is a plain column list ending in the stored
+    // generated UTC-day column. ON CONFLICT must name all six — Postgres
+    // refuses a target that names fewer (42P10), so a drifted target here
+    // would mean no snapshot could ever be written.
+    const target =
+      "owner_id,platform,external_post_id,source,observation_window,observed_on_utc";
+
+    expect(source("src/lib/analytics/repository.ts")).toContain(target);
+    expect(source("src/app/dashboard/analytics/actions.ts")).toContain(target);
+
+    const migration = source(
+      "supabase/migrations/20260814090000_fix_analytics_observation_upsert.sql",
+    );
+    expect(migration).toMatch(
+      /create unique index if not exists analytics_snapshots_unique_observation\s*\n\s*on public\.analytics_snapshots \(\s*owner_id, platform, external_post_id, source, observation_window,\s*observed_on_utc\s*\)/,
+    );
+    expect(migration).toMatch(/generated always as .* stored/);
+  });
 });
 
 describe("a deletion at the platform never rewrites publishing history", () => {

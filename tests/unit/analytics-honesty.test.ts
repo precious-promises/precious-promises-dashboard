@@ -9,7 +9,10 @@ import {
   formulaFor,
   type MetricMap,
 } from "@/lib/analytics/derive";
-import { mapMediaInsights } from "@/lib/analytics/instagram-provider";
+import {
+  instagramAnalyticsProvider,
+  mapMediaInsights,
+} from "@/lib/analytics/instagram-provider";
 import { totalFor } from "@/lib/analytics/overview";
 import {
   analyticsCapabilityFor,
@@ -497,6 +500,59 @@ describe("mapping platform responses", () => {
     expect(mapped.values.views_or_plays?.rawName).toBe("views");
     expect(mapped.values.saves?.value).toBe(40);
     expect(mapped.values.likes).toBeUndefined();
+  });
+
+  it("reports the posts it could not read alongside the ones it could", async () => {
+    // Meta answers per media, so a batch can half-succeed. A mixed outcome
+    // must carry its failures — a run where one Reel failed is partial, not a
+    // clean success — and a gone post must be identifiable for availability
+    // marking.
+    const responses = new Map<string, { status: number; body: unknown }>([
+      [
+        "ig-ok",
+        {
+          status: 200,
+          body: { data: [{ name: "views", values: [{ value: 500 }] }] },
+        },
+      ],
+      [
+        "ig-gone",
+        {
+          status: 400,
+          body: { error: { message: "Media does not exist" } },
+        },
+      ],
+    ]);
+
+    const fetchImpl = (async (url: string | URL | Request) => {
+      const text = String(url);
+      const id = text.includes("ig-gone") ? "ig-gone" : "ig-ok";
+      const entry = responses.get(id);
+      return new Response(JSON.stringify(entry?.body ?? {}), {
+        status: entry?.status ?? 500,
+      });
+    }) as typeof fetch;
+
+    const result = await instagramAnalyticsProvider.fetch({
+      ownerId: "owner-1",
+      accessToken: "token",
+      externalPostIds: ["ig-ok", "ig-gone"],
+      window: "lifetime",
+      periodStart: null,
+      periodEnd: NOW,
+      fetchImpl,
+    });
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.metrics).toHaveLength(1);
+      expect(result.metrics[0].externalPostId).toBe("ig-ok");
+      expect(result.failures).toHaveLength(1);
+      expect(result.failures?.[0]).toEqual({
+        externalPostId: "ig-gone",
+        category: "post_unavailable",
+      });
+    }
   });
 
   it("distinguishes a missing scope from an exhausted quota", () => {

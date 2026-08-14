@@ -179,6 +179,31 @@ describe("API provenance cannot be forged from a browser", () => {
       /create unique index[\s\S]*?analytics_snapshots_unique_observation[\s\S]*?source,/,
     );
   });
+
+  it("refuses to move a metric row onto an API snapshot", () => {
+    // The update policy's WITH CHECK must prove the *destination* snapshot is
+    // manual, not merely that the row started under one — otherwise an update
+    // could re-point `snapshot_id` at an API snapshot and a hand-typed number
+    // would render as though the platform reported it.
+    const fix = readFileSync(
+      join(
+        process.cwd(),
+        "supabase",
+        "migrations",
+        "20260814090000_fix_analytics_observation_upsert.sql",
+      ),
+      "utf8",
+    );
+
+    const updatePolicy = fix.slice(
+      fix.indexOf(
+        'create policy "Owners can update metrics on manual snapshots"',
+      ),
+    );
+    const withCheck = updatePolicy.slice(updatePolicy.indexOf("with check"));
+
+    expect(withCheck).toMatch(/s\.source = 'manual'/);
+  });
 });
 
 // ---------------------------------------------------------------------------

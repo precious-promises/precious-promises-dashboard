@@ -249,8 +249,21 @@ export interface AnalyticsFetchFailure {
   detail: string;
 }
 
+/**
+ * One post that could not be read while the rest of the batch could.
+ *
+ * Providers whose platform answers per post (Instagram) report these so a
+ * mixed outcome reaches the sync run as `partial` — a batch where one Reel
+ * failed must never be recorded as a complete success.
+ */
+export interface PostFetchFailure {
+  externalPostId: string;
+  category: AnalyticsErrorCategory;
+}
+
 export type AnalyticsFetchResult =
-  { ok: true; metrics: FetchedPostMetrics[] } | AnalyticsFetchFailure;
+  | { ok: true; metrics: FetchedPostMetrics[]; failures?: PostFetchFailure[] }
+  | AnalyticsFetchFailure;
 
 export interface AnalyticsFetchRequest {
   ownerId: string;

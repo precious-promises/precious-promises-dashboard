@@ -122,8 +122,11 @@ export async function recordManualAnalytics(
         fetched_at: new Date().toISOString(),
       },
       {
+        // Must name every column of the unique observation index, including
+        // the generated UTC-day column — a target that names fewer is refused
+        // by Postgres outright (42P10), not treated as a broader match.
         onConflict:
-          "owner_id,platform,external_post_id,source,observation_window",
+          "owner_id,platform,external_post_id,source,observation_window,observed_on_utc",
         ignoreDuplicates: false,
       },
     )

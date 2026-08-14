@@ -10,6 +10,7 @@ import {
   type AnalyticsFetchResult,
   type AnalyticsProvider,
   type FetchedPostMetrics,
+  type PostFetchFailure,
 } from "./providers";
 import type { MetricName } from "./types";
 
@@ -176,7 +177,7 @@ export class InstagramAnalyticsProvider implements AnalyticsProvider {
     }
 
     const collected: FetchedPostMetrics[] = [];
-    const failures: AnalyticsErrorCategory[] = [];
+    const failures: PostFetchFailure[] = [];
     const observedAt = request.periodEnd ?? new Date();
 
     for (const externalPostId of request.externalPostIds) {
@@ -192,7 +193,7 @@ export class InstagramAnalyticsProvider implements AnalyticsProvider {
           headers: { Authorization: `Bearer ${request.accessToken}` },
         });
       } catch {
-        failures.push("transient");
+        failures.push({ externalPostId, category: "transient" });
         continue;
       }
 
@@ -207,7 +208,10 @@ export class InstagramAnalyticsProvider implements AnalyticsProvider {
       }
 
       if (!response.ok) {
-        failures.push(categoriseInstagramAnalyticsError(response.status, body));
+        failures.push({
+          externalPostId,
+          category: categoriseInstagramAnalyticsError(response.status, body),
+        });
         // One unreachable Reel does not end the sync. The rest are still worth
         // having, and the failure is reported alongside them.
         continue;
@@ -227,7 +231,7 @@ export class InstagramAnalyticsProvider implements AnalyticsProvider {
     // Every single post failed, and for the same reason — that is a connection
     // problem rather than a content problem, and is reported as one.
     if (collected.length === 0 && failures.length > 0) {
-      const category = failures[0];
+      const category = failures[0].category;
       return {
         ok: false,
         category,
@@ -235,7 +239,13 @@ export class InstagramAnalyticsProvider implements AnalyticsProvider {
       };
     }
 
-    return { ok: true, metrics: collected };
+    // A mixed outcome carries its failures rather than swallowing them: the
+    // sync run must be recorded as partial, not as a clean success.
+    return {
+      ok: true,
+      metrics: collected,
+      failures: failures.length > 0 ? failures : undefined,
+    };
   }
 }
 

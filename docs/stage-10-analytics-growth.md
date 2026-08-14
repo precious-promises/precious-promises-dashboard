@@ -136,8 +136,11 @@ so `views_or_plays` can always be traced back to whichever of `views`,
 
 The unique observation index is
 `(owner_id, platform, external_post_id, source, observation_window,
-(observed_at at time zone 'UTC')::date)`. The same post observed twice in a day
-updates in place; observed tomorrow it becomes the next point in the series.
+observed_on_utc)` — the last a stored generated column holding the UTC day of
+`observed_at`, kept as a real column because `ON CONFLICT` must name every
+column of the index and can name only columns, not expressions. The same post
+observed twice in a day updates in place; observed tomorrow it becomes the
+next point in the series.
 That is what makes "first 24 hours" and "growth over time" both answerable from
 one table.
 
