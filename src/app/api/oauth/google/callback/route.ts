@@ -11,6 +11,7 @@ import {
   FOLDER_MIME_TYPE,
 } from "@/lib/drive/config";
 import { resolveDriveConfig } from "@/lib/drive/server-config";
+import { YOUTUBE_ANALYTICS_SCOPE } from "@/lib/youtube/config";
 import { canUpload, exchangeCode, type TokenSet } from "@/lib/youtube/oauth";
 import { resolveYouTubeConfig } from "@/lib/youtube/server-config";
 
@@ -139,7 +140,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     );
   }
 
-  return back(request, "connected");
+  // Whether the analytics permission came back is read from what Google
+  // actually granted, never from what was asked for. A consent screen lets
+  // individual scopes be unticked, so intent is not evidence.
+  return back(
+    request,
+    tokens.grantedScopes.includes(YOUTUBE_ANALYTICS_SCOPE)
+      ? "analytics-granted"
+      : "connected",
+  );
 }
 
 /**

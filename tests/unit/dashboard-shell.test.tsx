@@ -52,6 +52,8 @@ describe("SidebarNav", () => {
       "/dashboard/calendar",
       "/dashboard/approvals",
       "/dashboard/publish",
+      "/dashboard/growth",
+      "/dashboard/analytics",
       "/dashboard/accounts",
     ]);
   });
@@ -60,7 +62,7 @@ describe("SidebarNav", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
     // A link to a non-existent route is the failure this guards against.
-    for (const label of ["Growth Centre", "Analytics", "Settings"]) {
+    for (const label of ["Content Planner", "Rights & Licences", "Settings"]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });
@@ -68,7 +70,7 @@ describe("SidebarNav", () => {
   it("marks unbuilt modules as unavailable for assistive technology", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
-    const row = screen.getByText("Analytics").closest("[aria-disabled]");
+    const row = screen.getByText("Settings").closest("[aria-disabled]");
     expect(row).not.toBeNull();
     expect(row).toHaveAttribute("aria-disabled", "true");
     expect(row?.textContent).toContain("coming soon");

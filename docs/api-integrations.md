@@ -22,6 +22,13 @@
 > as `FILE_UPLOAD`; `PULL_FROM_URL` is refused for the same reason Instagram
 > images are. See [stage-9-tiktok.md](./stage-9-tiktok.md).
 >
+> Stage 10 added analytics readers for YouTube and Instagram — separate adapters
+> from the publishing providers, so an analytics failure can never touch a
+> publish record. **TikTok analytics were refused**, not deferred: the
+> engagement counts are only in TikTok's Research API, which is restricted to
+> qualifying academic institutions. See
+> [stage-10-analytics-growth.md](./stage-10-analytics-growth.md).
+>
 > ElevenLabs and the AI caption provider remain unimplemented.
 
 ## Verify the documentation before you build
@@ -164,6 +171,34 @@ Read-only retrieval from an approved folder, via Drive API v3.
   folder-scoped read scope. Every read proves containment first, and fails
   closed.
 - Nothing writes, deletes, or changes sharing.
+
+### Analytics readers — _implemented in Stage 10_
+
+Deliberately **separate adapters from the publishing providers**. They answer
+different questions and fail for different reasons, and an analytics failure
+must never be able to touch a publish record. Nothing in
+`src/lib/analytics/` imports `@/lib/publishing`.
+
+- **YouTube Analytics API** — views, watch time, average view duration, likes,
+  comments, shares, subscribers gained. Needs
+  `https://www.googleapis.com/auth/yt-analytics.readonly`, which the Stage 7
+  publishing scopes do **not** include, so Connected Accounts offers an explicit
+  re-consent rather than widening the existing request. `saves` and `reach` are
+  absent because YouTube has no equivalent.
+- **Instagram Insights** — views (which replaced `impressions` for media created
+  after 2 July 2024), reach, likes, comments, shares, saves. No additional scope:
+  the Stage 8 Business Login connection already covers reading insights back.
+  **No watch time** — Meta exposes none through this API, so none is shown.
+- **TikTok — refused.** The Display API returns metadata only; the engagement
+  counts live in TikTok's Research API, restricted to qualifying academic
+  institutions and non-profits with an approved research proposal and ethical
+  review. Precious Promises would not qualify, so no connector was built. The
+  interface states the reason. Figures can be entered by hand and are labelled
+  as manual.
+
+A metric absent from the capability matrix in `src/lib/analytics/providers.ts`
+renders as "not reported by this platform", never as zero. See
+[stage-10-analytics-growth.md](./stage-10-analytics-growth.md).
 
 ### ElevenLabs _(planned)_
 

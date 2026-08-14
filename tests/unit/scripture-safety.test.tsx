@@ -116,8 +116,8 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 8", () => {
-  it("activates exactly the thirteen built areas", () => {
+describe("navigation after Stage 10", () => {
+  it("activates exactly the fifteen built areas", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -135,16 +135,18 @@ describe("navigation after Stage 8", () => {
       "Calendar",
       "Approval Queue",
       "Publish Queue",
+      "Growth Centre",
+      "Analytics",
       "Connected Accounts",
     ]);
   });
 
-  it("leaves the remaining 6 areas unbuilt and unlinkable", () => {
+  it("leaves the remaining 4 areas unbuilt and unlinkable", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(6);
+    expect(comingSoon).toHaveLength(4);
     for (const item of comingSoon) {
       expect(item.href, `${item.label} must not be linkable`).toBeUndefined();
     }
@@ -168,10 +170,16 @@ describe("navigation after Stage 8", () => {
     ).toHaveAttribute("href", "/dashboard/video");
   });
 
-  it("still refuses to link publishing modules", () => {
+  it("still refuses to link the modules that remain unbuilt", () => {
     render(<SidebarNav pathname="/dashboard" />);
 
-    for (const label of ["YouTube & Playlists", "Growth Centre", "Analytics"]) {
+    // Growth Centre and Analytics moved off this list in Stage 10 because they
+    // were genuinely built. What stays here has no route behind it.
+    for (const label of [
+      "YouTube & Playlists",
+      "Content Planner",
+      "Settings",
+    ]) {
       expect(screen.queryByRole("link", { name: label })).toBeNull();
     }
   });

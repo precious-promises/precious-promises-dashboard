@@ -19,9 +19,10 @@ drafted — all under Row Level Security.
 Approval, scheduling and the publishing infrastructure are real as of Stages 5
 and 6. Stage 7 added Google OAuth and a YouTube provider. Stage 8 added Google
 Drive media retrieval — which unblocked YouTube uploads — and an Instagram
-Reels provider. Stage 9 added a TikTok provider.
+Reels provider. Stage 9 added a TikTok provider. Stage 10 added the Analytics &
+Growth Centre.
 
-Still absent: AI generation, server rendering, and analytics.
+Still absent: AI generation and server rendering.
 
 **Nothing has been published to any platform yet.** All three providers make
 real requests and can obtain real media, but no account has been connected and
@@ -35,6 +36,14 @@ rather than using `PULL_FROM_URL`, for the same reason.
 TikTok can also reach two states that are **not** publications — a video in the
 creator's drafts, and a post prepared for Dave to make by hand. Both are
 reported as what they are, never as success.
+
+Analytics follows the same rule in the other direction: **zero is a
+measurement, absence is not**. A metric that has not been fetched, is not
+reported by the platform, or is blocked by a missing permission shows a dash
+and states the reason — never `0`. TikTok analytics are not built at all,
+because the engagement figures live in TikTok's Research API, which is
+restricted to qualifying academic institutions. See
+[stage-10-analytics-growth.md](./docs/stage-10-analytics-growth.md).
 
 ## Current stack
 
@@ -228,6 +237,17 @@ Everything below is **planned, not built**:
   `unlisted` are offered. Scheduled release is not offered for the same reason.
 - **No rendering.** The video studio composes and previews; server rendering is
   designed and not connected.
+- **No TikTok analytics.** TikTok's Display API returns metadata only; the
+  engagement counts are in its Research API, restricted to qualifying academic
+  institutions. No connector was built, and figures can only be entered by hand
+  and are labelled as manual.
+- **YouTube analytics needs a separate consent.** The publishing connection does
+  not carry `yt-analytics.readonly`. Connected Accounts offers an explicit
+  re-consent; until it is granted, analytics reports the missing permission and
+  publishing is unaffected.
+- **No analytics have been fetched.** No account is connected, so every figure
+  in the Analytics and Growth pages is an absence with a stated reason. No
+  analytics call has been verified against a live platform.
 - **No analytics.** Content, approval and schedule counts are real database
   queries; publishing metrics stay at zero because nothing has been published.
   Nothing fabricates views, followers, revenue or engagement.

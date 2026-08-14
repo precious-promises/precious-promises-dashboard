@@ -58,8 +58,9 @@ describe("navigation configuration", () => {
     // Assets; Stage 3 added the three writing studios; Stage 4 added the Video
     // Creation Studio; Stage 5 added the Production Board, Calendar and
     // Approval Queue; Stage 6 added the Publish Queue; Stage 7 added Connected
-    // Accounts; Stage 8 added the Google Drive Browser. This list grows only
-    // when a route genuinely exists.
+    // Accounts; Stage 8 added the Google Drive Browser; Stage 10 added the
+    // Growth Centre and Analytics. This list grows only when a route genuinely
+    // exists — never to satisfy a target count.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -77,6 +78,8 @@ describe("navigation configuration", () => {
       "Calendar",
       "Approval Queue",
       "Publish Queue",
+      "Growth Centre",
+      "Analytics",
       "Connected Accounts",
     ]);
     expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
@@ -84,12 +87,12 @@ describe("navigation configuration", () => {
     );
   });
 
-  it("leaves the remaining 6 areas unbuilt", () => {
+  it("leaves the remaining 4 areas unbuilt", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(6);
+    expect(comingSoon).toHaveLength(4);
   });
 
   it("offers the Drive Browser, because Stage 8 built it", () => {

@@ -8,6 +8,13 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { loadSocialAccounts } from "@/lib/accounts/repository";
+import { loadAnalyticsOverview } from "@/lib/analytics/overview";
+import { analyticsCapabilityFor } from "@/lib/analytics/providers";
+import {
+  describeFreshness,
+  UNAVAILABLE_DETAIL,
+  UNAVAILABLE_LABELS,
+} from "@/lib/analytics/types";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { PROVIDER_STATUS } from "@/lib/publishing/providers";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
@@ -45,6 +52,7 @@ import {
   connectInstagram,
   connectTikTok,
   connectYouTube,
+  grantYouTubeAnalytics,
   disconnectGoogleDrive,
   disconnectInstagram,
   disconnectTikTok,
@@ -147,6 +155,8 @@ const NOTICES: Record<string, string> = {
     "The TikTok connection could not be saved. Nothing was recorded.",
   "tt-disconnected":
     "TikTok disconnected, and the authorisation was revoked at TikTok.",
+  "analytics-granted":
+    "Analytics permission granted. YouTube figures can now be read, and publishing is unchanged.",
   "tt-disconnected-not-revoked":
     "TikTok disconnected locally, but TikTok did not confirm the revocation. Remove this application manually under your TikTok account settings.",
 };
@@ -224,6 +234,10 @@ export default async function ConnectedAccountsPage(
   // hand-maintained: the day a fourth platform is named without one, it says so
   // by itself.
   const unimplemented = PROVIDER_STATUS.filter((status) => !status.implemented);
+
+  // Analytics readiness is a different question from publishing readiness, and
+  // this page is where both are answered side by side.
+  const analytics = await loadAnalyticsOverview();
 
   return (
     <DashboardShell
@@ -668,6 +682,122 @@ export default async function ConnectedAccountsPage(
                 and reconnecting is the only way back.
               </p>
             </li>
+          </ul>
+        </SectionCard>
+
+        <SectionCard
+          title="Analytics permissions"
+          description="Separate from publishing. A connected account is not automatically a measurable one, and this table never conflates the two."
+        >
+          <ul className="flex flex-col gap-2.5">
+            {analytics.readiness.map((entry) => {
+              const capability = analyticsCapabilityFor(entry.platform);
+
+              return (
+                <li
+                  key={entry.platform}
+                  className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-medium text-ink-primary">
+                      {PLATFORM_LABELS[entry.platform]}
+                    </span>
+                    <StatusBadge
+                      tone={
+                        entry.blockedBy === null
+                          ? "configured"
+                          : entry.providerImplemented
+                            ? "accent"
+                            : "inactive"
+                      }
+                    >
+                      {entry.blockedBy === null
+                        ? "Analytics available"
+                        : UNAVAILABLE_LABELS[entry.blockedBy]}
+                    </StatusBadge>
+                  </div>
+
+                  <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-4">
+                    <div>
+                      <dt className="text-ink-muted">Account connected</dt>
+                      <dd className="text-ink-secondary">
+                        {entry.accountConnected ? "Yes" : "No"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-muted">Publishing</dt>
+                      <dd className="text-ink-secondary">
+                        {entry.publishingAuthorised
+                          ? "Authorised"
+                          : "Not authorised"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-muted">Analytics</dt>
+                      <dd className="text-ink-secondary">
+                        {entry.analyticsAuthorised
+                          ? "Authorised"
+                          : "Not authorised"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-muted">Last analytics sync</dt>
+                      <dd className="text-ink-secondary">
+                        {entry.lastSuccessfulSync
+                          ? describeFreshness(
+                              entry.lastSuccessfulSync.completed_at ??
+                                entry.lastSuccessfulSync.started_at,
+                            )
+                          : "Never"}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {entry.lastSync && entry.lastSync.status === "failed" ? (
+                    <p className="mt-2 text-[11px] leading-5 text-gold">
+                      Latest analytics refresh failed
+                      {entry.lastSync.error_category
+                        ? ` (${entry.lastSync.error_category})`
+                        : ""}
+                      . Previously read figures are kept.
+                    </p>
+                  ) : null}
+
+                  {entry.blockedBy ? (
+                    <p className="mt-1.5 text-[11px] leading-5 text-ink-muted">
+                      {UNAVAILABLE_DETAIL[entry.blockedBy]}
+                      {entry.action ? ` ${entry.action}` : ""}
+                    </p>
+                  ) : null}
+
+                  {!entry.providerImplemented ? (
+                    <p className="mt-1.5 text-[11px] leading-5 text-ink-muted">
+                      {capability.detail}
+                    </p>
+                  ) : null}
+
+                  {entry.platform === "youtube" &&
+                  entry.accountConnected &&
+                  !entry.analyticsAuthorised ? (
+                    <form action={grantYouTubeAnalytics} className="mt-3">
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-edge-strong bg-panel-raised/60 px-3.5 py-2 text-xs font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                      >
+                        Grant analytics permission
+                      </button>
+                      <p className="mt-1.5 text-[11px] leading-5 text-ink-muted">
+                        This asks Google for read-only access to your YouTube
+                        analytics — views, watch time and subscriber changes. It
+                        is a separate permission from uploading, and your
+                        publishing access is kept as it is. Nothing is recorded
+                        until Google actually grants it.
+                      </p>
+                    </form>
+                  ) : null}
+                </li>
+              );
+            })}
           </ul>
         </SectionCard>
 

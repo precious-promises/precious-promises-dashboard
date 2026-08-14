@@ -242,5 +242,9 @@ harder to change safely.
 | Google Drive media retrieval                | Implemented                  |
 | Instagram (Reels) provider                  | Implemented                  |
 | TikTok provider (3 delivery modes)          | Implemented                  |
+| Analytics readers (YouTube, Instagram)      | Implemented                  |
+| Growth Centre: goals, experiments, findings | Implemented                  |
+| TikTok analytics                            | **Refused — see stage 10**   |
 | A successful external publish               | **No account connected yet** |
+| A fetched analytics figure                  | **No account connected yet** |
 | Server rendering                            | **Not started**              |
