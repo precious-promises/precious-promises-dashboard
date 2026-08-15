@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AiDraftPanel } from "@/components/ai/draft-panel";
 import { ItemPicker } from "@/components/content/item-picker";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { ScriptureReadOnly } from "@/components/scripture/scripture-panel-readonly";
@@ -13,6 +14,9 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { InstagramMetadataForm } from "@/components/instagram/metadata-form";
 import { TikTokMetadataForm } from "@/components/tiktok/metadata-form";
 import { YouTubeMetadataForm } from "@/components/youtube/metadata-form";
+import { draftedGenerationsFor } from "@/app/dashboard/ai/actions";
+import { isAiConfigured } from "@/lib/ai/server-config";
+import { VARIANT_GENERATION_TYPES } from "@/lib/ai/types";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { EMPTY_FILTERS } from "@/lib/content/filters";
 import { getContentItem, listContentItems } from "@/lib/content/repository";
@@ -75,6 +79,11 @@ export default async function CaptionStudioPage(
   const item = selectedId ? await getContentItem(selectedId) : null;
   const variants = item ? await listVariantsForItem(item.id) : [];
   const current = variants.find((v) => v.platform === platform) ?? null;
+
+  const drafts = item ? await draftedGenerationsFor(item.id) : [];
+  const variantDrafts = drafts.filter((draft) =>
+    VARIANT_GENERATION_TYPES.includes(draft.generation_type),
+  );
 
   // Only loaded for the YouTube tab, and only when a variant exists to attach
   // them to. There is nothing to configure until there is something to publish.
@@ -217,6 +226,25 @@ export default async function CaptionStudioPage(
                 contentItemId={item.id}
                 platform={platform}
                 variant={current}
+              />
+            </SectionCard>
+
+            <SectionCard
+              title="AI drafting"
+              description="Wording drafts on request, decided by you. Accepting one updates the variant through the same path as a hand edit — including approval invalidation."
+            >
+              <AiDraftPanel
+                contentItemId={item.id}
+                offeredTypes={VARIANT_GENERATION_TYPES}
+                drafts={variantDrafts}
+                variants={variants.map((variant) => ({
+                  id: variant.id,
+                  platform: variant.platform,
+                }))}
+                configured={isAiConfigured()}
+                hasScripture={Boolean(
+                  item.scripture_reference && item.scripture_text,
+                )}
               />
             </SectionCard>
 

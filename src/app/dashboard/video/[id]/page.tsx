@@ -42,7 +42,15 @@ const NOTICES: Record<string, string> = {
   "slot-cleared": "Media slot cleared.",
   "slot-invalid": "That slot could not be saved.",
   "render-refused":
-    "No renderer is connected, so nothing was rendered. The request is recorded as a failure.",
+    "The render was refused and recorded as a failed request — nothing was rendered. The reason is on the job below.",
+  "render-queued":
+    "Render queued. It runs in the background worker path; nothing is marked completed unless the file genuinely exists.",
+  "render-processed":
+    "The render queue was processed. Each job's outcome is recorded below.",
+  "render-reconciled":
+    "Reconciled. If the output file existed it was recovered; otherwise the job is marked failed as a crash.",
+  "render-cancelled":
+    "Render cancelled. Future work stops; every record is kept.",
 };
 
 function firstParam(value: string | string[] | undefined): string | null {

@@ -244,7 +244,46 @@ harder to change safely.
 | TikTok provider (3 delivery modes)          | Implemented                  |
 | Analytics readers (YouTube, Instagram)      | Implemented                  |
 | Growth Centre: goals, experiments, findings | Implemented                  |
+| Server rendering (Remotion, worker path)    | Implemented, not enabled     |
+| ElevenLabs narration                        | Implemented, not connected   |
+| AI drafting (Scripture-safe, drafts only)   | Implemented, not connected   |
+| Private generated-media storage             | Implemented                  |
+| Content Planner, YouTube workspace          | Implemented                  |
+| Rights & Licences register, Settings        | Implemented                  |
+| Production pipeline (ends at review)        | Implemented                  |
 | TikTok analytics                            | **Refused — see stage 10**   |
 | A successful external publish               | **No account connected yet** |
 | A fetched analytics figure                  | **No account connected yet** |
-| Server rendering                            | **Not started**              |
+| A live-verified render, narration or draft  | **Not yet — needs runtime**  |
+
+## Stage 11 — production automation _(implemented)_
+
+Stage 11 filled in the last seams. Full detail lives in
+[stage-11-final-production-automation.md](./stage-11-final-production-automation.md);
+the architectural shape:
+
+- **Rendering** is Remotion server-side rendering behind the existing
+  `RenderProvider` seam. The provider registers from a server-only module, so
+  browser bundles still resolve to `null`. Actual rendering runs in
+  `src/lib/render/worker.ts` under the trusted worker credential, gated by
+  `RENDER_ENABLED` — a deliberate operator opt-in, because rendering needs
+  headless Chromium and FFmpeg. The output object key is recorded at claim
+  time, which makes crash reconciliation possible: a worker that died after
+  writing the file is recovered from the found file, never re-rendered.
+- **Generated media** lands in the private `generated-media` bucket as
+  ordinary `media_assets` rows (`storage_provider = 'supabase_storage'`) with
+  provenance columns, which means publishing consumes rendered files through
+  the same media-source seam Drive files use. Keys are owner-prefixed and
+  every read path re-checks the prefix, because the worker credential
+  bypasses RLS.
+- **Voice** is one capability — text to speech with a voice that already
+  exists in the connected ElevenLabs account. Voice jobs follow the same
+  honesty constraints as render jobs: completed requires output, failed
+  requires a category.
+- **AI drafting** sits behind an `AIProvider` seam with exactly one
+  implementation (Anthropic). Output schemas are closed per generation type —
+  there is no Scripture field — and acceptance flows through the existing
+  revision and variant machinery, including approval invalidation.
+- **The production pipeline** is a workflow assistant whose terminal status is
+  `ready_for_review`. It links artefacts the other systems produced; it has no
+  import from publishing and no path to it.

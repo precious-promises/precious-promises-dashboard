@@ -92,6 +92,35 @@ export const AUDIT_ACTIONS = [
   "growth_goal_updated",
   "growth_experiment_created",
   "growth_experiment_completed",
+
+  // Stage 11 — production automation. Requests, outcomes and human decisions.
+  // Note what is absent: no generated text, no prompt content, no verse text,
+  // no storage URL — an audit entry names what happened, never the content.
+  "ai_generation_requested",
+  "ai_generation_completed",
+  "ai_generation_failed",
+  "ai_generation_accepted",
+  "ai_generation_rejected",
+  "voice_generation_requested",
+  "voice_generation_completed",
+  "voice_generation_failed",
+  "render_requested",
+  "render_started",
+  "render_completed",
+  "render_failed",
+  "render_cancelled",
+  "production_job_created",
+  "production_job_advanced",
+  "production_job_cancelled",
+  "production_job_failed",
+  "planner_item_created",
+  "planner_item_updated",
+  "planner_item_deleted",
+  "licence_record_created",
+  "licence_record_updated",
+  "licence_record_deleted",
+  "settings_updated",
+  "generated_media_deleted",
 ] as const;
 
 export type AuditAction = (typeof AUDIT_ACTIONS)[number];
@@ -159,6 +188,32 @@ export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
   growth_goal_updated: "Growth goal updated",
   growth_experiment_created: "Experiment started",
   growth_experiment_completed: "Experiment concluded",
+
+  ai_generation_requested: "AI draft requested",
+  ai_generation_completed: "AI draft generated",
+  ai_generation_failed: "AI draft failed",
+  ai_generation_accepted: "AI draft accepted by the owner",
+  ai_generation_rejected: "AI draft rejected by the owner",
+  voice_generation_requested: "Narration requested",
+  voice_generation_completed: "Narration generated",
+  voice_generation_failed: "Narration failed",
+  render_requested: "Render requested",
+  render_started: "Render started",
+  render_completed: "Render completed",
+  render_failed: "Render failed",
+  render_cancelled: "Render cancelled",
+  production_job_created: "Production job created",
+  production_job_advanced: "Production job advanced a step",
+  production_job_cancelled: "Production job cancelled",
+  production_job_failed: "Production job failed at a step",
+  planner_item_created: "Plan item created",
+  planner_item_updated: "Plan item updated",
+  planner_item_deleted: "Plan item deleted",
+  licence_record_created: "Licence recorded",
+  licence_record_updated: "Licence record updated",
+  licence_record_deleted: "Licence record deleted",
+  settings_updated: "Settings updated",
+  generated_media_deleted: "Generated media deleted",
 };
 
 export const AUDIT_ENTITY_TYPES = [
@@ -171,6 +226,13 @@ export const AUDIT_ENTITY_TYPES = [
   "analytics_sync_run",
   "growth_goal",
   "growth_experiment",
+  "ai_generation",
+  "voice_job",
+  "render_job",
+  "production_job",
+  "planner_item",
+  "licence_record",
+  "app_settings",
 ] as const;
 
 export type AuditEntityType = (typeof AUDIT_ENTITY_TYPES)[number];

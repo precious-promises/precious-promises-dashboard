@@ -53,6 +53,12 @@ export const DRIVE_BROWSER_PATH = "/dashboard/drive";
 export const ANALYTICS_PATH = "/dashboard/analytics";
 export const GROWTH_CENTRE_PATH = "/dashboard/growth";
 
+/** Routes activated in Stage 11. All 19 modules are now genuinely built. */
+export const CONTENT_PLANNER_PATH = "/dashboard/planner";
+export const YOUTUBE_WORKSPACE_PATH = "/dashboard/youtube";
+export const RIGHTS_LICENCES_PATH = "/dashboard/rights";
+export const SETTINGS_PATH = "/dashboard/settings";
+
 /**
  * The dashboard's navigation, defined once.
  *
@@ -115,7 +121,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "content-planner",
         label: "Content Planner",
         icon: CalendarClock,
-        status: "coming-soon",
+        status: "available",
+        href: CONTENT_PLANNER_PATH,
       },
     ],
   },
@@ -199,7 +206,8 @@ export const NAVIGATION: NavGroup[] = [
         id: "youtube-playlists",
         label: "YouTube & Playlists",
         icon: ListVideo,
-        status: "coming-soon",
+        status: "available",
+        href: YOUTUBE_WORKSPACE_PATH,
       },
     ],
   },
@@ -236,13 +244,15 @@ export const NAVIGATION: NavGroup[] = [
         id: "rights-licences",
         label: "Rights & Licences",
         icon: Scale,
-        status: "coming-soon",
+        status: "available",
+        href: RIGHTS_LICENCES_PATH,
       },
       {
         id: "settings",
         label: "Settings",
         icon: Settings,
-        status: "coming-soon",
+        status: "available",
+        href: SETTINGS_PATH,
       },
     ],
   },

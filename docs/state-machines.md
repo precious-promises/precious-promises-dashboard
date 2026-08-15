@@ -334,3 +334,63 @@ unknown ──┬──> available    (the platform answered for this post)
   was published; a third party deleting it later does not unmake it, and a
   `posted` row whose video has been removed stays `posted` with its
   availability marked and its full snapshot history intact.
+
+## Render jobs — _worker implemented in Stage 11_
+
+The vocabulary is unchanged from Stage 4; what changed is that `completed`
+became genuinely reachable:
+
+```
+queued ──> rendering ──> completed     (only the worker, only after the file
+   │           │                        verifiably exists in private storage)
+   │           ├──────> failed         (with a category and a reason)
+   │           └──────> cancelled
+   ├──────────────────> failed         (refused at request time, with reason)
+   └──────────────────> cancelled
+```
+
+- The claim from `queued` to `rendering` is atomic and records the
+  deterministic output object key, which is what makes **crash
+  reconciliation** possible: a job stuck in `rendering` is reconciled by
+  checking whether its recorded output exists — found means the worker died
+  after the render (recover and complete), missing means it died before
+  (`failed`, category `worker_crashed`). Nothing is silently re-rendered.
+- Failure categories: `not_configured`, `invalid_composition`,
+  `storage_error`, `render_error`, `worker_crashed`, `transient`. Only
+  `storage_error`, `worker_crashed` and `transient` are retryable — a broken
+  composition renders broken every time.
+
+## Voice jobs — _implemented in Stage 11_
+
+```
+generating ──> completed   (audio stored, media asset recorded)
+     └──────> failed       (with a category)
+```
+
+The database refuses a `completed` voice job with no output asset and a
+`failed` one with no category — the same fabricated-success constraints render
+and publish jobs carry.
+
+## Production pipeline — _implemented in Stage 11_
+
+A workflow assistant over the generation steps, **separate from the publish
+lifecycle** and ending strictly before it:
+
+```
+pending ──> planning ──> generating_text ──> generating_voice ──> rendering ──> ready_for_review
+               │              │                    │                 │
+               │              └──> failed ──> pending (explicit retry only)
+               └─ (any step may be skipped forward; none may run backward)
+
+any active status ──> cancelled (terminal; deletes nothing)
+```
+
+- `ready_for_review` is terminal. Review, approval, scheduling and publishing
+  remain the existing human paths; no pipeline status names them and no
+  transition reaches them.
+- Failure at a step blocks all later steps until the owner retries (back to
+  `pending`) or cancels.
+- Every advance is an explicit owner action. The voice step genuinely
+  generates (and fails the job honestly when it cannot); the render step links
+  a render job and refuses `ready_for_review` unless that job is genuinely
+  `completed`.

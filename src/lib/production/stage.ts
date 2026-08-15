@@ -3,14 +3,10 @@ import type { ContentItem } from "@/lib/content/types";
 /**
  * Production stage classification.
  *
- * Reusable domain logic for the Production Board, which is **not activated**.
- * Stage 3 uses it internally — on the content detail page and for a dashboard
- * count — so it is exercised rather than speculative, but no board renders it
- * yet.
- *
- * The stages beyond Review are computed as *not yet reached*, never as reached.
- * Approval, scheduling and publishing do not exist, so nothing can legitimately
- * be classified into them, and this function will not pretend otherwise.
+ * Reusable domain logic for the Production Board. Every stage is computed
+ * from records — Scripture verification, saved scripts, video projects,
+ * approvals, schedules — never stored as a board position, and never set by
+ * dragging a card.
  */
 
 export const PRODUCTION_STAGES = [
@@ -38,16 +34,15 @@ export const PRODUCTION_STAGE_LABELS: Record<ProductionStage, string> = {
 };
 
 /**
- * Stages the product cannot yet place anything in.
+ * Stages this classifier does not place anything in.
  *
- * Stage 4 made `produce` reachable — a video project with scenes is real
- * production work. Stage 5 made `approve` and `schedule` reachable, because
- * approval and scheduling are now real records.
- *
- * **`publish` remains unreachable, and must.** Nothing publishes: no platform
- * integration exists, so nothing can legitimately be classified as published
- * and this module will not pretend otherwise. The board renders the column as
- * structurally empty rather than as a column that happened to find nothing.
+ * `publish` is deliberately not a board column even though publishing now
+ * exists (Stage 6–9). A published post is a per-platform outcome with its own
+ * full record — the Publish Queue shows every claim, attempt and result — and
+ * collapsing that into a card position would flatten exactly the distinctions
+ * (posted vs drafted vs prepared-for-manual-posting) that queue exists to
+ * keep. The board tracks preparation up to scheduling; publishing reports
+ * itself.
  */
 export const UNREACHABLE_STAGES: readonly ProductionStage[] = ["publish"];
 

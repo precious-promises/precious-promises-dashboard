@@ -51,7 +51,8 @@ export const metadata: Metadata = {
 };
 
 const NOTICES: Record<string, string> = {
-  scheduled: "Scheduled. Nothing sends it — no publishing integration exists.",
+  scheduled:
+    "Scheduled. The publish run sends it when due — only while the approval still matches and the platform is connected.",
   cancelled: "Schedule cancelled, with the reason recorded.",
   resumed: "Schedule reinstated against the current approval.",
   "resume-refused":

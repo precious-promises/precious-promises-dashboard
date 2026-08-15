@@ -1,14 +1,16 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
   canTransitionRender,
+  clearRenderProvider,
   describeRenderCapability,
   getRenderProvider,
   isTerminalRenderStatus,
   NO_PROVIDER_REASON,
   RENDER_STATUSES,
+  registerRenderProvider,
   requestRender,
   TERMINAL_RENDER_STATUSES,
   type RenderStatus,
@@ -22,6 +24,10 @@ import {
  * post as published; for rendering it means never producing a job that claims
  * a video exists when none does.
  */
+
+// The registered provider resolves its config through the validated server
+// environment, which requires APP_URL.
+process.env.APP_URL ||= "http://localhost:3000";
 
 describe("render status vocabulary", () => {
   it("is exactly the five approved statuses", () => {
@@ -83,7 +89,10 @@ describe("render state machine", () => {
   });
 });
 
-describe("no rendering provider exists", () => {
+describe("an unregistered runtime has no provider", () => {
+  // Stage 11 made the provider a registry rather than a hard-coded null: the
+  // Remotion worker registers itself from a server-only module, so a browser
+  // bundle — which never imports it — still gets exactly this behaviour.
   it("returns null rather than a stub", () => {
     // A stub returning plausible values would be indistinguishable from a
     // working renderer at the call site. Callers must handle the absence.
@@ -122,6 +131,54 @@ describe("no rendering provider exists", () => {
 
       expect(outcome.accepted).toBe(false);
     }
+  });
+});
+
+describe("the registered Remotion provider", () => {
+  beforeAll(async () => {
+    // Importing the server-only module registers the provider, exactly as the
+    // server actions do.
+    await import("@/lib/render/register");
+  });
+
+  afterAll(() => {
+    clearRenderProvider();
+  });
+
+  it("is returned by the registry once registered", () => {
+    const provider = getRenderProvider();
+    expect(provider).not.toBeNull();
+    expect(provider?.id).toBe("remotion_worker");
+  });
+
+  it("still refuses to accept when the runtime is not enabled", async () => {
+    // RENDER_ENABLED and the worker credential are unset in tests, so even a
+    // registered provider must refuse — implemented is not enabled.
+    const outcome = await requestRender({
+      project: { id: "p1", name: "A project", current_revision: 2 },
+      aspectRatio: "9:16",
+      scenes: [],
+    });
+
+    expect(outcome.accepted).toBe(false);
+    if (!outcome.accepted) {
+      expect(outcome.reason).not.toBe("");
+    }
+  });
+});
+
+describe("the provider registry", () => {
+  it("can be cleared back to the honest null", async () => {
+    registerRenderProvider(() => ({
+      id: "remotion_worker",
+      isConnected: async () => false,
+      submit: async () => ({ accepted: false, reason: "test" }),
+    }));
+    expect(getRenderProvider()).not.toBeNull();
+
+    clearRenderProvider();
+    expect(getRenderProvider()).toBeNull();
+    expect(describeRenderCapability().connected).toBe(false);
   });
 });
 

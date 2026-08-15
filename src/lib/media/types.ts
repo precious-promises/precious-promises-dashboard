@@ -64,6 +64,10 @@ export const CONTENT_MEDIA_PURPOSES = [
 ] as const;
 export type ContentMediaPurpose = (typeof CONTENT_MEDIA_PURPOSES)[number];
 
+/** How a generated file came to exist. Null on imported media. */
+export const GENERATED_MEDIA_KINDS = ["rendered_video", "voiceover"] as const;
+export type GeneratedMediaKind = (typeof GENERATED_MEDIA_KINDS)[number];
+
 export interface MediaAsset {
   id: string;
   owner_id: string;
@@ -78,6 +82,14 @@ export interface MediaAsset {
   height: number | null;
   duration_seconds: number | null;
   rights_status: RightsStatus;
+  /**
+   * Stage 11 provenance: set only on files this application generated
+   * (render output, voiceover), with the job that produced them. Imported
+   * media carries null in both — a generated file can never masquerade as an
+   * imported one, nor the reverse.
+   */
+  generated_kind?: GeneratedMediaKind | null;
+  generated_job_id?: string | null;
   created_at: string;
   updated_at: string;
 }

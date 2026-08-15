@@ -3,12 +3,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AiDraftPanel } from "@/components/ai/draft-panel";
 import { ItemPicker } from "@/components/content/item-picker";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { ScriptForm } from "@/components/scripts/script-form";
 import { ScriptureReadOnly } from "@/components/scripture/scripture-panel-readonly";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
+import { draftedGenerationsFor } from "@/app/dashboard/ai/actions";
+import { isAiConfigured } from "@/lib/ai/server-config";
+import { SCRIPT_GENERATION_TYPES } from "@/lib/ai/types";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { EMPTY_FILTERS } from "@/lib/content/filters";
 import { getContentItem, listContentItems } from "@/lib/content/repository";
@@ -61,12 +65,16 @@ export default async function ScriptStudioPage(
   const items = await listContentItems(EMPTY_FILTERS);
   const item = selectedId ? await getContentItem(selectedId) : null;
 
-  const [revisions, latest] = item
+  const [revisions, latest, drafts] = item
     ? await Promise.all([
         listScriptRevisions(item.id),
         getLatestRevision(item.id),
+        draftedGenerationsFor(item.id),
       ])
-    : [[], null];
+    : [[], null, []];
+  const scriptDrafts = drafts.filter((draft) =>
+    SCRIPT_GENERATION_TYPES.includes(draft.generation_type),
+  );
 
   const nextRevision = nextRevisionNumber(latest?.revision_number ?? null);
 
@@ -140,6 +148,22 @@ export default async function ScriptStudioPage(
                 contentItemId={item.id}
                 latest={latest}
                 nextRevision={nextRevision}
+              />
+            </SectionCard>
+
+            <SectionCard
+              title="AI drafting"
+              description="Drafts on request, decided by you. An accepted draft becomes a new revision through the same save path — nothing is overwritten and nothing is approved by it."
+            >
+              <AiDraftPanel
+                contentItemId={item.id}
+                offeredTypes={SCRIPT_GENERATION_TYPES}
+                drafts={scriptDrafts}
+                variants={[]}
+                configured={isAiConfigured()}
+                hasScripture={Boolean(
+                  item.scripture_reference && item.scripture_text,
+                )}
               />
             </SectionCard>
 

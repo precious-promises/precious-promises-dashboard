@@ -121,13 +121,19 @@ describe("storage providers", () => {
     expect(drive?.detail).toMatch(/approved/i);
   });
 
-  it("still has no adapter for the other providers", () => {
-    for (const provider of ["supabase_storage", "external"] as const) {
-      const status = STORAGE_PROVIDER_STATUS.find(
-        (entry) => entry.provider === provider,
-      );
-      expect(status?.implemented, provider).toBe(false);
-    }
+  it("reports supabase_storage as implemented, because Stage 11 built it", () => {
+    const supabase = STORAGE_PROVIDER_STATUS.find(
+      (entry) => entry.provider === "supabase_storage",
+    );
+    expect(supabase?.implemented).toBe(true);
+    expect(supabase?.detail).toMatch(/private/i);
+  });
+
+  it("still has no adapter for external URLs", () => {
+    const external = STORAGE_PROVIDER_STATUS.find(
+      (entry) => entry.provider === "external",
+    );
+    expect(external?.implemented).toBe(false);
   });
 
   it("refuses to fetch arbitrary external URLs, and says why", () => {

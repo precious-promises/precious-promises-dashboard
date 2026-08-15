@@ -175,11 +175,11 @@ describe("content navigation", () => {
     );
   });
 
-  it("still refuses to link the modules that remain unbuilt", () => {
+  it("links the once-unbuilt modules now that Stage 11 built them", () => {
     render(<SidebarNav pathname="/dashboard" />);
 
     for (const label of ["Content Planner", "Rights & Licences", "Settings"]) {
-      expect(screen.queryByRole("link", { name: label })).toBeNull();
+      expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     }
   });
 });

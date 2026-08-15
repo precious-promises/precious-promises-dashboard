@@ -10,7 +10,7 @@ Owner: Dave — Founder & Creator.
 
 ## Status
 
-**Stage 3 — Scripture, Script and Caption Studios.**
+**Stage 11 — Final production automation.** All 19 navigation areas are built.
 
 The writing half of the workflow is real: Scripture is reviewed and verified,
 scripts are written with full revision history, and per-platform captions are
@@ -20,13 +20,25 @@ Approval, scheduling and the publishing infrastructure are real as of Stages 5
 and 6. Stage 7 added Google OAuth and a YouTube provider. Stage 8 added Google
 Drive media retrieval — which unblocked YouTube uploads — and an Instagram
 Reels provider. Stage 9 added a TikTok provider. Stage 10 added the Analytics &
-Growth Centre.
+Growth Centre. Stage 11 added server-side rendering (Remotion, in the
+background worker path), ElevenLabs narration, a Scripture-safe AI drafting
+provider, private generated-media storage, and the four remaining modules:
+Content Planner, YouTube & Playlists, Rights & Licences and Settings.
 
-Still absent: AI generation and server rendering.
+**Implemented is not connected, and connected is not live-verified.** The
+render, voice and AI paths are implemented and tested against mocks; no real
+call has been made to ElevenLabs or the AI provider, and no render has run on
+a deployed worker. The Settings page reports the truthful per-deployment state
+of each.
 
 **Nothing has been published to any platform yet.** All three providers make
 real requests and can obtain real media, but no account has been connected and
 no post has been created.
+
+**AI drafts only.** Generation happens exclusively on explicit request, every
+draft awaits a human accept/reject decision, and the output schemas are closed:
+there is no field in which AI could return Scripture, and no code path by which
+it could approve, schedule, publish or alter verified verse text.
 
 Two refusals are deliberate and permanent. Instagram publishes **Reels only**:
 images, carousels and Stories need media on a publicly reachable URL, and this
@@ -88,12 +100,16 @@ Real values belong in untracked `.env` files locally, and in the deployment
 platform's secret store in production. Every `.env*` file is git-ignored except
 `.env.example` itself.
 
-| Variable                                      | Required now        | Notes                       |
-| --------------------------------------------- | ------------------- | --------------------------- |
-| `APP_URL`                                     | **Yes**             | Must be a valid http(s) URL |
-| `NEXT_PUBLIC_SUPABASE_URL`                    | **Yes, to sign in** | Project API URL             |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`        | **Yes, to sign in** | Browser-safe key            |
-| AI, Trigger, Meta, TikTok, Google, ElevenLabs | No                  | Unused during Stage 0       |
+| Variable                                      | Required now        | Notes                                                     |
+| --------------------------------------------- | ------------------- | --------------------------------------------------------- |
+| `APP_URL`                                     | **Yes**             | Must be a valid http(s) URL                               |
+| `NEXT_PUBLIC_SUPABASE_URL`                    | **Yes, to sign in** | Project API URL                                           |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`        | **Yes, to sign in** | Browser-safe key                                          |
+| AI, Trigger, Meta, TikTok, Google, ElevenLabs | No                  | Each feature reports "not configured" honestly when unset |
+| `RENDER_ENABLED`                              | No                  | Opt-in; needs a runtime with headless Chromium + FFmpeg   |
+
+The application and CI stay green with every provider credential unset — a
+missing credential is a truthfully-reported absence, never an error.
 
 The two Supabase values are browser-safe by design; access is constrained by Row
 Level Security, not by keeping the key secret. `SUPABASE_SERVICE_ROLE_KEY` is
@@ -208,16 +224,26 @@ repository secrets.
 
 ## Current limitations
 
-**Implemented:** Supabase project, email/password sign-in and sign-out, the
-premium responsive dashboard shell, the Content Library with Scripture
-verification, the Scripture, Script and Caption Studios, and media asset
-metadata — all under Row Level Security.
+**Implemented:** everything in the 19-area navigation — the content, writing,
+video, approval, scheduling, publishing, analytics, planning, rights and
+settings surfaces, plus server-side rendering, ElevenLabs narration and AI
+drafting — all under Row Level Security.
 
-Everything below is **planned, not built**:
+What remains true, and is stated in the product wherever relevant:
 
-- **No file upload.** Media assets are metadata records; no bytes move.
-- **Four functional integrations.** Google Drive (read-only), YouTube,
-  Instagram and TikTok. ElevenLabs and the AI provider are not implemented.
+- **Rendering is implemented, not enabled.** It runs only where the operator
+  sets `RENDER_ENABLED=true` on a runtime with headless Chromium and FFmpeg.
+  No render has been live-verified. A request while disabled records a failed
+  job with the reason — never a queued one nothing will consume.
+- **Voice and AI are implemented, not connected.** No real call has been made
+  to ElevenLabs or to the AI provider; both paths are exercised against mocks
+  and report "not configured" honestly until credentials exist. Narration uses
+  only a voice that already exists in the connected account — nothing creates
+  or clones voices, and AI output schemas are closed against Scripture.
+- **Generated media is the only file this application writes.** It goes into a
+  private bucket, owner-prefixed, reachable only through short-lived signed
+  URLs. Uploaded media assets remain metadata records; Google Drive remains
+  read-only.
 - **No successful publish.** The infrastructure is built, all three publishing
   adapters are real, and media can genuinely be retrieved from Drive — but no
   account has been connected, so nothing has been posted.
@@ -235,8 +261,6 @@ Everything below is **planned, not built**:
 - **YouTube cannot upload publicly.** An API client that has not passed Google's
   compliance audit has its uploads forced to private, so only `private` and
   `unlisted` are offered. Scheduled release is not offered for the same reason.
-- **No rendering.** The video studio composes and previews; server rendering is
-  designed and not connected.
 - **No TikTok analytics.** TikTok's Display API returns metadata only; the
   engagement counts are in its Research API, restricted to qualifying academic
   institutions. No connector was built, and figures can only be entered by hand
@@ -246,14 +270,10 @@ Everything below is **planned, not built**:
   re-consent; until it is granted, analytics reports the missing permission and
   publishing is unaffected.
 - **No analytics have been fetched.** No account is connected, so every figure
-  in the Analytics and Growth pages is an absence with a stated reason. No
-  analytics call has been verified against a live platform.
-- **No analytics.** Content, approval and schedule counts are real database
-  queries; publishing metrics stay at zero because nothing has been published.
-  Nothing fabricates views, followers, revenue or engagement.
-- **No AI generation.** The Script Studio's "Generate with AI" control is a
-  genuinely disabled button marking where it will go.
-- **6 of 19 navigation areas are unbuilt** and marked as such, with no `href`.
+  in the Analytics and Growth pages is an absence with a stated reason, and the
+  Content Planner shows no data-driven recommendations — it never fabricates
+  one from nothing. No analytics call has been verified against a live
+  platform. Nothing fabricates views, followers, revenue or engagement.
 - **No user registration, password reset or email flows.**
 
 ### Deferred verification
@@ -269,24 +289,27 @@ configuration is agreed. Their presence does not indicate a working integration.
 
 ## Documentation
 
-| Document                                                                            | Covers                                          |
-| ----------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [architecture.md](./docs/architecture.md)                                           | Modular monolith, data, worker and adapters     |
-| [security.md](./docs/security.md)                                                   | Secrets, OAuth, access control, auditing        |
-| [state-machines.md](./docs/state-machines.md)                                       | Content, approval and render job lifecycles     |
-| [database-plan.md](./docs/database-plan.md)                                         | Data models — what is built and what is planned |
-| [supabase-setup.md](./docs/supabase-setup.md)                                       | Project identity, RLS, owner account setup      |
-| [api-integrations.md](./docs/api-integrations.md)                                   | Planned adapters and research rules             |
-| [design-system.md](./docs/design-system.md)                                         | Approved visual direction and the locked target |
-| [stage-0-decisions.md](./docs/stage-0-decisions.md)                                 | Stage 0 decisions and reasoning                 |
-| [stage-1-ui.md](./docs/stage-1-ui.md)                                               | The dashboard shell and component inventory     |
-| [stage-2-content-library.md](./docs/stage-2-content-library.md)                     | Content items, media and the Scripture rule     |
-| [stage-3-writing-studios.md](./docs/stage-3-writing-studios.md)                     | Scripture, Script and Caption Studios           |
-| [stage-4-video-studio.md](./docs/stage-4-video-studio.md)                           | Video editor, render model, rendering research  |
-| [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md)             | Approval fingerprint, board, calendar           |
-| [stage-6-publishing-infrastructure.md](./docs/stage-6-publishing-infrastructure.md) | Queue, claiming, idempotency, safety gate       |
-| [stage-7-youtube.md](./docs/stage-7-youtube.md)                                     | Google OAuth, YouTube provider, encryption      |
-| [stage-8-media-instagram.md](./docs/stage-8-media-instagram.md)                     | Drive retrieval, root isolation, Instagram      |
+| Document                                                                                  | Covers                                          |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| [architecture.md](./docs/architecture.md)                                                 | Modular monolith, data, worker and adapters     |
+| [security.md](./docs/security.md)                                                         | Secrets, OAuth, access control, auditing        |
+| [state-machines.md](./docs/state-machines.md)                                             | Content, approval and render job lifecycles     |
+| [database-plan.md](./docs/database-plan.md)                                               | Data models — what is built and what is planned |
+| [supabase-setup.md](./docs/supabase-setup.md)                                             | Project identity, RLS, owner account setup      |
+| [api-integrations.md](./docs/api-integrations.md)                                         | Planned adapters and research rules             |
+| [design-system.md](./docs/design-system.md)                                               | Approved visual direction and the locked target |
+| [stage-0-decisions.md](./docs/stage-0-decisions.md)                                       | Stage 0 decisions and reasoning                 |
+| [stage-1-ui.md](./docs/stage-1-ui.md)                                                     | The dashboard shell and component inventory     |
+| [stage-2-content-library.md](./docs/stage-2-content-library.md)                           | Content items, media and the Scripture rule     |
+| [stage-3-writing-studios.md](./docs/stage-3-writing-studios.md)                           | Scripture, Script and Caption Studios           |
+| [stage-4-video-studio.md](./docs/stage-4-video-studio.md)                                 | Video editor, render model, rendering research  |
+| [stage-5-approval-scheduling.md](./docs/stage-5-approval-scheduling.md)                   | Approval fingerprint, board, calendar           |
+| [stage-6-publishing-infrastructure.md](./docs/stage-6-publishing-infrastructure.md)       | Queue, claiming, idempotency, safety gate       |
+| [stage-7-youtube.md](./docs/stage-7-youtube.md)                                           | Google OAuth, YouTube provider, encryption      |
+| [stage-8-media-instagram.md](./docs/stage-8-media-instagram.md)                           | Drive retrieval, root isolation, Instagram      |
+| [stage-9-tiktok.md](./docs/stage-9-tiktok.md)                                             | TikTok provider, three honest outcomes          |
+| [stage-10-analytics-growth.md](./docs/stage-10-analytics-growth.md)                       | Analytics honesty, Growth Centre evidence rules |
+| [stage-11-final-production-automation.md](./docs/stage-11-final-production-automation.md) | Rendering, voice, AI safety, final modules      |
 
 Each document marks implemented and planned work explicitly. They do not claim
 that future features already work.
@@ -305,14 +328,19 @@ src/
     globals.css           Design tokens and surface treatments
   components/
     accounts/             Connected account cards
+    ai/                   AI draft panel (request, accept, reject)
     approvals/            Approval queue rows and review detail
     publish/              Publish queue rows and attempt history
     youtube/              YouTube publishing settings form
     calendar/             Month grid, schedule form, recurring slots
     dashboard/            Shell, sidebar, top bar, cards
     content/              Content forms, filters, item picker
+    planner/              Content Planner form
+    production/           Production pipeline panel
+    rights/               Licence record form
     scripture/            Read-only Scripture panel
     scripts/              Script editor
+    settings/             Settings form
     variants/             Caption editor
     video/                Video editor: layers, preview, timeline, inspector
     ui/                   Section card, empty state, status badge
@@ -331,11 +359,21 @@ src/
     instagram/            Meta OAuth, container lifecycle, Reels provider
     youtube/              Google OAuth, Data API client, publishing provider
     schedule/             Timezones, recurrence, calendar mapping, safety
+    ai/                   Closed output schemas, prompts, Anthropic provider
+    analytics/            Providers, sync, readiness, honest metrics
+    growth/               Evidence analysis, confidence, experiments
+    planner/              Planner vocabulary, views, evidence-backed hints
+    render/               Render worker, build-props, reconciliation
+    rights/               Licence register vocabulary and warnings
+    settings/             Owner preferences and readiness types
+    voice/                ElevenLabs provider and voice job orchestration
     audit/                Append-only workflow log
-    production/           Workflow stage classification and board data
+    production/           Stage classification, board data, pipeline machine
     video/                Projects, scenes, preview resolution, render model
     media/                Media types and metadata validation
-    storage/              StorageProvider seam (no implementation)
+    storage/              Generated-media storage (private bucket, Stage 11)
+  remotion/               The render composition (props, scenes, Root)
+  trigger/                Trigger.dev task definitions (written, not connected)
     auth/
       routes.ts           Pure redirect policy
       login-schema.ts     Sign-in input validation

@@ -34,7 +34,7 @@ describe("SidebarNav", () => {
     }
   });
 
-  it("links only to the areas that exist", () => {
+  it("links to every area, because all 19 now exist", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
     // One link per built route, and no others — the count is the guard.
@@ -43,6 +43,7 @@ describe("SidebarNav", () => {
       DASHBOARD_PATH,
       "/dashboard/production",
       "/dashboard/content",
+      "/dashboard/planner",
       "/dashboard/scripture",
       "/dashboard/scripts",
       "/dashboard/captions",
@@ -52,28 +53,34 @@ describe("SidebarNav", () => {
       "/dashboard/calendar",
       "/dashboard/approvals",
       "/dashboard/publish",
+      "/dashboard/youtube",
       "/dashboard/growth",
       "/dashboard/analytics",
       "/dashboard/accounts",
+      "/dashboard/rights",
+      "/dashboard/settings",
     ]);
   });
 
-  it("does not render unbuilt modules as links", () => {
+  it("renders the Stage 11 modules as real links", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
-    // A link to a non-existent route is the failure this guards against.
-    for (const label of ["Content Planner", "Rights & Licences", "Settings"]) {
-      expect(screen.queryByRole("link", { name: label })).toBeNull();
+    for (const label of [
+      "Content Planner",
+      "YouTube & Playlists",
+      "Rights & Licences",
+      "Settings",
+    ]) {
+      expect(screen.getByRole("link", { name: label })).toBeInTheDocument();
     }
   });
 
-  it("marks unbuilt modules as unavailable for assistive technology", () => {
-    render(<SidebarNav pathname={DASHBOARD_PATH} />);
+  it("has no disabled coming-soon rows left", () => {
+    const { container } = render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
-    const row = screen.getByText("Settings").closest("[aria-disabled]");
-    expect(row).not.toBeNull();
-    expect(row).toHaveAttribute("aria-disabled", "true");
-    expect(row?.textContent).toContain("coming soon");
+    // The disabled-row rendering still exists for any future unbuilt module,
+    // but nothing currently uses it: every area is genuinely built.
+    expect(container.querySelector("[aria-disabled='true']")).toBeNull();
   });
 
   it("marks the current section as the active page", () => {
@@ -128,17 +135,62 @@ describe("MetricCard", () => {
 });
 
 describe("PlatformStatus", () => {
-  it("reports the platform as not connected", () => {
-    render(<PlatformStatus name="YouTube" icon={TestIcon} />);
+  it("reports a platform with no stored account as not connected", () => {
+    render(
+      <PlatformStatus
+        name="YouTube"
+        icon={TestIcon}
+        status={null}
+        identity={null}
+      />,
+    );
 
     expect(screen.getByText("YouTube")).toBeInTheDocument();
     expect(screen.getByText("Not connected")).toBeInTheDocument();
   });
 
-  it("disables Connect, because no OAuth flow exists", () => {
-    render(<PlatformStatus name="YouTube" icon={TestIcon} />);
+  it("shows the stored identity only when genuinely connected", () => {
+    render(
+      <PlatformStatus
+        name="YouTube"
+        icon={TestIcon}
+        status="connected"
+        identity="Precious Promises"
+      />,
+    );
 
-    expect(screen.getByRole("button", { name: /Connect/ })).toBeDisabled();
+    expect(
+      screen.getByText(/Connected · Precious Promises/),
+    ).toBeInTheDocument();
+  });
+
+  it("reports a rejected authorisation as needing reconnection", () => {
+    render(
+      <PlatformStatus
+        name="Instagram"
+        icon={TestIcon}
+        status="needs_reconnect"
+        identity="@precious"
+      />,
+    );
+
+    expect(screen.getByText("Reconnection needed")).toBeInTheDocument();
+    expect(screen.queryByText(/@precious/)).toBeNull();
+  });
+
+  it("links to Connected Accounts rather than pretending to connect here", () => {
+    render(
+      <PlatformStatus
+        name="YouTube"
+        icon={TestIcon}
+        status={null}
+        identity={null}
+      />,
+    );
+
+    expect(
+      screen.getByRole("link", { name: /YouTube connection/ }),
+    ).toHaveAttribute("href", "/dashboard/accounts");
   });
 });
 

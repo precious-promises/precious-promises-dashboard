@@ -22,10 +22,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { MetricCard } from "@/components/dashboard/metric-card";
 import { PlatformStatus } from "@/components/dashboard/platform-status";
-import {
-  QuickAction,
-  QuickActionLink,
-} from "@/components/dashboard/quick-action";
+import { QuickActionLink } from "@/components/dashboard/quick-action";
 import { WorkflowPipeline } from "@/components/dashboard/workflow-pipeline";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SectionCard } from "@/components/ui/section-card";
@@ -44,6 +41,7 @@ import {
   countScriptureNeedingAttention,
   getContentCounts,
 } from "@/lib/content/repository";
+import { loadSocialAccounts } from "@/lib/accounts/repository";
 import { loadReviewRows } from "@/lib/approvals/repository";
 import { loadBoard } from "@/lib/production/board";
 import type { ProductionStage } from "@/lib/production/stage";
@@ -66,13 +64,9 @@ export const metadata: Metadata = {
 /**
  * Dashboard metrics.
  *
- * The first two are **real queries** against `content_items` as of Stage 2 —
- * often still zero, but now because the database says so rather than because
- * the number was written into the markup.
- *
- * The last two stay at zero and say why: scheduling and publishing do not
- * exist, so there is nothing to count. Showing anything else would imply a
- * capability the product does not have.
+ * Every number is a **real query** — content, scripts, approvals, schedules,
+ * publish outcomes. "Published This Week" counts posts whose publish attempt
+ * genuinely succeeded, because that is the only thing the word may mean here.
  */
 function buildMetrics(counts: {
   draft: number;
@@ -85,6 +79,7 @@ function buildMetrics(counts: {
   scheduled: number;
   queued: number;
   publishFailed: number;
+  postedThisWeek: number;
 }) {
   return [
     {
@@ -149,34 +144,26 @@ function buildMetrics(counts: {
     },
     {
       label: "Published This Week",
-      value: 0,
+      value: counts.postedThisWeek,
       icon: Send,
-      note: "No platform is connected",
+      note: "Genuinely posted in the last 7 days",
     },
   ] as const;
 }
 
-/** Actions that still have nothing behind them. */
-const QUICK_ACTIONS = [
-  {
-    label: "Schedule Post",
-    description: "Queue approved content",
-    icon: CalendarClock,
-  },
-] as const;
-
 const PLATFORMS = [
-  { name: "YouTube", icon: MonitorPlay },
-  { name: "Instagram", icon: Camera },
-  { name: "TikTok", icon: Music2 },
+  { name: "YouTube", platform: "youtube", icon: MonitorPlay },
+  { name: "Instagram", platform: "instagram", icon: Camera },
+  { name: "TikTok", platform: "tiktok", icon: Music2 },
 ] as const;
 
 /**
  * What the application genuinely has, described structurally.
  *
- * These say what is *configured in this codebase* — they deliberately do not
- * claim any external service is currently reachable. Nothing here performs a
- * health check, so nothing here should read like one.
+ * These say what is *implemented in this codebase* — they deliberately do not
+ * claim any external service is currently reachable or that any credential is
+ * present in this deployment. Implemented is not connected, and connected is
+ * not live-verified; the Settings page reports the per-deployment truth.
  */
 const FOUNDATION = [
   { label: "Authentication foundation", state: "Configured" },
@@ -188,10 +175,12 @@ const FOUNDATION = [
   { label: "Approval & schedule RLS", state: "Configured" },
   { label: "Audit log", state: "Configured" },
   { label: "Publishing infrastructure", state: "Configured" },
-  { label: "Platform connections", state: "Not configured" },
-  { label: "Media storage", state: "Not configured" },
-  { label: "Video rendering", state: "Not configured" },
-  { label: "Publishing", state: "Not configured" },
+  { label: "Platform OAuth connections", state: "Configured" },
+  { label: "Private media storage", state: "Configured" },
+  { label: "Video rendering (Remotion)", state: "Configured" },
+  { label: "Voice generation (ElevenLabs)", state: "Configured" },
+  { label: "AI drafting (drafts only)", state: "Configured" },
+  { label: "Production pipeline RLS", state: "Configured" },
 ] as const;
 
 export default async function DashboardPage() {
@@ -213,6 +202,7 @@ export default async function DashboardPage() {
     reviewRows,
     scheduleEntries,
     board,
+    socialAccounts,
   ] = await Promise.all([
     getContentCounts(),
     countScriptureNeedingAttention(),
@@ -221,6 +211,7 @@ export default async function DashboardPage() {
     loadReviewRows(),
     listScheduleEntries(),
     loadBoard(),
+    loadSocialAccounts(),
   ]);
 
   const now = new Date();
@@ -255,6 +246,13 @@ export default async function DashboardPage() {
     ).length,
     publishFailed: scheduleEntries.filter(
       (entry) => entry.post.status === "failed",
+    ).length,
+    postedThisWeek: scheduleEntries.filter(
+      (entry) =>
+        entry.post.status === "posted" &&
+        entry.post.posted_at !== null &&
+        now.getTime() - new Date(entry.post.posted_at).getTime() <
+          7 * 24 * 60 * 60 * 1000,
     ).length,
   });
   const greeting = greetingFor(new Date().getHours(), OWNER_NAME);
@@ -363,14 +361,14 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <SectionCard
             title="Upcoming content"
-            description="Approved variants with a time against them. Nothing sends them."
+            description="Approved variants with a time against them. The publish run sends each one only when due, still approved and on a connected platform."
             className="xl:col-span-2"
           >
             {upcoming.length === 0 ? (
               <EmptyState
                 icon={CalendarClock}
                 title="Nothing scheduled yet."
-                description="Approve a platform variant, then give it a time in the Calendar. Scheduling records an intention — no publishing integration exists."
+                description="Approve a platform variant, then give it a time in the Calendar. The publish run only ever sends what you approved, when you said."
                 action={
                   <Link
                     href="/dashboard/calendar"
@@ -410,12 +408,29 @@ export default async function DashboardPage() {
 
           <SectionCard
             title="Connected platforms"
-            description="No publishing integration exists yet."
+            description="Read from the stored account records. Manage each connection — and see what it permits — on Connected Accounts."
           >
             <ul className="flex flex-col gap-2.5">
-              {PLATFORMS.map((platform) => (
-                <PlatformStatus key={platform.name} {...platform} />
-              ))}
+              {PLATFORMS.map(({ name, platform, icon }) => {
+                const account =
+                  socialAccounts.find(
+                    (candidate) => candidate.platform === platform,
+                  ) ?? null;
+                return (
+                  <PlatformStatus
+                    key={name}
+                    name={name}
+                    icon={icon}
+                    status={account?.status ?? null}
+                    identity={
+                      account?.handle ??
+                      account?.channel_title ??
+                      account?.display_name ??
+                      null
+                    }
+                  />
+                );
+              })}
             </ul>
           </SectionCard>
         </div>
@@ -496,9 +511,12 @@ export default async function DashboardPage() {
                 description="Review media metadata"
                 icon={Images}
               />
-              {QUICK_ACTIONS.map((action) => (
-                <QuickAction key={action.label} {...action} />
-              ))}
+              <QuickActionLink
+                href="/dashboard/planner"
+                label="Content Planner"
+                description="Plan what to make next"
+                icon={CalendarClock}
+              />
             </div>
           </SectionCard>
 
