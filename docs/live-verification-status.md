@@ -88,6 +88,34 @@ reported only as CONFIGURED / NOT CONFIGURED.
   environment values (Supabase URL, publishable key, `APP_URL`) plus
   `NODE_VERSION` — no secret is required for checkpoint B.
 
+### 2026-08-16 — Netlify site created and configured (B: partially configured)
+
+Performed directly through the connected Netlify tools:
+
+- **Site created:** `precious-promises-dashboard`, id
+  `7287fe02-553d-483f-b6c6-977ab43db0c2`, team Genesis OS, URL
+  `https://precious-promises-dashboard.netlify.app`. A **new** site — the
+  two pre-existing "precious" sites were neither read in detail, modified,
+  reused nor redeployed, and no Genesis project was touched.
+- **Environment variables — all four CONFIGURED** (verified by reading them
+  back; all four are non-secret by design):
+  `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`,
+  `NODE_VERSION` = 22, `APP_URL` = the exact assigned site URL. No server
+  secret has been placed in this environment yet.
+- **Repository link: NOT yet in effect.** `currentDeploy` on the site is
+  empty — **no build has ever run**. (The changing
+  `branchVersionOfSite` ids are placeholders, not deploys; they 404 when
+  queried.)
+- **Tooling limits encountered, recorded honestly:** the connected Netlify
+  tool surface exposes project/env/forms/extensions/team reads and one
+  deploy-write that only performs a _local upload_ via `npx` — which this
+  session's permission layer denies. No connected operation links a Git
+  repository or edits build settings, and the Netlify REST token is held
+  server-side by the connector. Additionally, `*.netlify.app` is blocked by
+  this sandbox's egress proxy, so the deployed site cannot be fetched from
+  here; deploy state must be read through the Netlify tools or confirmed by
+  the owner.
+
 ## Blocker order (verification sequence)
 
 1. Supabase owner account — CONFIGURED 2026-08-16
