@@ -289,6 +289,16 @@ export async function advanceProductionJob(
   if (target === "generating_text") {
     const generationId = formData.get("ai_generation_id");
     if (typeof generationId === "string" && generationId !== "") {
+      // Ownership proved before linking, exactly as the render step does.
+      const { data: owned } = await supabase
+        .from("ai_generations")
+        .select("id")
+        .eq("id", generationId)
+        .eq("owner_id", user.id)
+        .maybeSingle();
+      if (!owned) {
+        return { error: "That draft could not be found." };
+      }
       update.ai_generation_id = generationId;
     }
   }

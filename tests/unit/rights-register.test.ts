@@ -108,6 +108,22 @@ describe("warnings", () => {
   });
 });
 
+describe("linked assets are proved to be the owner's", () => {
+  it("verifies media_asset ownership on create AND update", () => {
+    // The update path must make the same proof the create path makes — an
+    // update is not a quieter door for linking someone else's asset.
+    const actions = readFileSync(
+      join(process.cwd(), "src/app/dashboard/rights/actions.ts"),
+      "utf8",
+    );
+    const ownershipChecks =
+      actions.match(
+        /from\("media_assets"\)[\s\S]*?eq\("owner_id", user\.id\)/g,
+      ) ?? [];
+    expect(ownershipChecks.length).toBeGreaterThanOrEqual(2);
+  });
+});
+
 describe("the register stays administrative", () => {
   it("says it is a record, not legal advice, in the module and the page", () => {
     const types = readFileSync(

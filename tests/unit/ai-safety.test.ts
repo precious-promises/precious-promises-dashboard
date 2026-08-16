@@ -192,6 +192,20 @@ describe("AI can only draft — the code paths that would act do not exist", () 
     expect(actions).not.toContain("scheduled_posts");
   });
 
+  it("anchors the failure audit to a real uuid, never a placeholder", () => {
+    // audit_log.entity_id is a uuid column; a non-uuid placeholder would make
+    // the insert fail and be silently swallowed — a lost audit row. The
+    // failure audit therefore only writes when a content item id exists.
+    const generations = readFileSync(
+      join(process.cwd(), "src/lib/ai/generations.ts"),
+      "utf8",
+    );
+    expect(generations).not.toContain('"none"');
+    expect(generations).toMatch(
+      /contentItemId !== null[\s\S]*?ai_generation_failed/,
+    );
+  });
+
   it("keeps the generation decision vocabulary human-shaped", () => {
     const generations = readFileSync(
       join(process.cwd(), "src/lib/ai/generations.ts"),

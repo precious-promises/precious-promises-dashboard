@@ -139,6 +139,21 @@ describe("the handoff to the human path", () => {
     expect(actions).not.toMatch(/review_state:\s*["']approved["']/);
   });
 
+  it("proves ownership of every artefact before linking it", () => {
+    // The render step and the text step link records by id from form data;
+    // both must prove the record is the owner's before writing the link.
+    const actions = readFileSync(
+      join(process.cwd(), "src/app/dashboard/production/pipeline-actions.ts"),
+      "utf8",
+    );
+    expect(actions).toMatch(
+      /from\("render_jobs"\)[\s\S]*?eq\("id", renderJobId\)[\s\S]*?eq\("owner_id", user\.id\)/,
+    );
+    expect(actions).toMatch(
+      /from\("ai_generations"\)[\s\S]*?eq\("id", generationId\)[\s\S]*?eq\("owner_id", user\.id\)/,
+    );
+  });
+
   it("requires a genuinely completed render before ready_for_review", () => {
     const actions = readFileSync(
       join(process.cwd(), "src/app/dashboard/production/pipeline-actions.ts"),

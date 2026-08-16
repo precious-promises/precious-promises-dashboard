@@ -118,6 +118,9 @@ describe("an unregistered runtime has no provider", () => {
     if (!outcome.accepted) {
       expect(outcome.reason).toBe(NO_PROVIDER_REASON);
       expect(outcome.reason).toMatch(/nothing was rendered/i);
+      // The renderer IS built as of Stage 11; an unregistered runtime must
+      // not claim otherwise.
+      expect(outcome.reason).not.toMatch(/not built/i);
     }
   });
 

@@ -162,7 +162,7 @@ export function getRenderProvider(): RenderProvider | null {
 }
 
 export const NO_PROVIDER_REASON =
-  "No rendering provider is connected. Server rendering is not built yet, so nothing was rendered.";
+  "No rendering provider is registered in this runtime, so nothing was rendered.";
 
 /**
  * Ask for a render.

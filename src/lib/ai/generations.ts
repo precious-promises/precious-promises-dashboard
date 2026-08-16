@@ -48,15 +48,20 @@ export async function runAiGeneration(
 
   if (!result.ok) {
     // A failed generation is a fact worth auditing, but there is no draft to
-    // store — an ai_generations row exists only when output exists.
-    await recordAuditAsWorker(
-      client,
-      input.ownerId,
-      "ai_generation_failed",
-      input.contentItemId ? "ai_generation" : "ai_generation",
-      input.contentItemId ?? "none",
-      { type: input.request.type, category: result.category },
-    );
+    // store — an ai_generations row exists only when output exists — so the
+    // audit anchors to the content item the draft was for. `entity_id` is a
+    // uuid column: with no item there is nothing valid to anchor to, and the
+    // failure reaches the owner through the action's own error instead.
+    if (input.contentItemId !== null) {
+      await recordAuditAsWorker(
+        client,
+        input.ownerId,
+        "ai_generation_failed",
+        "ai_generation",
+        input.contentItemId,
+        { type: input.request.type, category: result.category },
+      );
+    }
     return { ok: false, generationId: null, result, problems: [] };
   }
 

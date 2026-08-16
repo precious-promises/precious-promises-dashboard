@@ -97,6 +97,20 @@ export async function updateLicenceRecord(
     redirect(LOGIN_PATH);
   }
 
+  // The same proof the create path makes: a linked asset must be the
+  // owner's. An update is not a quieter door.
+  if (parsed.data.media_asset_id !== null) {
+    const { data: asset } = await supabase
+      .from("media_assets")
+      .select("id")
+      .eq("id", parsed.data.media_asset_id)
+      .eq("owner_id", user.id)
+      .maybeSingle();
+    if (!asset) {
+      return { error: "That linked media asset could not be found." };
+    }
+  }
+
   const { data, error } = await supabase
     .from("licence_records")
     .update(parsed.data)
