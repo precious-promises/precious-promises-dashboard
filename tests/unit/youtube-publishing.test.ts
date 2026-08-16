@@ -80,17 +80,30 @@ function account(overrides: Partial<SocialAccount> = {}): SocialAccount {
 }
 
 describe("media resolution after Stage 8", () => {
-  it("refuses a provider with no adapter, and names which", async () => {
-    for (const provider of ["supabase_storage", "external"] as const) {
-      const result = await resolveMediaSource(
-        asset({ storage_provider: provider }),
-      );
+  it("refuses the external provider, which has no adapter, and says why", async () => {
+    const result = await resolveMediaSource(
+      asset({ storage_provider: "external" }),
+    );
 
-      expect(result.available, provider).toBe(false);
-      if (!result.available) {
-        expect(result.error.code, provider).toBe("media_source_unavailable");
-        expect(result.error.message.length, provider).toBeGreaterThan(40);
-      }
+    expect(result.available).toBe(false);
+    if (!result.available) {
+      expect(result.error.code).toBe("media_source_unavailable");
+      expect(result.error.message.length).toBeGreaterThan(40);
+    }
+  });
+
+  it("refuses generated storage honestly when no worker credential exists", async () => {
+    // Stage 11 gave supabase_storage a real adapter — the private
+    // generated-media bucket — so its refusal in an unconfigured runtime is
+    // "not connected", not "no adapter".
+    const result = await resolveMediaSource(
+      asset({ storage_provider: "supabase_storage" }),
+    );
+
+    expect(result.available).toBe(false);
+    if (!result.available) {
+      expect(result.error.code).toBe("provider_not_connected");
+      expect(result.error.message.length).toBeGreaterThan(40);
     }
   });
 

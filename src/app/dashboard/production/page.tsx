@@ -4,7 +4,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
+import {
+  PipelinePanel,
+  type PipelineJobView,
+} from "@/components/production/pipeline-panel";
 import { EmptyState } from "@/components/ui/empty-state";
+import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import {
@@ -16,6 +21,10 @@ import {
   loadBoard,
   type BoardCard,
 } from "@/lib/production/board";
+import {
+  PIPELINE_HANDOFF_STATEMENT,
+  type ProductionJob,
+} from "@/lib/production/pipeline";
 import {
   BOARD_STAGES,
   PRODUCTION_STAGE_LABELS,
@@ -34,8 +43,78 @@ const STAGE_NOTES: Partial<Record<(typeof BOARD_STAGES)[number], string>> = {
   verify_scripture: "Scripture needs checking before anything else proceeds.",
   produce: "A video composition exists and is being built.",
   approve: "Approved and waiting to be given a time.",
-  schedule: "A time is set. Nothing sends it — no publishing exists.",
+  schedule:
+    "A time is set. The publish run sends it only when due, approved and on a connected platform.",
 };
+
+async function loadPipelineData(): Promise<{
+  jobs: PipelineJobView[];
+  contentOptions: { id: string; title: string }[];
+}> {
+  const supabase = await createSupabaseServerClient();
+
+  const [{ data: jobRows }, { data: itemRows }] = await Promise.all([
+    supabase
+      .from("production_jobs")
+      .select("*, content_items(title)")
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase
+      .from("content_items")
+      .select("id, title")
+      .neq("status", "archived")
+      .order("created_at", { ascending: false })
+      .limit(100),
+  ]);
+
+  type JobRow = ProductionJob & { content_items: { title: string } | null };
+  const jobs = (jobRows ?? []) as JobRow[];
+
+  // The newest render job per linked video project, so the rendering step can
+  // link to work the owner genuinely started in the Video Studio.
+  const projectIds = [
+    ...new Set(
+      jobs
+        .map((job) => job.video_project_id)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+  const rendersByProject = new Map<string, { id: string; status: string }>();
+  if (projectIds.length > 0) {
+    const { data: renderRows } = await supabase
+      .from("render_jobs")
+      .select("id, status, video_project_id, created_at")
+      .in("video_project_id", projectIds)
+      .order("created_at", { ascending: false });
+    for (const row of (renderRows ?? []) as {
+      id: string;
+      status: string;
+      video_project_id: string;
+    }[]) {
+      if (!rendersByProject.has(row.video_project_id)) {
+        rendersByProject.set(row.video_project_id, {
+          id: row.id,
+          status: row.status,
+        });
+      }
+    }
+  }
+
+  return {
+    jobs: jobs.map((row) => {
+      const { content_items: contentItem, ...job } = row;
+      return {
+        job,
+        contentTitle: contentItem?.title ?? "Untitled item",
+        latestRender:
+          job.video_project_id !== null
+            ? (rendersByProject.get(job.video_project_id) ?? null)
+            : null,
+      };
+    }),
+    contentOptions: (itemRows ?? []) as { id: string; title: string }[],
+  };
+}
 
 function Card({ card }: { card: BoardCard }) {
   const scheduled = card.schedules.filter(
@@ -141,7 +220,10 @@ export default async function ProductionBoardPage() {
     redirect(LOGIN_PATH);
   }
 
-  const cards = await loadBoard();
+  const [cards, pipeline] = await Promise.all([
+    loadBoard(),
+    loadPipelineData(),
+  ]);
   const byStage = groupByStage(cards);
 
   return (
@@ -223,9 +305,20 @@ export default async function ProductionBoardPage() {
           {UNREACHABLE_STAGES.map(
             (stage) => PRODUCTION_STAGE_LABELS[stage],
           ).join(", ")}{" "}
-          is not shown as a column. No publishing integration exists, so nothing
-          can reach it.
+          is not shown as a column. Publishing runs from the Publish Queue with
+          its own record of every attempt; this board tracks preparation up to
+          scheduling.
         </p>
+
+        <SectionCard
+          title="Production pipeline"
+          description={PIPELINE_HANDOFF_STATEMENT}
+        >
+          <PipelinePanel
+            jobs={pipeline.jobs}
+            contentOptions={pipeline.contentOptions}
+          />
+        </SectionCard>
       </div>
     </DashboardShell>
   );

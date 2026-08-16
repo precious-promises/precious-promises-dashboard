@@ -242,3 +242,38 @@ A variable becomes required in the block that implements the integration
 depending on it.
 
 Tests and CI never require real credentials.
+
+## Stage 11 — implemented integrations
+
+Researched against current documentation at implementation time (via the
+Context7 documentation index — direct vendor sites were blocked from this
+environment; sources and dates are recorded in
+[stage-11-final-production-automation.md](./stage-11-final-production-automation.md)).
+
+### Remotion (server-side rendering) — implemented, not enabled
+
+`@remotion/bundler` + `@remotion/renderer` in the background worker path,
+lazy-imported so nothing heavy loads in a request. Gated by `RENDER_ENABLED`
+because it needs headless Chromium and FFmpeg. Remotion is source-available
+with a company-licence requirement above a team-size threshold — recorded as a
+suggested entry in the Rights & Licences register.
+
+### ElevenLabs (narration) — implemented, not connected
+
+`POST /v1/text-to-speech/{voice_id}?output_format=mp3_44100_128` with the
+`xi-api-key` header. Per-request character limits enforced **before** the
+request from each model's documented figure. Voices are listed from the
+connected account; no cloning or voice-design endpoint is used or referenced.
+No real call has been made.
+
+### Anthropic (AI drafting) — implemented, not connected
+
+The official TypeScript SDK, structured outputs (`output_config` with a
+closed JSON schema per generation type), refusal stop-reason handled as a
+refusal. Drafts only; see [security.md](./security.md) for the confinement
+model. No real call has been made.
+
+### Supabase Storage (generated media) — implemented
+
+Private bucket, worker-credential access, owner-prefixed keys, short-lived
+signed URLs. No public URL exists for any generated file.

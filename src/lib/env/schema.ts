@@ -104,6 +104,12 @@ export const serverEnvSchema = z.object({
 
   ELEVENLABS_API_KEY: optionalText,
   ELEVENLABS_DEFAULT_VOICE_ID: optionalText,
+
+  // Opt-in switch for server-side rendering. Rendering needs a runtime that
+  // can run headless Chromium and FFmpeg; a serverless request environment
+  // usually cannot, so the capability stays off until the operator says the
+  // runtime can carry it.
+  RENDER_ENABLED: optionalText,
 });
 
 export type PublicEnv = z.infer<typeof publicEnvSchema>;

@@ -53,46 +53,43 @@ describe("navigation configuration", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("marks exactly the built areas as available", () => {
+  it("marks exactly the built areas as available — now all 19", () => {
     // Stage 1 had only Dashboard; Stage 2 added Content Library and Media
     // Assets; Stage 3 added the three writing studios; Stage 4 added the Video
     // Creation Studio; Stage 5 added the Production Board, Calendar and
     // Approval Queue; Stage 6 added the Publish Queue; Stage 7 added Connected
     // Accounts; Stage 8 added the Google Drive Browser; Stage 10 added the
-    // Growth Centre and Analytics. This list grows only when a route genuinely
-    // exists — never to satisfy a target count.
+    // Growth Centre and Analytics; Stage 11 added the Content Planner, the
+    // YouTube & Playlists workspace, Rights & Licences and Settings. This list
+    // grew only as each route genuinely came to exist — never to satisfy a
+    // target count — and it happens to have reached the full 19.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
 
-    expect(available.map((item) => item.label)).toEqual([
-      "Dashboard",
-      "Production Board",
-      "Content Library",
-      "Scripture Studio",
-      "Script Studio",
-      "Caption Studio",
-      "Video Creation Studio",
-      "Media Assets",
-      "Google Drive Browser",
-      "Calendar",
-      "Approval Queue",
-      "Publish Queue",
-      "Growth Centre",
-      "Analytics",
-      "Connected Accounts",
-    ]);
+    expect(available.map((item) => item.label)).toEqual(EXPECTED_LABELS);
     expect(available.find((item) => item.label === "Dashboard")?.href).toBe(
       DASHBOARD_PATH,
     );
   });
 
-  it("leaves the remaining 4 areas unbuilt", () => {
+  it("leaves nothing unbuilt", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(4);
+    expect(comingSoon).toHaveLength(0);
+  });
+
+  it("adds no 20th area for AI assistance", () => {
+    // AI drafting lives inside the studios that use it, behind explicit
+    // request buttons. A top-level AI area would present generation as a
+    // destination of its own, which is exactly what this product avoids.
+    expect(allNavItems()).toHaveLength(19);
+    for (const item of allNavItems()) {
+      expect(item.label.toLowerCase()).not.toContain("ai");
+      expect(item.label.toLowerCase()).not.toContain("assistant");
+    }
   });
 
   it("offers the Drive Browser, because Stage 8 built it", () => {
@@ -116,15 +113,31 @@ describe("navigation configuration", () => {
     expect(connectedAccounts?.href).toBe("/dashboard/accounts");
   });
 
-  it("still refuses to offer YouTube & Playlists as its own area", () => {
-    // Playlist selection lives inside the YouTube settings form. A separate
-    // area would imply browsing and managing playlists, which nothing does.
+  it("offers YouTube & Playlists, because Stage 11 built the workspace", () => {
+    // Stage 7's playlist selection lived inside the YouTube settings form,
+    // and this test used to insist no separate area existed. Stage 11 built a
+    // real workspace — channel identity, playlists from the connected channel,
+    // uploads this dashboard recorded — so the area is now genuine.
     const playlists = allNavItems().find(
       (item) => item.id === "youtube-playlists",
     );
 
-    expect(playlists?.status).toBe("coming-soon");
-    expect(playlists?.href).toBeUndefined();
+    expect(playlists?.status).toBe("available");
+    expect(playlists?.href).toBe("/dashboard/youtube");
+  });
+
+  it("offers the four Stage 11 areas at their routes", () => {
+    const expectations: Record<string, string> = {
+      "content-planner": "/dashboard/planner",
+      "youtube-playlists": "/dashboard/youtube",
+      "rights-licences": "/dashboard/rights",
+      settings: "/dashboard/settings",
+    };
+    for (const [id, href] of Object.entries(expectations)) {
+      const item = allNavItems().find((candidate) => candidate.id === id);
+      expect(item?.status, id).toBe("available");
+      expect(item?.href, id).toBe(href);
+    }
   });
 
   it("gives no href to any unbuilt module", () => {

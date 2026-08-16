@@ -24,86 +24,89 @@ open PRs against this handoff before making changes.**
   **Never access, inspect, query or modify Genesis projects or databases**,
   and do not reference them in code, configuration or documentation.
 
-## Current state (as of the Stage 10 merge, 2026-08-14)
+## Current state (as of Stage 11 implementation, 2026-08-15)
 
-- **Main SHA after Stage 10 merge:** `bc4166e00e7ae9e1d0c6b26f4823dd03b47d72b0`
-  ("Stage 10: add analytics and growth centre", squash of PR #13)
-- **Completed stages:** 0–10.
-  - Stage 5: approval, production board and scheduling
-  - Stage 6: safe publishing infrastructure
-  - Stage 7: YouTube connection and publishing provider
-  - Stage 8: media retrieval and Instagram provider
-  - Stage 9: TikTok publishing provider
-  - Stage 10: Analytics & Growth Centre (including a pre-merge fix commit
-    `36643b8`: reachable observation upsert via the `observed_on_utc`
-    generated column, a closed provenance gap in the `analytics_metrics`
-    update policy, and honest partial-sync reporting)
-- **Test counts on main:** 1109 unit tests across 54 files; 14 Playwright E2E
-  tests. CI (`Validate`) runs format, lint, typecheck, unit tests and build;
-  E2E is deliberately not in CI and runs locally
-  (`PLAYWRIGHT_CHROMIUM_EXECUTABLE` may be needed in sandboxes).
+- **Main SHA:** `d49c3c4` (Stage 10 merged as
+  `bc4166e00e7ae9e1d0c6b26f4823dd03b47d72b0`, then the handoff commit).
+- **Stage 11 is IMPLEMENTED but NOT MERGED.** It lives on branch
+  `claude/dashboard-stage-11` with an open PR titled
+  **"Stage 11: complete production automation and remaining dashboard
+  modules"**. Do not merge it without Dave's explicit instruction. Main does
+  not contain Stage 11.
+- **Completed (merged) stages:** 0–10.
+- **Stage 11 (on the branch) adds:** real Remotion server-side rendering in
+  the background worker path (gated by `RENDER_ENABLED`, crash-safe
+  reconciliation, completed-requires-file); the private `generated-media`
+  storage bucket (owner-prefixed keys, signed URLs only, no browser policy);
+  an ElevenLabs narration provider (server-only key, existing voices only, no
+  cloning anywhere); a Scripture-safe AI drafting provider (Anthropic SDK,
+  closed output schemas with no Scripture field, drafts only, human
+  accept/reject, provenance records); AI panels in the Script and Caption
+  Studios; the Content Planner (`/dashboard/planner`), YouTube & Playlists
+  workspace (`/dashboard/youtube`), Rights & Licences register
+  (`/dashboard/rights`) and Settings (`/dashboard/settings`); the production
+  pipeline ending at `ready_for_review`; a dashboard truth pass (stale "no
+  publishing integration exists" copy removed, platform rows read stored
+  accounts); and navigation at **19 of 19** areas — deliberately no 20th "AI
+  Assistant" area.
 
-## Navigation status
+## Honesty boundaries that must survive any future work
 
-Fifteen areas are built and linkable: Dashboard, Scripture Library, Content
-Library, Media Assets, the three writing studios, Video Creation Studio,
-Production Board, Calendar, Approval Queue, Publish Queue, Growth Centre,
-Analytics, Connected Accounts (plus the Google Drive Browser under Media).
-Four remain **coming-soon and unlinkable**: Content Planner, YouTube &
-Playlists, Rights & Licences, Settings. The navigation tests enforce that no
-unbuilt module is ever linked.
+- **Implemented ≠ connected ≠ live-verified.** Rendering, voice and AI are
+  implemented and tested against mocks. **Zero real calls** have been made to
+  ElevenLabs or the AI provider; no render has run on a deployed worker; no
+  social account is connected; nothing has ever been published; no analytics
+  call has reached a live platform.
+- **AI may never** approve, schedule, publish, verify Scripture, edit stored
+  verified Scripture, invent a verse, or claim guaranteed outcomes. These are
+  enforced structurally (closed schemas, separated read-only Scripture
+  context, no code path) and pinned by tests in `tests/unit/ai-safety.test.ts`.
+- **The production pipeline ends at `ready_for_review`.** No path exists from
+  generation to publication without the human review/approval/scheduling
+  steps.
+- **Google Drive stays read-only.** The only file store this application
+  writes is the private `generated-media` bucket.
+- The application and CI stay green with **all** provider credentials unset.
 
 ## Platform implementation status
 
-| Platform | Publishing | Analytics |
-| --- | --- | --- |
-| YouTube | Provider built (upload, thumbnail, playlist; `private`/`unlisted` only — no `public` until Google's audit) | Adapter built. Requires `yt-analytics.readonly`, a **separate explicit grant** — the publishing connection is never read as analytics authorisation |
-| Instagram | Provider built (Reels via container flow) | Adapter built. Same connection as publishing; no extra scope; **no watch time** (Meta exposes none) |
-| TikTok | Provider built (draft upload / manual post / direct post distinctions) | **Refused** — TikTok's Research API is closed to this product. Manual entry only, permanently labelled manual |
-
-**Connected is not the same as live-verified.** No social account is currently
-connected, no OAuth consent screen has been exercised end-to-end against a
-real account, and **no analytics call has ever reached a live platform API**.
-Every figure on the dashboard today is an honest absence with a stated reason.
-Every publish/analytics test runs against a fake platform.
-
-## Outstanding manual connection work (Dave's, not code)
-
-- Configure real OAuth credentials (Google, Meta, TikTok) in the deployment
-  platform's secret storage; connect accounts on Connected Accounts.
-- For YouTube analytics: add `yt-analytics.readonly` to the Google OAuth
-  consent screen, then use the separate "Grant analytics permission" button.
-- Google API compliance audit before `public` YouTube uploads can be offered.
+| Platform  | Publishing                                                      | Analytics                                                            |
+| --------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
+| YouTube   | Provider built (`private`/`unlisted` only until Google's audit) | Adapter built; needs the separate `yt-analytics.readonly` grant      |
+| Instagram | Provider built (Reels via container flow)                       | Adapter built; no watch time (Meta exposes none)                     |
+| TikTok    | Provider built (draft / manual / direct distinctions)           | **Refused** — Research API closed to this product; manual entry only |
 
 ## Trigger.dev
 
-Task code is written and type-checked (`analytics-daily-sync` at 05:15 UTC,
-`analytics-sync-one`, plus the publishing tasks) but **no Trigger.dev project
-is connected — nothing runs on a schedule**. The interface says "Implemented,
-not running". Manual "Refresh now" uses the same orchestration directly and
-works without the scheduler.
+Task code is written and type-checked (analytics sync, publishing tasks, and
+now `render-video`, `render-queue-sweep`, `render-reconcile`) but **no
+Trigger.dev project is connected — nothing runs on a schedule**. Manual paths
+use the same orchestration directly.
 
 ## Database
 
 - **Supabase project ref:** `yrlnahnbwrtmljcbfjdg` (this project and no other;
-  never touch Genesis projects)
-- Migrations through `20260814090000_fix_analytics_observation_upsert` are
-  applied remotely. Security advisor shows only the five intended
-  `rls_enabled_no_policy` INFO notices on the credential/session tables that
-  are worker-only by design.
-- Standing rules: API analytics provenance is enforced by RLS (browser may
-  write `source = 'manual'` only); `analytics_sync_runs` is read-only from the
-  browser; nothing in the analytics layer deletes snapshots or touches publish
-  records.
+  never touch Genesis projects).
+- Stage 11 migration `20260815090000_create_production_automation.sql` is on
+  the branch and applied remotely: `generated-media` bucket, provenance
+  columns on `media_assets` and `render_jobs`, new tables `voice_jobs`,
+  `ai_generations`, `production_jobs`, `planner_items`, `licence_records`,
+  `app_settings`, and rebuilt audit constraints. All new tables have RLS;
+  voice/AI generation rows are browser-read-only.
 
-## Remaining unbuilt modules
+## Outstanding manual work (Dave's, not code)
 
-Content Planner, YouTube & Playlists, Rights & Licences, Settings — plus AI
-generation, media upload and server-side rendering, none of which has a stage
-document yet.
+- Configure real OAuth credentials and connect accounts; grant the YouTube
+  analytics scope; pass the Google/TikTok audits where public posting is
+  wanted.
+- Set `ELEVENLABS_API_KEY`, choose a voice in Settings; set `AI_API_KEY`;
+  deploy a worker runtime with Chromium + FFmpeg and set `RENDER_ENABLED=true`;
+  connect a Trigger.dev project if scheduled runs are wanted.
+- After connecting: live-verify one render, one narration, one AI draft — none
+  has ever run for real.
 
-## Stage 11: NOT STARTED
+## The exact next authorized action
 
-**The exact next authorized action is: await Dave's instruction.** A finished
-stage is never permission to begin the next one. Do not start Stage 11, do not
-redesign delivered stages, and do not add unrelated features.
+**Await Dave's decision on the open Stage 11 PR.** A finished stage is never
+permission to begin further work. Do not merge, do not redesign delivered
+stages, and do not add unrelated features.

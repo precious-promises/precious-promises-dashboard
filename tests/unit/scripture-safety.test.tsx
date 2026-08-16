@@ -116,8 +116,8 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 10", () => {
-  it("activates exactly the fifteen built areas", () => {
+describe("navigation after Stage 11", () => {
+  it("activates all nineteen areas, each genuinely built", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -126,6 +126,7 @@ describe("navigation after Stage 10", () => {
       "Dashboard",
       "Production Board",
       "Content Library",
+      "Content Planner",
       "Scripture Studio",
       "Script Studio",
       "Caption Studio",
@@ -135,21 +136,21 @@ describe("navigation after Stage 10", () => {
       "Calendar",
       "Approval Queue",
       "Publish Queue",
+      "YouTube & Playlists",
       "Growth Centre",
       "Analytics",
       "Connected Accounts",
+      "Rights & Licences",
+      "Settings",
     ]);
   });
 
-  it("leaves the remaining 4 areas unbuilt and unlinkable", () => {
+  it("leaves nothing marked coming-soon", () => {
     const comingSoon = allNavItems().filter(
       (item) => item.status === "coming-soon",
     );
 
-    expect(comingSoon).toHaveLength(4);
-    for (const item of comingSoon) {
-      expect(item.href, `${item.label} must not be linkable`).toBeUndefined();
-    }
+    expect(comingSoon).toHaveLength(0);
   });
 
   it("renders the studios as real links", () => {
@@ -170,17 +171,22 @@ describe("navigation after Stage 10", () => {
     ).toHaveAttribute("href", "/dashboard/video");
   });
 
-  it("still refuses to link the modules that remain unbuilt", () => {
+  it("links the Stage 11 modules, because they are now genuinely built", () => {
     render(<SidebarNav pathname="/dashboard" />);
 
-    // Growth Centre and Analytics moved off this list in Stage 10 because they
-    // were genuinely built. What stays here has no route behind it.
-    for (const label of [
-      "YouTube & Playlists",
-      "Content Planner",
-      "Settings",
-    ]) {
-      expect(screen.queryByRole("link", { name: label })).toBeNull();
+    // Growth Centre and Analytics moved off the unbuilt list in Stage 10;
+    // Stage 11 emptied it entirely. Each of these has a real route behind it.
+    const expectations: Record<string, string> = {
+      "YouTube & Playlists": "/dashboard/youtube",
+      "Content Planner": "/dashboard/planner",
+      "Rights & Licences": "/dashboard/rights",
+      Settings: "/dashboard/settings",
+    };
+    for (const [label, href] of Object.entries(expectations)) {
+      expect(screen.getByRole("link", { name: label })).toHaveAttribute(
+        "href",
+        href,
+      );
     }
   });
 });

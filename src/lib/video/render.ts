@@ -128,18 +128,41 @@ export interface RenderProvider {
 }
 
 /**
+ * The provider registry.
+ *
+ * Stage 4 hard-coded `null`; Stage 11 made this a registry the same way the
+ * analytics adapters register themselves. This module stays pure and
+ * client-safe — the Remotion provider registers from a server-only module
+ * (`@/lib/render/register`), so a browser bundle that imports this file gets
+ * an empty registry and the same honest `null` it always did.
+ */
+let registeredFactory: (() => RenderProvider | null) | null = null;
+
+export function registerRenderProvider(
+  factory: () => RenderProvider | null,
+): void {
+  registeredFactory = factory;
+}
+
+/** Intended for tests. */
+export function clearRenderProvider(): void {
+  registeredFactory = null;
+}
+
+/**
  * The configured provider, or `null`.
  *
- * Returns `null` in Stage 4 — deliberately, and not as a placeholder to be
- * filled in later by a fake. Callers must handle the absence, which is what
- * makes "rendering is not connected" impossible to forget at the call site.
+ * `null` still means exactly what it meant in Stage 4: nothing can render,
+ * and callers must handle the absence. A registered factory may itself
+ * return `null` when the runtime is not configured for rendering — a
+ * provider that exists in code is not a provider that is connected.
  */
 export function getRenderProvider(): RenderProvider | null {
-  return null;
+  return registeredFactory === null ? null : registeredFactory();
 }
 
 export const NO_PROVIDER_REASON =
-  "No rendering provider is connected. Server rendering is not built yet, so nothing was rendered.";
+  "No rendering provider is registered in this runtime, so nothing was rendered.";
 
 /**
  * Ask for a render.

@@ -114,12 +114,14 @@ describe("an incomplete outcome is never a publication", () => {
     // integration module may name a platform host, so no page, action or
     // scheduling path can start talking to one.
     const forbidden =
-      /(googleapis\.com|accounts\.google\.com|graph\.facebook\.com|graph\.instagram\.com|rupload\.facebook\.com|api\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com)/i;
+      /(googleapis\.com|accounts\.google\.com|graph\.facebook\.com|graph\.instagram\.com|rupload\.facebook\.com|api\.instagram\.com|api\.tiktok\.com|open-api\.tiktok\.com|api\.elevenlabs\.io|api\.anthropic\.com)/i;
 
     const integrationDirs = [
       join("src", "lib", "youtube"),
       join("src", "lib", "drive"),
       join("src", "lib", "instagram"),
+      join("src", "lib", "voice"),
+      join("src", "lib", "ai"),
     ];
 
     for (const file of sourceFiles()) {

@@ -4,8 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { syncApprovalsForItem } from "@/lib/approvals/invalidate";
+import { recordAudit } from "@/lib/audit/repository";
 import { LOGIN_PATH } from "@/lib/auth/routes";
-import { requestRender } from "@/lib/video/render";
+import { getRenderProvider, requestRender } from "@/lib/video/render";
+import {
+  processQueuedRenderJobs,
+  reconcileRenderJob,
+} from "@/lib/render/worker";
+import { createWorkerClient } from "@/lib/supabase/worker";
+// Registers the Remotion provider into the render registry. Server-only.
+import "@/lib/render/register";
 import {
   clampDuration,
   nextSceneOrder,
@@ -632,10 +640,12 @@ export async function clearProductionAsset(formData: FormData): Promise<void> {
 /**
  * Ask for a render.
  *
- * There is no rendering provider, so this always refuses — and records the
- * refusal as a **failed** job with the reason attached. It is deliberately not
- * left `queued`: a queued job would read as work in progress, when in fact
- * nothing is going to pick it up.
+ * Stage 11 connected a real provider (Remotion, `src/lib/render/`). When the
+ * runtime is configured for rendering the request is **accepted** and
+ * recorded as `queued` — and only the render worker may advance it from
+ * there. When it is not configured, the refusal is recorded as a **failed**
+ * job with the reason attached, exactly as it has been since Stage 4: a
+ * queued job nothing will pick up would read as work in progress.
  */
 export async function requestProjectRender(formData: FormData): Promise<void> {
   const projectId = formData.get("project_id");
@@ -672,18 +682,130 @@ export async function requestProjectRender(formData: FormData): Promise<void> {
     scenes: (scenes ?? []) as VideoScene[],
   });
 
-  await supabase.from("render_jobs").insert({
-    project_id: projectId,
-    owner_id: user.id,
-    project_revision: (full!.current_revision as number) ?? 1,
-    provider: "none",
-    // Accepted is impossible while no provider exists. If one is added later,
-    // an accepted job starts as `queued` and only the worker may advance it.
-    status: outcome.accepted ? "queued" : "failed",
-    failure_reason: outcome.accepted ? null : outcome.reason,
-    completed_at: null,
-  });
+  const provider = getRenderProvider();
+
+  const { data: jobRow } = await supabase
+    .from("render_jobs")
+    .insert({
+      project_id: projectId,
+      owner_id: user.id,
+      project_revision: (full!.current_revision as number) ?? 1,
+      provider: outcome.accepted && provider ? provider.id : "none",
+      // An accepted job starts as `queued` and only the worker may advance
+      // it. A refusal is a recorded failure, never a silent nothing.
+      status: outcome.accepted ? "queued" : "failed",
+      failure_reason: outcome.accepted ? null : outcome.reason,
+      completed_at: null,
+    })
+    .select("id")
+    .single();
+
+  if (jobRow) {
+    await recordAudit(
+      "render_requested",
+      "render_job",
+      (jobRow as { id: string }).id,
+      { accepted: outcome.accepted },
+    );
+  }
 
   revalidatePath(editorPath(projectId));
-  redirect(`${editorPath(projectId)}?notice=render-refused`);
+  redirect(
+    `${editorPath(projectId)}?notice=${outcome.accepted ? "render-queued" : "render-refused"}`,
+  );
+}
+
+/**
+ * Process the render queue now.
+ *
+ * The manual counterpart to the Trigger.dev sweep, mirroring how analytics
+ * refresh works: no scheduler needs to be deployed for Dave to get his own
+ * render. This is a long request by nature — rendering is slow — and it only
+ * exists because the runtime operator explicitly enabled rendering.
+ */
+export async function processRenderQueueNow(formData: FormData): Promise<void> {
+  const projectId = formData.get("project_id");
+  if (typeof projectId !== "string") {
+    return;
+  }
+
+  const { project } = await ownedProject(projectId);
+  if (!project) {
+    redirect(VIDEO_PATH);
+  }
+
+  const { client } = createWorkerClient();
+  if (client !== null) {
+    await processQueuedRenderJobs(client);
+  }
+
+  revalidatePath(editorPath(projectId));
+  redirect(`${editorPath(projectId)}?notice=render-processed`);
+}
+
+/**
+ * Reconcile a job stuck in `rendering` after a crash: recover the output if
+ * it exists, otherwise record the crash honestly.
+ */
+export async function reconcileRender(formData: FormData): Promise<void> {
+  const projectId = formData.get("project_id");
+  const jobId = formData.get("job_id");
+  if (typeof projectId !== "string" || typeof jobId !== "string") {
+    return;
+  }
+
+  const { supabase, user, project } = await ownedProject(projectId);
+  if (!project) {
+    redirect(VIDEO_PATH);
+  }
+
+  // Ownership proved through the session before the worker credential acts.
+  const { data: owned } = await supabase
+    .from("render_jobs")
+    .select("id")
+    .eq("id", jobId)
+    .eq("owner_id", user.id)
+    .maybeSingle();
+
+  if (owned) {
+    const { client } = createWorkerClient();
+    if (client !== null) {
+      await reconcileRenderJob(client, jobId);
+    }
+  }
+
+  revalidatePath(editorPath(projectId));
+  redirect(`${editorPath(projectId)}?notice=render-reconciled`);
+}
+
+/**
+ * Cancel a queued or in-flight render. Cancellation stops future work and
+ * keeps every record; it deletes nothing and completes nothing.
+ */
+export async function cancelRender(formData: FormData): Promise<void> {
+  const projectId = formData.get("project_id");
+  const jobId = formData.get("job_id");
+  if (typeof projectId !== "string" || typeof jobId !== "string") {
+    return;
+  }
+
+  const { supabase, user, project } = await ownedProject(projectId);
+  if (!project) {
+    redirect(VIDEO_PATH);
+  }
+
+  const { data: cancelled } = await supabase
+    .from("render_jobs")
+    .update({ status: "cancelled", completed_at: new Date().toISOString() })
+    .eq("id", jobId)
+    .eq("owner_id", user.id)
+    .in("status", ["queued", "rendering"])
+    .select("id");
+
+  if (cancelled && cancelled.length > 0) {
+    await recordAudit("render_cancelled", "render_job", jobId, {});
+  }
+
+  revalidatePath(editorPath(projectId));
+  redirect(`${editorPath(projectId)}?notice=render-cancelled`);
 }

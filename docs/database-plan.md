@@ -306,3 +306,35 @@ Deliberately unresolved until the implementing block:
   in application code
 - Soft-delete versus hard-delete for archived content
 - How Scripture references are keyed against a canonical verse source
+
+## Stage 11 additions — _implemented_
+
+Migration `20260815090000_create_production_automation.sql`:
+
+- **`storage.buckets`** gains the private `generated-media` bucket
+  (`public = false`, no browser-facing `storage.objects` policy at all).
+  Object keys are `<ownerId>/<kind>/<name>.<ext>`; ownership is enforced by
+  the key prefix in every worker read/write path.
+- **`media_assets`** gains `generated_kind` and `generated_job_id` so a file
+  this application rendered or narrated is an ordinary asset with provenance,
+  consumable by publishing through the existing media-source seam.
+- **`render_jobs`** gains `output_storage_path`, `failure_category` and
+  `claimed_at` for the worker's atomic claim and crash reconciliation.
+- **`voice_jobs`** — narration runs; completed-requires-output and
+  failed-requires-category constraints; browser SELECT-only.
+- **`ai_generations`** — full provenance per draft (provider, model, prompt
+  template version, Scripture reference used as context, output, status,
+  accepted target); accepted-requires-target constraint; browser SELECT-only.
+- **`production_jobs`** — the pipeline state machine's record; owner CRUD;
+  failed-requires-category constraint.
+- **`planner_items`** — planning intent; `target_platforms` checked against
+  the platform vocabulary. Not a scheduling table.
+- **`licence_records`** — the rights register.
+- **`app_settings`** — one preferences row per owner (`unique (owner_id)`).
+  Preferences only; no credential column exists.
+- **`audit_log`** constraints rebuilt with the Stage 11 actions and entity
+  types.
+
+Every new table has RLS enabled, owner-scoped policies (or read-only where the
+browser must not write), `revoke` from `anon`, and the `handle_updated_at`
+trigger.

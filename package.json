@@ -20,6 +20,10 @@
     "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
+    "@remotion/bundler": "^4.0.512",
+    "@remotion/player": "^4.0.512",
+    "@remotion/renderer": "^4.0.512",
     "@supabase/ssr": "^0.12.4",
     "@supabase/supabase-js": "^2.112.2",
     "@trigger.dev/sdk": "^4.5.10",
@@ -28,6 +32,7 @@
     "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "remotion": "^4.0.512",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },

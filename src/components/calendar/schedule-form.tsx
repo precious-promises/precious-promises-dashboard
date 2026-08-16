@@ -169,8 +169,8 @@ export function ScheduleForm({
       <div>
         <SubmitButton />
         <p className="mt-1.5 text-xs text-ink-muted">
-          Scheduling records an intention. Nothing sends it — no publishing
-          exists.
+          Scheduling records an intention. The publish run sends it when due —
+          and only if the approval still matches and the platform is connected.
         </p>
       </div>
     </form>

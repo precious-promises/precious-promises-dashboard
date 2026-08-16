@@ -272,9 +272,10 @@ the standard any future platform must meet.
 
 `scheduled_posts` cannot record `posted` without the platform's own post id,
 and `publish_attempts` cannot record `succeeded` without one; an attempt made
-with no provider cannot succeed at all. **No provider exists**, so the
-execution-time safety gate refuses every run before anything is sent, and the
-refusal is written down.
+with no provider cannot succeed at all. Providers now exist for YouTube,
+Instagram and TikTok, but **no account is connected**, so the execution-time
+safety gate refuses every run before anything is sent, and the refusal is
+written down.
 
 A completed background job is not evidence of a completed publish, and nothing
 in this codebase treats it as though it were.
@@ -286,8 +287,42 @@ truncation, so a secret cannot survive by sitting past the cut.
 ### The same rule, already enforced for rendering — _implemented_
 
 `render_jobs` cannot record a `completed` render without an output media asset,
-and cannot record a `failed` one without a reason. No rendering provider is
-connected, so every render request is refused and written down as a failure
-with its reason. The application has no code path that writes `completed`;
-only something that produced a file could. See
-[stage-4-video-studio.md](./stage-4-video-studio.md).
+and cannot record a `failed` one without a reason. As of Stage 11 a real
+Remotion worker exists, and it is the **only** code that moves a job to
+`completed` — after storing the file, verifying it exists, and recording the
+asset. In a runtime where rendering is not enabled, every request is still
+refused and written down as a failure with its reason. See
+[stage-4-video-studio.md](./stage-4-video-studio.md) and
+[stage-11-final-production-automation.md](./stage-11-final-production-automation.md).
+
+## Stage 11 — generated media, voice and AI — _implemented_
+
+- **The `generated-media` bucket is private.** No browser-facing storage
+  policy exists on it at all; access goes through the trusted worker
+  credential, every object key is prefixed with the owner's id, and every
+  read path re-checks that prefix because the worker credential bypasses RLS.
+  The browser only ever receives a short-lived signed URL (10 minutes).
+- **Uploads are validated before a byte is written**: MIME allowlist and size
+  ceiling per generated kind, and object names are sanitised even though they
+  are built from UUIDs.
+- **Google Drive stays read-only.** Stage 11 writes files, but only to the
+  private bucket; no Drive write scope was added and no upload call exists.
+- **The ElevenLabs key is server-only**, sent in the `xi-api-key` header and
+  nowhere else. Platform error bodies are mapped to fixed sentences rather
+  than echoed, because a provider message can quote the request and the
+  request contains the script. No voice-cloning or voice-design endpoint is
+  referenced anywhere in the tree — narration can only use a voice that
+  already exists in the connected account.
+- **AI is structurally confined to drafting.** Output schemas are closed
+  (`additionalProperties: false`, enforced server-side by the provider and
+  re-validated locally); no schema has a Scripture field, so "AI returned
+  Scripture" is unstorable. Scripture reaches the model only as separated
+  read-only context. Acceptance is a second human decision that flows through
+  the existing revision/variant machinery — including approval invalidation —
+  and the AI modules cannot see the approval, scheduling or publishing tables.
+- **Voice, AI and production job rows are browser-read-only.** They are
+  written by the server paths that did the work; a browser that could write
+  one could record work that never happened.
+- **Settings never touch credentials.** The readiness board reports only
+  Configured / Not configured, derived from server-side booleans; no secret
+  value is displayed, returned, logged or stored in the database.

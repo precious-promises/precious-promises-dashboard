@@ -71,8 +71,9 @@ export const STORAGE_PROVIDER_STATUS: readonly StorageProviderStatus[] = [
   },
   {
     provider: "supabase_storage",
-    implemented: false,
-    detail: "No adapter. Available for small development assets in future.",
+    implemented: true,
+    detail:
+      "Implemented in Stage 11 for generated media only. Reads files this application itself rendered or narrated into the private generated-media bucket; the browser never receives more than a short-lived signed URL.",
   },
   {
     provider: "external",
