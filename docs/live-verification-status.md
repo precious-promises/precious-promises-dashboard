@@ -22,19 +22,19 @@ reported only as CONFIGURED / NOT CONFIGURED.
 
 ## Readiness matrix
 
-| #   | Subsystem                     | Implemented                           | Configured           | Connected | Live-verified | Blocker                                                                                                |
-| --- | ----------------------------- | ------------------------------------- | -------------------- | --------- | ------------- | ------------------------------------------------------------------------------------------------------ |
-| A   | Supabase Auth (owner sign-in) | Yes                                   | **Yes** (2026-08-16) | No        | No            | Sign-in not yet possible: no deployment exists to sign into (depends on B)                             |
-| B   | Production web deployment     | Yes (app builds; 19 routes)           | **No**               | No        | No            | No deploy config in the repository; no site confirmably linked to this repo                            |
-| C   | Trigger.dev                   | Yes (task code + `trigger.config.ts`) | No                   | No        | No            | No Trigger.dev project connected; `TRIGGER_SECRET_KEY` / `TRIGGER_PROJECT_REF` not configured          |
-| D   | Render worker (Remotion)      | Yes                                   | No                   | No        | No            | No render-capable deployed runtime; `RENDER_ENABLED` and the worker credential not configured anywhere |
-| E   | Google / YouTube OAuth        | Yes                                   | No                   | No        | No            | No Google Cloud OAuth client configured; needs the deployed redirect URI, so depends on B              |
-| F   | Google Drive (read-only)      | Yes                                   | No                   | No        | No            | Same Google OAuth client + `GOOGLE_DRIVE_ROOT_FOLDER_ID`                                               |
-| G   | YouTube Analytics             | Yes                                   | No                   | No        | No            | Separate `yt-analytics.readonly` consent, after E                                                      |
-| H   | Meta / Instagram              | Yes                                   | No                   | No        | No            | No Meta app configured; publish permission is App-Review-gated                                         |
-| I   | TikTok                        | Yes                                   | No                   | No        | No            | No TikTok developer app; public direct post additionally audit-gated                                   |
-| J   | ElevenLabs                    | Yes                                   | No                   | No        | No            | `ELEVENLABS_API_KEY` not configured in any server environment                                          |
-| K   | Anthropic AI                  | Yes                                   | No                   | No        | No            | `AI_API_KEY` not configured in any server environment                                                  |
+| #   | Subsystem                     | Implemented                           | Configured           | Connected | Live-verified | Blocker                                                                                                                   |
+| --- | ----------------------------- | ------------------------------------- | -------------------- | --------- | ------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| A   | Supabase Auth (owner sign-in) | Yes                                   | **Yes** (2026-08-16) | No        | No            | Deployment now live; awaiting the owner's first real sign-in (evidence will be `last_sign_in_at`)                         |
+| B   | Production web deployment     | Yes (app builds; 19 routes)           | **Yes**              | **Yes**   | **Partial**   | Build published from main with evidence; page rendering confirmed by owner sign-in (sandbox cannot reach `*.netlify.app`) |
+| C   | Trigger.dev                   | Yes (task code + `trigger.config.ts`) | No                   | No        | No            | No Trigger.dev project connected; `TRIGGER_SECRET_KEY` / `TRIGGER_PROJECT_REF` not configured                             |
+| D   | Render worker (Remotion)      | Yes                                   | No                   | No        | No            | No render-capable deployed runtime; `RENDER_ENABLED` and the worker credential not configured anywhere                    |
+| E   | Google / YouTube OAuth        | Yes                                   | No                   | No        | No            | No Google Cloud OAuth client configured; needs the deployed redirect URI, so depends on B                                 |
+| F   | Google Drive (read-only)      | Yes                                   | No                   | No        | No            | Same Google OAuth client + `GOOGLE_DRIVE_ROOT_FOLDER_ID`                                                                  |
+| G   | YouTube Analytics             | Yes                                   | No                   | No        | No            | Separate `yt-analytics.readonly` consent, after E                                                                         |
+| H   | Meta / Instagram              | Yes                                   | No                   | No        | No            | No Meta app configured; publish permission is App-Review-gated                                                            |
+| I   | TikTok                        | Yes                                   | No                   | No        | No            | No TikTok developer app; public direct post additionally audit-gated                                                      |
+| J   | ElevenLabs                    | Yes                                   | No                   | No        | No            | `ELEVENLABS_API_KEY` not configured in any server environment                                                             |
+| K   | Anthropic AI                  | Yes                                   | No                   | No        | No            | `AI_API_KEY` not configured in any server environment                                                                     |
 
 ## Evidence log
 
@@ -116,21 +116,63 @@ Performed directly through the connected Netlify tools:
   here; deploy state must be read through the Netlify tools or confirmed by
   the owner.
 
+### 2026-08-18 — First production deploy succeeded (B: Connected)
+
+Repository linked by the owner in the Netlify UI (the connected tool surface
+exposes no Git-link operation). First production build then ran on Netlify's
+own infrastructure. Verified from the deploy record via the Netlify API:
+
+- **Deploy** `6a84a1e646817078b6f04f66`, build `6a84a1e546817078b6f04f64`,
+  **state `ready`**, `error_message: null`, `plugin_state: success`,
+  build time 67s, published 2026-08-18 18:19:26 UTC.
+- **Repository:** commit URL resolves to
+  `github.com/precious-promises/precious-promises-dashboard` — the correct
+  repository.
+- **Branch `main`, context `production`**, `subdomain_alias: main`.
+- **Deployed commit `d920124956b26a2f1afcb4b2c253723ddd489182`** — exactly
+  current main.
+- **HTTPS:** `ssl_url` = `https://precious-promises-dashboard.netlify.app`;
+  `APP_URL` matches it exactly.
+- **Server rendering genuinely deployed:** `@netlify/plugin-nextjs@5.15.13`
+  produced the Next.js Server Handler function on runtime **nodejs22.x**
+  (confirming `NODE_VERSION=22` took effect) plus one edge function — so the
+  proxy/session path and server actions are deployed, not a static export.
+- **Environment variables:** all four still CONFIGURED, re-read after the
+  deploy. All four are non-secret by design; **no server secret exists in
+  this environment yet**, so no secret can be exposed by it.
+- **Isolation:** one site only (no duplicate created, nothing renamed);
+  `v5-precious-promises` and `precious-promises-v1` untouched; no Genesis
+  project, database, code or secret accessed or modified at any point.
+
+**Not yet verified by me, and deliberately not claimed:** the rendered login
+page. This sandbox's egress proxy blocks `*.netlify.app` (confirmed: curl
+CONNECT returns 403), so the deployed HTML cannot be fetched from here. The
+owner's sign-in is the verification step for it.
+
+**Observation, not a defect:** the GitHub repository is **public**
+(`private: false`). No credential is in the repository — `.env*` is
+git-ignored, `.env.example` holds placeholder keys with no values, and a unit
+test forbids literal credential values in source. Real secrets belong in the
+Netlify environment, which is not public. The owner may still wish to make
+the repository private as a matter of preference; nothing in this phase
+depends on it.
+
 ## Blocker order (verification sequence)
 
 1. Supabase owner account — CONFIGURED 2026-08-16
-2. **Production web deployment** ← current blocker; owner action required (hosts the server environment every provider
-   credential lives in)
-3. Trigger.dev connection
-4. Render worker runtime
-5. ElevenLabs key + one controlled narration
-6. Anthropic key + one controlled draft
-7. Google / YouTube OAuth (+ Drive root, + separate analytics consent)
-8. One controlled private YouTube upload through the full human workflow
-9. YouTube analytics readback
-10. Meta / Instagram connection and one controlled Reel
-11. TikTok connection via its safest supported mode
-12. Final end-to-end production workflow
+2. Production web deployment — DEPLOYED 2026-08-18 (hosts the server
+   environment every provider credential lives in)
+3. **Owner sign-in to the deployed dashboard** ← current checkpoint
+4. Trigger.dev connection
+5. Render worker runtime
+6. ElevenLabs key + one controlled narration
+7. Anthropic key + one controlled draft
+8. Google / YouTube OAuth (+ Drive root, + separate analytics consent)
+9. One controlled private YouTube upload through the full human workflow
+10. YouTube analytics readback
+11. Meta / Instagram connection and one controlled Reel
+12. TikTok connection via its safest supported mode
+13. Final end-to-end production workflow
 
 Nothing below a blocker is attempted until the blocker above it is genuinely
 cleared and evidenced.
