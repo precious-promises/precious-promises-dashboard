@@ -62,7 +62,7 @@ export function ContentCard({ item }: { item: ContentItem }) {
                 {CONTENT_TYPE_LABELS[item.content_type]}
               </p>
               <p className="mt-0.5 truncate text-[11px] text-ink-muted">
-                {item.topic ?? "No topic assigned"}
+                {item.topic ? `Topic: ${item.topic}` : "No topic assigned"}
               </p>
             </div>
           </div>
