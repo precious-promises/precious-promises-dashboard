@@ -831,7 +831,7 @@ export default async function DashboardPage() {
 
             <SectionCard
               title="System Status"
-              description="Deployment truth, not decorative green lights."
+              description="Deployment truth, not decorative green lights. Implemented is not connected; connected is not live-verified."
             >
               <ul className="space-y-2.5">
                 {readiness.map((entry) => (
