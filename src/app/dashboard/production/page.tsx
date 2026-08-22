@@ -291,7 +291,10 @@ export default async function ProductionBoardPage() {
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-edge bg-panel-hover/70 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
-                <GitBranch aria-hidden="true" className="size-3.5 text-highlight" />
+                <GitBranch
+                  aria-hidden="true"
+                  className="size-3.5 text-highlight"
+                />
                 Production command centre
               </div>
               <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
@@ -395,13 +398,14 @@ export default async function ProductionBoardPage() {
                   Current production stages
                 </h3>
                 <p className="mt-1 max-w-3xl text-xs leading-5 text-ink-secondary">
-                  Cards move only when the underlying records change. There is no
-                  drag-and-drop shortcut that can bypass Scripture verification,
-                  review, approval or scheduling requirements.
+                  Cards move only when the underlying records change. There is
+                  no drag-and-drop shortcut that can bypass Scripture
+                  verification, review, approval or scheduling requirements.
                 </p>
               </div>
               <p className="text-xs text-ink-muted">
-                {cards.length} {cards.length === 1 ? "content item" : "content items"}
+                {cards.length}{" "}
+                {cards.length === 1 ? "content item" : "content items"}
               </p>
             </div>
           </div>
@@ -467,7 +471,10 @@ export default async function ProductionBoardPage() {
 
         <section className="rounded-2xl border border-edge bg-panel/55 px-4 py-4 sm:px-5">
           <div className="flex items-start gap-3">
-            <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-highlight" />
+            <ShieldCheck
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-highlight"
+            />
             <div>
               <h3 className="text-sm font-semibold text-ink-primary">
                 Production truth boundary
@@ -475,9 +482,10 @@ export default async function ProductionBoardPage() {
               <p className="mt-1 text-xs leading-5 text-ink-secondary">
                 {UNREACHABLE_STAGES.map(
                   (stage) => PRODUCTION_STAGE_LABELS[stage],
-                ).join(", ")} is not a board column. Publishing reports through
-                the separate Publish Queue, which preserves per-platform attempts
-                and outcomes instead of flattening them into a card position.
+                ).join(", ")}{" "}
+                is not a board column. Publishing reports through the separate
+                Publish Queue, which preserves per-platform attempts and
+                outcomes instead of flattening them into a card position.
               </p>
             </div>
           </div>
