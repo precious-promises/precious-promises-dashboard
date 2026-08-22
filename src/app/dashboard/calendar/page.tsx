@@ -173,7 +173,8 @@ export default async function CalendarPage(
   const todayEntries = allEntries.filter(
     (entry) =>
       entry.post.status === "scheduled" &&
-      isoDateInTimeZone(new Date(entry.post.scheduled_for), timeZone) === todayKey,
+      isoDateInTimeZone(new Date(entry.post.scheduled_for), timeZone) ===
+        todayKey,
   );
   const activeRules = rules.filter((rule) => rule.enabled).length;
   const scheduledCount = countStatus(allEntries, "scheduled");
@@ -206,8 +207,10 @@ export default async function CalendarPage(
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-secondary sm:text-base">
                 Plan approved Precious Promises content, see the real publishing
-                rhythm and manage upcoming slots from one place. Times display in
-                {` ${timeZone}`}; schedule records do not claim a post was published.
+                rhythm and manage upcoming slots from one place. Times display
+                in
+                {` ${timeZone}`}; schedule records do not claim a post was
+                published.
               </p>
             </div>
 
@@ -216,7 +219,10 @@ export default async function CalendarPage(
                 href="/dashboard/approvals"
                 className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-panel-raised/70 px-4 py-2 text-sm font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
               >
-                <ShieldCheck aria-hidden="true" className="size-4 text-highlight" />
+                <ShieldCheck
+                  aria-hidden="true"
+                  className="size-4 text-highlight"
+                />
                 Review approvals
               </Link>
               <a
@@ -270,12 +276,17 @@ export default async function CalendarPage(
                   <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">
                     {metric.label}
                   </span>
-                  <metric.icon aria-hidden="true" className="size-4 text-highlight" />
+                  <metric.icon
+                    aria-hidden="true"
+                    className="size-4 text-highlight"
+                  />
                 </div>
                 <p className="mt-2 text-2xl font-semibold text-ink-primary">
                   {metric.value}
                 </p>
-                <p className="mt-0.5 text-[11px] text-ink-muted">{metric.detail}</p>
+                <p className="mt-0.5 text-[11px] text-ink-muted">
+                  {metric.detail}
+                </p>
               </div>
             ))}
           </div>
@@ -483,7 +494,9 @@ export default async function CalendarPage(
                   <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
                     Paused
                   </p>
-                  <p className="mt-1 text-xl font-semibold text-gold">{pausedCount}</p>
+                  <p className="mt-1 text-xl font-semibold text-gold">
+                    {pausedCount}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-edge/70 bg-panel-raised/30 p-3">
                   <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
@@ -518,7 +531,10 @@ export default async function CalendarPage(
           >
             {upcoming.length === 0 ? (
               <div className="rounded-xl border border-dashed border-edge px-4 py-8 text-center">
-                <Clock3 aria-hidden="true" className="mx-auto size-6 text-ink-muted" />
+                <Clock3
+                  aria-hidden="true"
+                  className="mx-auto size-6 text-ink-muted"
+                />
                 <p className="mt-2 text-sm font-medium text-ink-secondary">
                   Nothing upcoming
                 </p>
@@ -629,7 +645,10 @@ export default async function CalendarPage(
                   ) : null}
 
                   {selectedEntry.post.status !== "cancelled" ? (
-                    <form action={cancelSchedule} className="flex flex-wrap gap-2">
+                    <form
+                      action={cancelSchedule}
+                      className="flex flex-wrap gap-2"
+                    >
                       <input
                         type="hidden"
                         name="scheduled_post_id"

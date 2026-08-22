@@ -87,7 +87,8 @@ export function MonthGrid({
                   </span>
                   {day.entries.length > 0 ? (
                     <span className="text-[10px] font-medium text-ink-muted">
-                      {day.entries.length} {day.entries.length === 1 ? "post" : "posts"}
+                      {day.entries.length}{" "}
+                      {day.entries.length === 1 ? "post" : "posts"}
                     </span>
                   ) : null}
                 </div>
