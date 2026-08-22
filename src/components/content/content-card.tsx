@@ -1,4 +1,9 @@
-import { ArrowUpRight, BookOpen, CalendarDays, FolderKanban } from "lucide-react";
+import {
+  ArrowUpRight,
+  BookOpen,
+  CalendarDays,
+  FolderKanban,
+} from "lucide-react";
 import Link from "next/link";
 
 import { StatusBadge, type StatusTone } from "@/components/ui/status-badge";
@@ -112,7 +117,9 @@ export function ContentCard({ item }: { item: ContentItem }) {
                     {item.scripture_translation}
                   </span>
                   <StatusBadge
-                    tone={VERIFICATION_TONES[item.scripture_verification_status]}
+                    tone={
+                      VERIFICATION_TONES[item.scripture_verification_status]
+                    }
                     className="ml-auto"
                   >
                     {

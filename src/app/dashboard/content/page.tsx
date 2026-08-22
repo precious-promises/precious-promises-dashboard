@@ -99,16 +99,19 @@ export default async function ContentLibraryPage(
           <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl">
               <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-edge bg-panel-hover/70 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
-                <Library aria-hidden="true" className="size-3.5 text-highlight" />
+                <Library
+                  aria-hidden="true"
+                  className="size-3.5 text-highlight"
+                />
                 Content command centre
               </div>
               <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
                 Content Library
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary sm:text-base">
-                Manage every owned content item from draft through review readiness,
-                with Scripture verification kept visible before anything moves further
-                through production.
+                Manage every owned content item from draft through review
+                readiness, with Scripture verification kept visible before
+                anything moves further through production.
               </p>
             </div>
 
@@ -172,14 +175,18 @@ export default async function ContentLibraryPage(
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <div className="flex items-center gap-2">
-                  <Search aria-hidden="true" className="size-4 text-highlight" />
+                  <Search
+                    aria-hidden="true"
+                    className="size-4 text-highlight"
+                  />
                   <h3 className="text-base font-semibold text-ink-primary">
                     Find and filter content
                   </h3>
                 </div>
                 <p className="mt-1 text-xs leading-5 text-ink-secondary">
-                  Search titles, Scripture references and descriptions, then narrow by
-                  type, topic, workflow status or Scripture verification state.
+                  Search titles, Scripture references and descriptions, then
+                  narrow by type, topic, workflow status or Scripture
+                  verification state.
                 </p>
               </div>
               <p className="text-xs text-ink-muted" aria-live="polite">
@@ -254,15 +261,19 @@ export default async function ContentLibraryPage(
 
         <section className="rounded-2xl border border-edge bg-panel/55 px-4 py-4 sm:px-5">
           <div className="flex items-start gap-3">
-            <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-highlight" />
+            <ShieldCheck
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-highlight"
+            />
             <div>
               <h3 className="text-sm font-semibold text-ink-primary">
                 Library truth boundary
               </h3>
               <p className="mt-1 text-xs leading-5 text-ink-secondary">
-                Draft and review-ready are content workflow states only. They do not
-                mean approved, scheduled, published or live-verified. Scripture
-                verification remains a separate human-controlled status.
+                Draft and review-ready are content workflow states only. They do
+                not mean approved, scheduled, published or live-verified.
+                Scripture verification remains a separate human-controlled
+                status.
               </p>
             </div>
           </div>
