@@ -1,0 +1,35 @@
+name: Section 3 Format
+
+on:
+  push:
+    branches: [refinement/content-library-section-3]
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refinement/content-library-section-3
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format Section 3 files
+        run: pnpm exec prettier --write src/app/dashboard/content/page.tsx src/components/content/content-card.tsx
+      - name: Commit formatting when needed
+        run: |
+          if ! git diff --quiet; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/app/dashboard/content/page.tsx src/components/content/content-card.tsx
+            git commit -m "style: format Section 3 files"
+            git push
+          fi
