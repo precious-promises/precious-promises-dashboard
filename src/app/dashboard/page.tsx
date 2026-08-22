@@ -182,7 +182,8 @@ export default async function DashboardPage() {
     .filter((row) => row.variant.review_state === "ready_for_review")
     .slice(0, 5);
   const latestContent = recentItems[0] ?? null;
-  const latestVideo = videoProjects.find((project) => project.status !== "archived") ?? null;
+  const latestVideo =
+    videoProjects.find((project) => project.status !== "archived") ?? null;
   const latestScenes: VideoScene[] = latestVideo
     ? await listScenes(latestVideo.id)
     : [];
@@ -264,10 +265,26 @@ export default async function DashboardPage() {
               </p>
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[560px]">
-              <MiniMetric label="Content" value={counts.total} note="Stored items" />
-              <MiniMetric label="Approvals" value={approvalQueue.length} note="Waiting now" />
-              <MiniMetric label="Scheduled" value={scheduled} note="Future posts" />
-              <MiniMetric label="Published" value={postedThisWeek} note="Last 7 days" />
+              <MiniMetric
+                label="Content"
+                value={counts.total}
+                note="Stored items"
+              />
+              <MiniMetric
+                label="Approvals"
+                value={approvalQueue.length}
+                note="Waiting now"
+              />
+              <MiniMetric
+                label="Scheduled"
+                value={scheduled}
+                note="Future posts"
+              />
+              <MiniMetric
+                label="Published"
+                value={postedThisWeek}
+                note="Last 7 days"
+              />
             </div>
           </div>
         </section>
@@ -302,17 +319,27 @@ export default async function DashboardPage() {
                           className="group flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 px-3.5 py-3 transition hover:border-edge-strong hover:bg-panel-hover/55"
                         >
                           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-highlight/20 bg-highlight/10 text-highlight-soft">
-                            <CalendarClock aria-hidden="true" className="size-4" />
+                            <CalendarClock
+                              aria-hidden="true"
+                              className="size-4"
+                            />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-medium text-ink-primary">
                               {entry.item.title}
                             </span>
                             <span className="block truncate text-xs text-ink-muted">
-                              {PLATFORM_LABELS[entry.variant.platform]} · {formatInTimeZone(new Date(entry.post.scheduled_for), entry.post.timezone)}
+                              {PLATFORM_LABELS[entry.variant.platform]} ·{" "}
+                              {formatInTimeZone(
+                                new Date(entry.post.scheduled_for),
+                                entry.post.timezone,
+                              )}
                             </span>
                           </span>
-                          <ChevronRight aria-hidden="true" className="size-4 text-ink-muted group-hover:text-ink-primary" />
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="size-4 text-ink-muted group-hover:text-ink-primary"
+                          />
                         </Link>
                       </li>
                     ))}
@@ -353,7 +380,10 @@ export default async function DashboardPage() {
                           {entry.item.title}
                         </span>
                         <span className="mt-2 block text-xs text-ink-muted">
-                          {formatInTimeZone(new Date(entry.post.scheduled_for), entry.post.timezone)}
+                          {formatInTimeZone(
+                            new Date(entry.post.scheduled_for),
+                            entry.post.timezone,
+                          )}
                         </span>
                       </Link>
                     ))}
@@ -394,10 +424,17 @@ export default async function DashboardPage() {
                               {row.item.title}
                             </span>
                             <span className="block text-xs text-ink-muted">
-                              {PLATFORM_LABELS[row.variant.platform]} · {row.blockers.length === 0 ? "Ready for your decision" : `${row.blockers.length} blocker${row.blockers.length === 1 ? "" : "s"}`}
+                              {PLATFORM_LABELS[row.variant.platform]} ·{" "}
+                              {row.blockers.length === 0
+                                ? "Ready for your decision"
+                                : `${row.blockers.length} blocker${row.blockers.length === 1 ? "" : "s"}`}
                             </span>
                           </span>
-                          <StatusBadge tone={row.blockers.length === 0 ? "accent" : "inactive"}>
+                          <StatusBadge
+                            tone={
+                              row.blockers.length === 0 ? "accent" : "inactive"
+                            }
+                          >
                             {row.blockers.length === 0 ? "Review" : "Blocked"}
                           </StatusBadge>
                         </Link>
@@ -443,10 +480,17 @@ export default async function DashboardPage() {
                               {item.title}
                             </span>
                             <span className="block truncate text-xs text-ink-muted">
-                              {CONTENT_TYPE_LABELS[item.content_type]} · {formatUpdated(item.updated_at)}
+                              {CONTENT_TYPE_LABELS[item.content_type]} ·{" "}
+                              {formatUpdated(item.updated_at)}
                             </span>
                           </span>
-                          <StatusBadge tone={item.status === "ready_for_review" ? "accent" : "inactive"}>
+                          <StatusBadge
+                            tone={
+                              item.status === "ready_for_review"
+                                ? "accent"
+                                : "inactive"
+                            }
+                          >
                             {CONTENT_STATUS_LABELS[item.status]}
                           </StatusBadge>
                         </Link>
@@ -477,8 +521,18 @@ export default async function DashboardPage() {
                 ) : (
                   <>
                     <div className="grid grid-cols-2 gap-2">
-                      <MiniMetric label="Published" value={analytics.publishedCount} note="Measured records" />
-                      {(["views_or_plays", "engagements", "watch_time_seconds"] as MetricName[])
+                      <MiniMetric
+                        label="Published"
+                        value={analytics.publishedCount}
+                        note="Measured records"
+                      />
+                      {(
+                        [
+                          "views_or_plays",
+                          "engagements",
+                          "watch_time_seconds",
+                        ] as MetricName[]
+                      )
                         .slice(0, 3)
                         .map((metric) => {
                           const value = analytics.totals[metric];
@@ -487,13 +541,19 @@ export default async function DashboardPage() {
                               key={metric}
                               label={METRIC_LABELS[metric]}
                               value={value ? formatReading(value) : "—"}
-                              note={value && !value.available ? UNAVAILABLE_LABELS[value.reason] : "Measured total"}
+                              note={
+                                value && !value.available
+                                  ? UNAVAILABLE_LABELS[value.reason]
+                                  : "Measured total"
+                              }
                             />
                           );
                         })}
                     </div>
                     <p className="mt-3 text-xs leading-5 text-ink-muted">
-                      Last fetched {describeFreshness(analytics.lastFetchedAt).toLowerCase()}.
+                      Last fetched{" "}
+                      {describeFreshness(analytics.lastFetchedAt).toLowerCase()}
+                      .
                     </p>
                   </>
                 )}
@@ -515,14 +575,47 @@ export default async function DashboardPage() {
               <WorkflowPipeline counts={stageCounts} />
             </SectionCard>
 
-            <SectionCard title="Quick Actions" description="Jump directly into the working areas of the dashboard.">
+            <SectionCard
+              title="Quick Actions"
+              description="Jump directly into the working areas of the dashboard."
+            >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <QuickActionLink href="/dashboard/content/new" label="Create Content" description="Start a new content item" icon={FileText} />
-                <QuickActionLink href="/dashboard/scripture" label="Scripture Studio" description={`${scriptureNeedingAttention} needing attention`} icon={ScrollText} />
-                <QuickActionLink href="/dashboard/scripts" label="Script Studio" description={`${itemsWithScripts} items with scripts`} icon={Clapperboard} />
-                <QuickActionLink href="/dashboard/video" label="Video Creation Studio" description={`${videoProjectsCount} active video projects`} icon={MonitorPlay} />
-                <QuickActionLink href="/dashboard/approvals" label="Approval Queue" description={`${approvalQueue.length} waiting for review`} icon={CheckCircle2} />
-                <QuickActionLink href="/dashboard/calendar" label="Content Calendar" description={`${scheduled} scheduled posts`} icon={CalendarDays} />
+                <QuickActionLink
+                  href="/dashboard/content/new"
+                  label="Create Content"
+                  description="Start a new content item"
+                  icon={FileText}
+                />
+                <QuickActionLink
+                  href="/dashboard/scripture"
+                  label="Scripture Studio"
+                  description={`${scriptureNeedingAttention} needing attention`}
+                  icon={ScrollText}
+                />
+                <QuickActionLink
+                  href="/dashboard/scripts"
+                  label="Script Studio"
+                  description={`${itemsWithScripts} items with scripts`}
+                  icon={Clapperboard}
+                />
+                <QuickActionLink
+                  href="/dashboard/video"
+                  label="Video Creation Studio"
+                  description={`${videoProjectsCount} active video projects`}
+                  icon={MonitorPlay}
+                />
+                <QuickActionLink
+                  href="/dashboard/approvals"
+                  label="Approval Queue"
+                  description={`${approvalQueue.length} waiting for review`}
+                  icon={CheckCircle2}
+                />
+                <QuickActionLink
+                  href="/dashboard/calendar"
+                  label="Content Calendar"
+                  description={`${scheduled} scheduled posts`}
+                  icon={CalendarDays}
+                />
               </div>
             </SectionCard>
           </div>
@@ -537,7 +630,8 @@ export default async function DashboardPage() {
                   <div className="aspect-[16/9] border-b border-edge bg-[radial-gradient(circle_at_25%_15%,rgba(77,141,247,0.18),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(201,169,97,0.12),transparent_30%),linear-gradient(145deg,#0c142a,#070b16)] p-5 sm:p-6">
                     <div className="flex h-full flex-col justify-between">
                       <span className="w-fit rounded-full border border-gold-dim/50 bg-gold/10 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-gold">
-                        {latestContent.topic ?? CONTENT_TYPE_LABELS[latestContent.content_type]}
+                        {latestContent.topic ??
+                          CONTENT_TYPE_LABELS[latestContent.content_type]}
                       </span>
                       <div>
                         <p className="text-lg font-semibold leading-snug text-ink-primary sm:text-xl">
@@ -545,7 +639,8 @@ export default async function DashboardPage() {
                         </p>
                         {latestContent.scripture_reference ? (
                           <p className="mt-2 text-xs font-medium text-highlight-soft">
-                            {latestContent.scripture_reference} · {latestContent.scripture_translation}
+                            {latestContent.scripture_reference} ·{" "}
+                            {latestContent.scripture_translation}
                           </p>
                         ) : null}
                       </div>
@@ -555,8 +650,19 @@ export default async function DashboardPage() {
                     {latestContent.scripture_reference ? (
                       <div className="flex items-center justify-between gap-3 text-xs">
                         <span className="text-ink-muted">Scripture status</span>
-                        <StatusBadge tone={latestContent.scripture_verification_status === "manually_verified" ? "configured" : "inactive"}>
-                          {SCRIPTURE_VERIFICATION_LABELS[latestContent.scripture_verification_status]}
+                        <StatusBadge
+                          tone={
+                            latestContent.scripture_verification_status ===
+                            "manually_verified"
+                              ? "configured"
+                              : "inactive"
+                          }
+                        >
+                          {
+                            SCRIPTURE_VERIFICATION_LABELS[
+                              latestContent.scripture_verification_status
+                            ]
+                          }
                         </StatusBadge>
                       </div>
                     ) : null}
@@ -587,7 +693,10 @@ export default async function DashboardPage() {
               title="Video Creation Studio"
               description="Latest real project and timeline summary. Editing remains in the dedicated studio."
               action={
-                <Link href="/dashboard/video" className="text-xs font-medium text-highlight-soft hover:text-ink-primary">
+                <Link
+                  href="/dashboard/video"
+                  className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
+                >
                   Open studio
                 </Link>
               }
@@ -597,20 +706,35 @@ export default async function DashboardPage() {
                   <div className="rounded-xl border border-edge/70 bg-panel-raised/35 p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-medium text-ink-primary">{latestVideo.name}</p>
+                        <p className="text-sm font-medium text-ink-primary">
+                          {latestVideo.name}
+                        </p>
                         <p className="mt-1 text-xs text-ink-muted">
-                          {latestVideo.aspect_ratio} · {latestVideo.duration_estimate_seconds}s · revision {latestVideo.current_revision}
+                          {latestVideo.aspect_ratio} ·{" "}
+                          {latestVideo.duration_estimate_seconds}s · revision{" "}
+                          {latestVideo.current_revision}
                         </p>
                       </div>
-                      <StatusBadge tone={latestVideo.status === "ready_for_review" ? "accent" : "inactive"}>
+                      <StatusBadge
+                        tone={
+                          latestVideo.status === "ready_for_review"
+                            ? "accent"
+                            : "inactive"
+                        }
+                      >
                         {VIDEO_PROJECT_STATUS_LABELS[latestVideo.status]}
                       </StatusBadge>
                     </div>
                   </div>
                   <div>
                     <div className="mb-2 flex items-center justify-between text-xs">
-                      <span className="font-medium text-ink-secondary">Timeline</span>
-                      <span className="text-ink-muted">{latestScenes.length} scene{latestScenes.length === 1 ? "" : "s"}</span>
+                      <span className="font-medium text-ink-secondary">
+                        Timeline
+                      </span>
+                      <span className="text-ink-muted">
+                        {latestScenes.length} scene
+                        {latestScenes.length === 1 ? "" : "s"}
+                      </span>
                     </div>
                     {latestScenes.length === 0 ? (
                       <div className="rounded-xl border border-dashed border-edge-strong px-4 py-5 text-center text-xs text-ink-muted">
@@ -640,63 +764,138 @@ export default async function DashboardPage() {
               )}
             </SectionCard>
 
-            <SectionCard title="Creator Tools" description="Premium shortcuts with honest capability states.">
+            <SectionCard
+              title="Creator Tools"
+              description="Premium shortcuts with honest capability states."
+            >
               <div className="space-y-2.5">
-                <Link href="/dashboard/captions" className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55">
-                  <span className="flex size-10 items-center justify-center rounded-lg border border-highlight/20 bg-highlight/10 text-highlight-soft"><Captions aria-hidden="true" className="size-4" /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-ink-primary">Auto Captions</span><span className="block text-xs leading-5 text-ink-muted">Caption track workflow exists; automatic transcription is not built.</span></span>
+                <Link
+                  href="/dashboard/captions"
+                  className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-lg border border-highlight/20 bg-highlight/10 text-highlight-soft">
+                    <Captions aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-ink-primary">
+                      Auto Captions
+                    </span>
+                    <span className="block text-xs leading-5 text-ink-muted">
+                      Caption track workflow exists; automatic transcription is
+                      not built.
+                    </span>
+                  </span>
                   <StatusBadge tone="inactive">Manual</StatusBadge>
                 </Link>
-                <Link href="/dashboard/captions" className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55">
-                  <span className="flex size-10 items-center justify-center rounded-lg border border-gold-dim/30 bg-gold/10 text-gold"><WandSparkles aria-hidden="true" className="size-4" /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-ink-primary">Caption Templates</span><span className="block text-xs leading-5 text-ink-muted">Caption Studio is available; reusable template automation is not yet implemented.</span></span>
+                <Link
+                  href="/dashboard/captions"
+                  className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-lg border border-gold-dim/30 bg-gold/10 text-gold">
+                    <WandSparkles aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-ink-primary">
+                      Caption Templates
+                    </span>
+                    <span className="block text-xs leading-5 text-ink-muted">
+                      Caption Studio is available; reusable template automation
+                      is not yet implemented.
+                    </span>
+                  </span>
                   <StatusBadge tone="inactive">Not built</StatusBadge>
                 </Link>
-                <Link href="/dashboard/media" className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55">
-                  <span className="flex size-10 items-center justify-center rounded-lg border border-edge bg-panel text-ink-secondary"><Music2 aria-hidden="true" className="size-4" /></span>
-                  <span className="min-w-0 flex-1"><span className="block text-sm font-medium text-ink-primary">Music & Audio Library</span><span className="block text-xs leading-5 text-ink-muted">Use stored media assets for background audio and voice files.</span></span>
+                <Link
+                  href="/dashboard/media"
+                  className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
+                >
+                  <span className="flex size-10 items-center justify-center rounded-lg border border-edge bg-panel text-ink-secondary">
+                    <Music2 aria-hidden="true" className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium text-ink-primary">
+                      Music & Audio Library
+                    </span>
+                    <span className="block text-xs leading-5 text-ink-muted">
+                      Use stored media assets for background audio and voice
+                      files.
+                    </span>
+                  </span>
                   <StatusBadge tone="configured">Available</StatusBadge>
                 </Link>
               </div>
             </SectionCard>
 
-            <SectionCard title="System Status" description="Deployment truth, not decorative green lights.">
+            <SectionCard
+              title="System Status"
+              description="Deployment truth, not decorative green lights."
+            >
               <ul className="space-y-2.5">
                 {readiness.map((entry) => (
-                  <li key={entry.label} className="flex items-center justify-between gap-3 rounded-xl border border-edge/70 bg-panel-raised/30 px-3.5 py-3">
-                    <span className="text-sm text-ink-secondary">{entry.label}</span>
+                  <li
+                    key={entry.label}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-edge/70 bg-panel-raised/30 px-3.5 py-3"
+                  >
+                    <span className="text-sm text-ink-secondary">
+                      {entry.label}
+                    </span>
                     <StatusBadge tone={entry.ready ? "configured" : "inactive"}>
                       {entry.ready ? entry.readyLabel : entry.offLabel}
                     </StatusBadge>
                   </li>
                 ))}
                 {PLATFORMS.map(({ name, platform, icon }) => {
-                  const account = socialAccounts.find((candidate) => candidate.platform === platform) ?? null;
+                  const account =
+                    socialAccounts.find(
+                      (candidate) => candidate.platform === platform,
+                    ) ?? null;
                   return (
                     <PlatformStatus
                       key={name}
                       name={name}
                       icon={icon}
                       status={account?.status ?? null}
-                      identity={account?.handle ?? account?.channel_title ?? account?.display_name ?? null}
+                      identity={
+                        account?.handle ??
+                        account?.channel_title ??
+                        account?.display_name ??
+                        null
+                      }
                     />
                   );
                 })}
               </ul>
               {publishFailures > 0 ? (
                 <div className="mt-3 flex items-start gap-2 rounded-lg border border-gold-dim/40 bg-gold/10 px-3 py-2.5 text-xs leading-5 text-gold">
-                  <AlertTriangle aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
-                  {publishFailures} publish failure{publishFailures === 1 ? " is" : "s are"} recorded and should be reviewed.
+                  <AlertTriangle
+                    aria-hidden="true"
+                    className="mt-0.5 size-4 shrink-0"
+                  />
+                  {publishFailures} publish failure
+                  {publishFailures === 1 ? " is" : "s are"} recorded and should
+                  be reviewed.
                 </div>
               ) : null}
-              <Link href="/dashboard/settings" className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-highlight-soft hover:text-ink-primary">
-                Full operational readiness <ChevronRight aria-hidden="true" className="size-3.5" />
+              <Link
+                href="/dashboard/settings"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-highlight-soft hover:text-ink-primary"
+              >
+                Full operational readiness{" "}
+                <ChevronRight aria-hidden="true" className="size-3.5" />
               </Link>
             </SectionCard>
 
             <div className="grid grid-cols-2 gap-3">
-              <MiniMetric label="Approved" value={approved} note="Still valid" />
-              <MiniMetric label="Videos" value={videoProjectsCount} note="Active projects" />
+              <MiniMetric
+                label="Approved"
+                value={approved}
+                note="Still valid"
+              />
+              <MiniMetric
+                label="Videos"
+                value={videoProjectsCount}
+                note="Active projects"
+              />
             </div>
           </aside>
         </div>
