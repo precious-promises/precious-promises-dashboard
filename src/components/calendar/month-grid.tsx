@@ -97,7 +97,7 @@ export function MonthGrid({
                   {day.entries.map((entry) => (
                     <li key={entry.post.id}>
                       <Link
-                        href={`/dashboard/calendar?entry=${entry.post.id}&month=${grid.year}-${String(grid.month).padStart(2, "0")}`}
+                        href={`/dashboard/calendar?entry=${entry.post.id}`}
                         className={cn(
                           "group block rounded-lg border px-2 py-1.5 text-[10px] leading-tight transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight",
                           STATUS_STYLES[entry.post.status],
