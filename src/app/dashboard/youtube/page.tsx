@@ -239,7 +239,11 @@ export default async function YouTubeWorkspacePage() {
           <Metric
             label="Channel"
             value={connected ? "1" : "0"}
-            note={connected ? "YouTube account currently connected." : "No connected YouTube account."}
+            note={
+              connected
+                ? "YouTube account currently connected."
+                : "No connected YouTube account."
+            }
             icon={connected ? CheckCircle2 : WifiOff}
           />
           <Metric
@@ -301,7 +305,9 @@ export default async function YouTubeWorkspacePage() {
                 </div>
                 <div className="rounded-xl border border-edge/70 bg-panel-raised/40 p-3">
                   <dt className="text-xs text-ink-muted">Account status</dt>
-                  <dd className="mt-1 text-sm text-ink-secondary">{account.status}</dd>
+                  <dd className="mt-1 text-sm text-ink-secondary">
+                    {account.status}
+                  </dd>
                 </div>
                 <div className="rounded-xl border border-edge/70 bg-panel-raised/40 p-3">
                   <dt className="text-xs text-ink-muted">Publishing</dt>
@@ -310,7 +316,9 @@ export default async function YouTubeWorkspacePage() {
                   </dd>
                 </div>
                 <div className="rounded-xl border border-edge/70 bg-panel-raised/40 p-3">
-                  <dt className="text-xs text-ink-muted">Analytics permission</dt>
+                  <dt className="text-xs text-ink-muted">
+                    Analytics permission
+                  </dt>
                   <dd className="mt-1 text-sm text-ink-secondary">
                     {analytics.analyticsAuthorised
                       ? "Granted"
@@ -331,7 +339,9 @@ export default async function YouTubeWorkspacePage() {
             }
           >
             {channelPlaylists.playlists.length === 0 ? (
-              <p className="text-sm text-ink-muted">{channelPlaylists.reason}</p>
+              <p className="text-sm text-ink-muted">
+                {channelPlaylists.reason}
+              </p>
             ) : (
               <ul className="grid gap-2 sm:grid-cols-2">
                 {channelPlaylists.playlists.map((playlist) => (
@@ -410,14 +420,18 @@ export default async function YouTubeWorkspacePage() {
                       <dt className="text-ink-muted">Posted</dt>
                       <dd className="mt-0.5 text-ink-secondary">
                         {upload.postedAt
-                          ? new Date(upload.postedAt).toLocaleDateString("en-GB")
+                          ? new Date(upload.postedAt).toLocaleDateString(
+                              "en-GB",
+                            )
                           : "No timestamp recorded"}
                       </dd>
                     </div>
                     <div className="rounded-lg border border-edge/60 bg-panel/40 p-2.5">
                       <dt className="text-ink-muted">Playlist</dt>
                       <dd className="mt-0.5 text-ink-secondary">
-                        {upload.metadata?.playlist_id ? "Assigned" : "Not assigned"}
+                        {upload.metadata?.playlist_id
+                          ? "Assigned"
+                          : "Not assigned"}
                       </dd>
                     </div>
                     <div className="rounded-lg border border-edge/60 bg-panel/40 p-2.5">
@@ -430,7 +444,9 @@ export default async function YouTubeWorkspacePage() {
                     </div>
                     <div className="rounded-lg border border-edge/60 bg-panel/40 p-2.5">
                       <dt className="text-ink-muted">Shorts</dt>
-                      <dd className="mt-0.5 text-ink-secondary">Not inferred</dd>
+                      <dd className="mt-0.5 text-ink-secondary">
+                        Not inferred
+                      </dd>
                     </div>
                   </dl>
 
@@ -450,7 +466,10 @@ export default async function YouTubeWorkspacePage() {
 
         <div className="rounded-2xl border border-edge bg-panel/55 px-5 py-4">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-highlight" aria-hidden="true" />
+            <ShieldCheck
+              className="mt-0.5 size-4 shrink-0 text-highlight"
+              aria-hidden="true"
+            />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 YouTube truth boundary
@@ -459,9 +478,9 @@ export default async function YouTubeWorkspacePage() {
                 A built YouTube integration is not the same as a connected
                 channel. A connected channel is not the same as analytics
                 permission. A scheduled item is not an upload. An upload is only
-                shown here when this dashboard has stored the platform&apos;s own
-                video id. Shorts classification remains YouTube&apos;s decision and
-                is never inferred by this workspace.
+                shown here when this dashboard has stored the platform&apos;s
+                own video id. Shorts classification remains YouTube&apos;s
+                decision and is never inferred by this workspace.
               </p>
             </div>
           </div>
