@@ -479,8 +479,9 @@ export default async function YouTubeWorkspacePage() {
                 channel. A connected channel is not the same as analytics
                 permission. A scheduled item is not an upload. An upload is only
                 shown here when this dashboard has stored the platform&apos;s
-                own video id. Shorts classification remains YouTube&apos;s
-                decision and is never inferred by this workspace.
+                own video id. Shorts classification is decided by YouTube after
+                processing. The API does not report it, so this dashboard does
+                not claim it.
               </p>
             </div>
           </div>
