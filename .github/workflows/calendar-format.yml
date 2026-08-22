@@ -26,7 +26,7 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Format Calendar files
+      - name: Format only Section 2 Calendar files
         run: pnpm exec prettier --write src/app/dashboard/calendar/page.tsx src/components/calendar/month-grid.tsx
       - name: Commit formatting if needed
         run: |
