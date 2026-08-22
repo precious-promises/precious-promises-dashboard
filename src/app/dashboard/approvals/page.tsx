@@ -107,7 +107,9 @@ export default async function ApprovalQueuePage(
 
   const script = selected ? await getLatestRevision(selected.item.id) : null;
 
-  const invalidated = rows.filter((row) => row.validity === "invalidated").length;
+  const invalidated = rows.filter(
+    (row) => row.validity === "invalidated",
+  ).length;
   const scheduled = rows.filter((row) =>
     row.schedules.some((post) => post.status === "scheduled"),
   ).length;
@@ -209,7 +211,8 @@ export default async function ApprovalQueuePage(
         {invalidated > 0 ? (
           <div className="rounded-2xl border border-gold-dim/60 bg-gold/10 px-5 py-4">
             <p className="text-sm font-semibold text-gold">
-              {invalidated} approval{invalidated === 1 ? "" : "s"} need fresh review.
+              {invalidated} approval{invalidated === 1 ? "" : "s"} need fresh
+              review.
             </p>
             <p className="mt-1 text-xs leading-5 text-ink-secondary">
               The approved fingerprint no longer matches the stored content, so
