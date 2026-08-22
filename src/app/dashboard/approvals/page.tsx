@@ -1,5 +1,14 @@
-import { CheckSquare } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CheckSquare,
+  Clock3,
+  FileEdit,
+  ShieldCheck,
+  XCircle,
+} from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ReviewDetail } from "@/components/approvals/review-detail";
@@ -34,20 +43,43 @@ function firstParam(value: string | string[] | undefined): string | null {
   return raw && raw.trim() !== "" ? raw : null;
 }
 
+function Metric({
+  label,
+  value,
+  note,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  note: string;
+  icon: typeof CheckSquare;
+}) {
+  return (
+    <div className="rounded-2xl border border-edge bg-panel/70 p-4 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
+            {label}
+          </p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink-primary">
+            {value}
+          </p>
+        </div>
+        <span className="rounded-xl border border-edge bg-panel-raised/70 p-2 text-highlight">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
+      </div>
+      <p className="mt-2 text-xs leading-5 text-ink-muted">{note}</p>
+    </div>
+  );
+}
+
 /**
  * The Approval Queue.
  *
- * **What makes a variant approvable**, in one place, enforced in
- * `src/lib/approvals/rules.ts` and re-checked in the server action:
- *
- * 1. Its content item is not archived.
- * 2. The variant is marked ready for review.
- * 3. If the item carries Scripture, that Scripture is manually verified.
- * 4. The variant has a title, caption or description — something to review.
- * 5. A content type published as video has a video composition with scenes.
- * 6. A content type published as an image has at least one media asset.
- *
- * Approval is per platform variant and touches exactly one row.
+ * Approval is a human decision over one platform variant at a time. The server
+ * action re-checks every blocker before it can persist that decision. Approval
+ * never means scheduled, published or live-verified.
  */
 export default async function ApprovalQueuePage(
   props: PageProps<"/dashboard/approvals">,
@@ -75,6 +107,13 @@ export default async function ApprovalQueuePage(
 
   const script = selected ? await getLatestRevision(selected.item.id) : null;
 
+  const invalidated = rows.filter(
+    (row) => row.validity === "invalidated",
+  ).length;
+  const scheduled = rows.filter((row) =>
+    row.schedules.some((post) => post.status === "scheduled"),
+  ).length;
+
   const sections = [
     { key: "ready", title: "Ready for Review", rows: groups.readyForReview },
     { key: "approved", title: "Approved", rows: groups.approved },
@@ -87,29 +126,103 @@ export default async function ApprovalQueuePage(
       pathname="/dashboard/approvals"
       email={user.email ?? null}
     >
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-semibold tracking-tight text-ink-primary sm:text-3xl">
-              Approval Queue
-            </h2>
-            <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink-secondary">
-              Approval is per platform. Approving the YouTube wording says
-              nothing about Instagram, and approving anything publishes nothing.
+      <div className="flex w-full flex-col gap-6">
+        <section className="overflow-hidden rounded-3xl border border-edge bg-[radial-gradient(circle_at_top_right,rgba(77,141,247,0.15),transparent_35%),linear-gradient(135deg,rgba(12,20,42,0.96),rgba(7,11,22,0.96))] p-5 shadow-xl sm:p-7">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-highlight/30 bg-highlight/10 px-3 py-1 text-xs font-medium text-highlight-soft">
+                <ShieldCheck className="size-3.5" aria-hidden="true" />
+                Human review command centre
+              </div>
+              <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
+                Approval Queue
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
+                Review each platform variant independently before it can move
+                downstream. Approval records your decision only — it does not
+                schedule or publish anything.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/captions"
+                className="rounded-lg border border-edge-strong bg-panel-raised/70 px-4 py-2 text-sm font-semibold text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+              >
+                Caption Studio
+              </Link>
+              <Link
+                href="/dashboard/calendar"
+                className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+              >
+                Content Calendar
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        {notice && NOTICES[notice] ? (
+          <p
+            role="status"
+            className="rounded-xl border border-edge-strong/70 bg-panel-raised/60 px-4 py-3 text-sm text-ink-secondary"
+          >
+            {NOTICES[notice]}
+          </p>
+        ) : null}
+
+        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+          <Metric
+            label="Ready"
+            value={groups.readyForReview.length}
+            note="Platform variants currently awaiting a human decision."
+            icon={Clock3}
+          />
+          <Metric
+            label="Approved"
+            value={groups.approved.length}
+            note="Stored approvals that remain in the approved queue."
+            icon={CheckCircle2}
+          />
+          <Metric
+            label="Rejected"
+            value={groups.rejected.length}
+            note="Variants rejected with their review outcome retained."
+            icon={XCircle}
+          />
+          <Metric
+            label="Drafts"
+            value={groups.draft.length}
+            note="Variants not yet submitted for review."
+            icon={FileEdit}
+          />
+          <Metric
+            label="Stale Approval"
+            value={invalidated}
+            note="Approvals invalidated because the underlying content changed."
+            icon={AlertTriangle}
+          />
+          <Metric
+            label="Scheduled"
+            value={scheduled}
+            note="Reviewed variants that also have a real active schedule row."
+            icon={CheckSquare}
+          />
+        </section>
+
+        {invalidated > 0 ? (
+          <div className="rounded-2xl border border-gold-dim/60 bg-gold/10 px-5 py-4">
+            <p className="text-sm font-semibold text-gold">
+              {invalidated} approval{invalidated === 1 ? "" : "s"} need fresh
+              review.
+            </p>
+            <p className="mt-1 text-xs leading-5 text-ink-secondary">
+              The approved fingerprint no longer matches the stored content, so
+              the old decision cannot be treated as current approval.
             </p>
           </div>
-          {notice && NOTICES[notice] ? (
-            <p
-              role="status"
-              className="rounded-lg border border-edge-strong/70 bg-panel-raised/60 px-3 py-1.5 text-xs text-ink-secondary"
-            >
-              {NOTICES[notice]}
-            </p>
-          ) : null}
-        </div>
+        ) : null}
 
         {rows.length === 0 ? (
-          <div className="pp-glass rounded-xl border border-edge">
+          <div className="pp-glass rounded-2xl border border-edge">
             <EmptyState
               icon={CheckSquare}
               title="Nothing to review yet."
@@ -117,7 +230,7 @@ export default async function ApprovalQueuePage(
             />
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)]">
             <div className="flex flex-col gap-4">
               {sections.map((section) => (
                 <SectionCard
@@ -163,24 +276,38 @@ export default async function ApprovalQueuePage(
               ) : null}
             </div>
 
-            <SectionCard
-              title="Review"
-              description={
-                selected
-                  ? "Scripture is shown separately from everything written."
-                  : "Choose a variant to review."
-              }
-            >
-              {selected ? (
-                <ReviewDetail row={selected} script={script} />
-              ) : (
-                <p className="text-sm text-ink-muted">
-                  Select a variant from the queue.
-                </p>
-              )}
-            </SectionCard>
+            <div className="xl:sticky xl:top-24 xl:self-start">
+              <SectionCard
+                title="Review workspace"
+                description={
+                  selected
+                    ? "Scripture is separated from generated or written copy so the source text stays visibly distinct."
+                    : "Choose a variant to review."
+                }
+              >
+                {selected ? (
+                  <ReviewDetail row={selected} script={script} />
+                ) : (
+                  <p className="text-sm text-ink-muted">
+                    Select a variant from the queue.
+                  </p>
+                )}
+              </SectionCard>
+            </div>
           </div>
         )}
+
+        <div className="rounded-2xl border border-edge bg-panel/55 px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
+            Approval truth boundary
+          </p>
+          <p className="mt-2 text-sm leading-6 text-ink-secondary">
+            Approval applies to one platform variant and one exact content
+            fingerprint. It is not a schedule, publish attempt or live-platform
+            result. If the underlying content changes, the earlier approval no
+            longer proves that the current version was reviewed.
+          </p>
+        </div>
       </div>
     </DashboardShell>
   );
