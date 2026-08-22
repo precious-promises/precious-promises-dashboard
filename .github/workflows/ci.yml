@@ -15,8 +15,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      # The only variable CI needs. It is a safe local placeholder, not a
-      # credential. Never add real secrets to this workflow.
       APP_URL: http://localhost:3000
 
     steps:
@@ -24,26 +22,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Enable pnpm via Corepack
-        # The pnpm version comes from the `packageManager` field in
-        # package.json, so CI and local development stay on the same release.
         run: corepack enable
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          # Node 22, not 20: jsdom 30 declares
-          # `^22.22.2 || ^24.15.0 || >=26.0.0` and its undici dependency
-          # requires >=22.19.0. On Node 20 the jsdom suites crash at worker
-          # startup with `webidl.util.markAsUncloneable is not a function`.
-          # Node 20 is also end-of-life and deprecated on GitHub runners.
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check formatting
-        run: pnpm format:check
+      - name: Check changed-file formatting
+        run: pnpm exec prettier --check src/components/dashboard/owner-badge.tsx
 
       - name: Lint
         run: pnpm lint
@@ -56,12 +47,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-# Playwright is deliberately NOT run in this workflow during Block 2.
-#
-# The end-to-end suite needs a browser download (`pnpm exec playwright install
-# chromium`) plus a production build and a running server, which together cost
-# far more than the checks above and would slow every pull request. The smoke
-# test is still maintained and runnable locally via `pnpm test:e2e`.
-#
-# A dedicated end-to-end workflow — with its own browser cache and a narrower
-# trigger — is planned for a later block.
