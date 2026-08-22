@@ -1,0 +1,41 @@
+name: Calendar Format
+
+on:
+  push:
+    branches:
+      - refinement/content-calendar-section-2
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: refinement/content-calendar-section-2
+          fetch-depth: 0
+      - name: Enable pnpm via Corepack
+        run: corepack enable
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format Calendar files
+        run: pnpm exec prettier --write src/app/dashboard/calendar/page.tsx src/components/calendar/month-grid.tsx
+      - name: Commit formatting if needed
+        run: |
+          if git diff --quiet -- src/app/dashboard/calendar/page.tsx src/components/calendar/month-grid.tsx; then
+            echo "Calendar files already formatted"
+            exit 0
+          fi
+          git config user.name "precious-promises-content-dashboard"
+          git config user.email "precious.promises888@gmail.com"
+          git add src/app/dashboard/calendar/page.tsx src/components/calendar/month-grid.tsx
+          git commit -m "Format Content Calendar refinement"
+          git push origin HEAD:refinement/content-calendar-section-2
