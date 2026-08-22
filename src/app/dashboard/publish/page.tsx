@@ -139,9 +139,9 @@ export default async function PublishQueuePage() {
                 Publish Queue
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
-                See what is waiting, what was attempted, what stopped, and what a
-                platform actually confirmed. A schedule is never presented as a
-                successful publication.
+                See what is waiting, what was attempted, what stopped, and what
+                a platform actually confirmed. A schedule is never presented as
+                a successful publication.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -203,13 +203,18 @@ export default async function PublishQueuePage() {
         {failedCount > 0 ? (
           <div className="rounded-2xl border border-gold-dim/60 bg-gold/10 px-5 py-4">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="mt-0.5 size-4 shrink-0 text-gold" aria-hidden="true" />
+              <AlertTriangle
+                className="mt-0.5 size-4 shrink-0 text-gold"
+                aria-hidden="true"
+              />
               <div>
                 <p className="text-sm font-semibold text-gold">
-                  {failedCount} publish flow{failedCount === 1 ? "" : "s"} stopped.
+                  {failedCount} publish flow{failedCount === 1 ? "" : "s"}{" "}
+                  stopped.
                 </p>
                 <p className="mt-1 text-xs leading-5 text-ink-secondary">
-                  Open the affected row to inspect the latest safe error and its attempt history before retrying or changing the setup.
+                  Open the affected row to inspect the latest safe error and its
+                  attempt history before retrying or changing the setup.
                 </p>
               </div>
             </div>
@@ -239,10 +244,14 @@ export default async function PublishQueuePage() {
                         </span>
                       </span>
                       <span className="flex flex-wrap gap-2">
-                        <StatusBadge tone={status.implemented ? "accent" : "inactive"}>
+                        <StatusBadge
+                          tone={status.implemented ? "accent" : "inactive"}
+                        >
                           {status.implemented ? "Adapter built" : "Not built"}
                         </StatusBadge>
-                        <StatusBadge tone={connected ? "configured" : "inactive"}>
+                        <StatusBadge
+                          tone={connected ? "configured" : "inactive"}
+                        >
                           {connected ? "Connected" : "Not connected"}
                         </StatusBadge>
                       </span>
@@ -338,13 +347,20 @@ export default async function PublishQueuePage() {
 
         <div className="rounded-2xl border border-edge bg-panel/55 px-5 py-4">
           <div className="flex items-start gap-3">
-            <ShieldCheck className="mt-0.5 size-4 shrink-0 text-highlight" aria-hidden="true" />
+            <ShieldCheck
+              className="mt-0.5 size-4 shrink-0 text-highlight"
+              aria-hidden="true"
+            />
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
                 Publishing truth boundary
               </p>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">
-                Scheduled means waiting. Queued means claimed. Publishing means an attempt is active. Manual or platform-draft states still require an owner action. Only a provider-confirmed post id can move a row into Posted, and even that is reported separately from any later live-watchability check.
+                Scheduled means waiting. Queued means claimed. Publishing means
+                an attempt is active. Manual or platform-draft states still
+                require an owner action. Only a provider-confirmed post id can
+                move a row into Posted, and even that is reported separately
+                from any later live-watchability check.
               </p>
             </div>
           </div>
