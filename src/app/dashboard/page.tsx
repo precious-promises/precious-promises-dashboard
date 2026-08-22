@@ -9,14 +9,11 @@ import {
   ChevronRight,
   Clapperboard,
   FileText,
-  Gauge,
   Images,
   Library,
-  Mic2,
   MonitorPlay,
   Music2,
   ScrollText,
-  Send,
   Sparkles,
   WandSparkles,
 } from "lucide-react";
@@ -44,6 +41,7 @@ import {
 import { isAiConfigured } from "@/lib/ai/server-config";
 import { loadReviewRows } from "@/lib/approvals/repository";
 import { DASHBOARD_PATH, LOGIN_PATH } from "@/lib/auth/routes";
+import { EMPTY_FILTERS } from "@/lib/content/filters";
 import {
   countScriptureNeedingAttention,
   getContentCounts,
@@ -162,7 +160,7 @@ export default async function DashboardPage() {
     listScheduleEntries(),
     loadBoard(),
     loadSocialAccounts(),
-    listContentItems({}),
+    listContentItems(EMPTY_FILTERS),
     listVideoProjects(),
   ]);
 
@@ -170,14 +168,19 @@ export default async function DashboardPage() {
   const now = new Date();
   const upcoming = upcomingEntries(scheduleEntries, now, 6);
   const todayEntries = scheduleEntries
-    .filter((entry) =>
-      sameScheduleDay(
-        new Date(entry.post.scheduled_for),
-        entry.post.timezone,
-        now,
-      ),
+    .filter(
+      (entry) =>
+        entry.post.status === "scheduled" &&
+        sameScheduleDay(
+          new Date(entry.post.scheduled_for),
+          entry.post.timezone,
+          now,
+        ),
     )
     .slice(0, 5);
+  const awaitingApproval = reviewRows.filter(
+    (row) => row.variant.review_state === "ready_for_review",
+  ).length;
   const approvalQueue = reviewRows
     .filter((row) => row.variant.review_state === "ready_for_review")
     .slice(0, 5);
@@ -272,7 +275,7 @@ export default async function DashboardPage() {
               />
               <MiniMetric
                 label="Approvals"
-                value={approvalQueue.length}
+                value={awaitingApproval}
                 note="Waiting now"
               />
               <MiniMetric
@@ -607,7 +610,7 @@ export default async function DashboardPage() {
                 <QuickActionLink
                   href="/dashboard/approvals"
                   label="Approval Queue"
-                  description={`${approvalQueue.length} waiting for review`}
+                  description={`${awaitingApproval} waiting for review`}
                   icon={CheckCircle2}
                 />
                 <QuickActionLink
