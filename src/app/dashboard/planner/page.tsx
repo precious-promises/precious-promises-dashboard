@@ -111,7 +111,9 @@ function ItemRow({ item }: { item: PlannerItem }) {
       </div>
 
       {item.notes ? (
-        <p className="mt-2 text-xs leading-5 text-ink-secondary">{item.notes}</p>
+        <p className="mt-2 text-xs leading-5 text-ink-secondary">
+          {item.notes}
+        </p>
       ) : (
         <p className="mt-2 text-xs leading-5 text-ink-muted">
           No planning notes have been added yet.
@@ -181,8 +183,12 @@ export default async function PlannerPage() {
   const inProduction = items.filter(
     (item) => item.status === "in_production",
   ).length;
-  const highPriority = openItems.filter((item) => item.priority === "high").length;
-  const linkedContent = openItems.filter((item) => item.content_item_id !== null).length;
+  const highPriority = openItems.filter(
+    (item) => item.priority === "high",
+  ).length;
+  const linkedContent = openItems.filter(
+    (item) => item.content_item_id !== null,
+  ).length;
 
   return (
     <DashboardShell
@@ -203,7 +209,8 @@ export default async function PlannerPage() {
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
                 Decide what to make next, why it matters and where it should go.
-                Planning stays separate from scheduling, approval and publishing.
+                Planning stays separate from scheduling, approval and
+                publishing.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -381,10 +388,10 @@ export default async function PlannerPage() {
             Planner truth boundary
           </p>
           <p className="mt-2 text-sm leading-6 text-ink-secondary">
-            A plan item records intent only. A target date is not a scheduled post,
-            a linked content item is not approval, and a completed plan does not
-            prove anything was published. Real content must still move through
-            production, approval, scheduling and the Publish Queue.
+            A plan item records intent only. A target date is not a scheduled
+            post, a linked content item is not approval, and a completed plan
+            does not prove anything was published. Real content must still move
+            through production, approval, scheduling and the Publish Queue.
           </p>
         </div>
       </div>
