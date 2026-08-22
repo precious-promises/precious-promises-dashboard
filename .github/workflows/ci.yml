@@ -5,9 +5,6 @@ on:
   push:
     branches: [main]
 
-permissions:
-  contents: write
-
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -18,53 +15,35 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      # The only variable CI needs. It is a safe local placeholder, not a
+      # credential. Never add real secrets to this workflow.
       APP_URL: http://localhost:3000
 
     steps:
-      - name: Check out refinement branch
+      - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          ref: refinement/dashboard-premium-section-1
 
       - name: Enable pnpm via Corepack
+        # The pnpm version comes from the `packageManager` field in
+        # package.json, so CI and local development stay on the same release.
         run: corepack enable
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
+          # Node 22, not 20: jsdom 30 declares
+          # `^22.22.2 || ^24.15.0 || >=26.0.0` and its undici dependency
+          # requires >=22.19.0. On Node 20 the jsdom suites crash at worker
+          # startup with `webidl.util.markAsUncloneable is not a function`.
+          # Node 20 is also end-of-life and deprecated on GitHub runners.
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Preserve dashboard honesty contract
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('src/app/dashboard/page.tsx')
-          s = p.read_text()
-          s = s.replace(
-              'description="Deployment truth, not decorative green lights."',
-              'description="Deployment truth, not decorative green lights. Implemented is not connected; connected is not live-verified."',
-          )
-          p.write_text(s)
-          PY
-          pnpm exec prettier --write src/app/dashboard/page.tsx src/components/dashboard/owner-badge.tsx
-
-      - name: Commit dashboard fixes
-        run: |
-          if git diff --quiet; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add src/app/dashboard/page.tsx src/components/dashboard/owner-badge.tsx
-          git commit -m "Preserve dashboard honesty contract"
-          git push origin HEAD:refinement/dashboard-premium-section-1
-
-      - name: Check changed-file formatting
-        run: pnpm exec prettier --check src/app/dashboard/page.tsx src/components/dashboard/owner-badge.tsx
+      - name: Check formatting
+        run: pnpm format:check
 
       - name: Lint
         run: pnpm lint
@@ -77,3 +56,12 @@ jobs:
 
       - name: Build
         run: pnpm build
+# Playwright is deliberately NOT run in this workflow during Block 2.
+#
+# The end-to-end suite needs a browser download (`pnpm exec playwright install
+# chromium`) plus a production build and a running server, which together cost
+# far more than the checks above and would slow every pull request. The smoke
+# test is still maintained and runnable locally via `pnpm test:e2e`.
+#
+# A dedicated end-to-end workflow — with its own browser cache and a narrower
+# trigger — is planned for a later block.
