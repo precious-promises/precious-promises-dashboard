@@ -25,7 +25,7 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Check Section 2 formatting
+      - name: Check only Section 2 formatting
         run: pnpm exec prettier --check src/app/dashboard/calendar/page.tsx src/components/calendar/month-grid.tsx
       - name: Lint
         run: pnpm lint
