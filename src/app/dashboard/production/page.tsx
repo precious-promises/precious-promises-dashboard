@@ -1,4 +1,11 @@
-import { Gauge } from "lucide-react";
+import {
+  ArrowRight,
+  CheckCircle2,
+  CircleAlert,
+  Gauge,
+  GitBranch,
+  ShieldCheck,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -40,11 +47,14 @@ export const metadata: Metadata = {
 };
 
 const STAGE_NOTES: Partial<Record<(typeof BOARD_STAGES)[number], string>> = {
+  plan: "Content exists, but no later production signal has been reached yet.",
   verify_scripture: "Scripture needs checking before anything else proceeds.",
+  write: "A script revision exists and the item remains in development.",
   produce: "A video composition exists and is being built.",
-  approve: "Approved and waiting to be given a time.",
+  review: "The item or a platform variant is ready for human review.",
+  approve: "A valid approval exists and the content is waiting for scheduling.",
   schedule:
-    "A time is set. The publish run sends it only when due, approved and on a connected platform.",
+    "A time is set. Publishing still depends on the separate publish workflow.",
 };
 
 async function loadPipelineData(): Promise<{
@@ -70,8 +80,6 @@ async function loadPipelineData(): Promise<{
   type JobRow = ProductionJob & { content_items: { title: string } | null };
   const jobs = (jobRows ?? []) as JobRow[];
 
-  // The newest render job per linked video project, so the rendering step can
-  // link to work the owner genuinely started in the Video Studio.
   const projectIds = [
     ...new Set(
       jobs
@@ -116,6 +124,37 @@ async function loadPipelineData(): Promise<{
   };
 }
 
+function MetricCard({
+  label,
+  value,
+  description,
+  icon: Icon,
+}: {
+  label: string;
+  value: number;
+  description: string;
+  icon: typeof Gauge;
+}) {
+  return (
+    <div className="pp-glass rounded-2xl border border-edge p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[11px] font-semibold tracking-[0.13em] text-ink-muted uppercase">
+            {label}
+          </p>
+          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink-primary">
+            {value}
+          </p>
+        </div>
+        <span className="rounded-xl border border-edge bg-panel-hover/60 p-2.5 text-highlight">
+          <Icon aria-hidden="true" className="size-4" />
+        </span>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-ink-secondary">{description}</p>
+    </div>
+  );
+}
+
 function Card({ card }: { card: BoardCard }) {
   const scheduled = card.schedules.filter(
     (post) => post.status === "scheduled",
@@ -126,35 +165,45 @@ function Card({ card }: { card: BoardCard }) {
     <li>
       <Link
         href={`/dashboard/content/${card.item.id}`}
-        className="block rounded-lg border border-edge/70 bg-panel-raised/40 px-3 py-2.5 transition-colors hover:border-edge-strong hover:bg-panel-hover/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+        className="group block rounded-xl border border-edge/70 bg-panel-raised/45 px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:border-edge-strong hover:bg-panel-hover/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
       >
-        <span className="block text-sm font-medium text-ink-primary">
-          {card.item.title}
-        </span>
-        <span className="mt-0.5 block text-[11px] text-ink-muted">
-          {CONTENT_TYPE_LABELS[card.item.content_type]}
-          {card.item.topic ? ` · ${card.item.topic}` : ""}
-        </span>
-
-        <span className="mt-2 flex flex-wrap gap-1">
-          {card.variants.map((variant) => (
-            <StatusBadge
-              key={variant.id}
-              tone={
-                variant.review_state === "approved"
-                  ? "configured"
-                  : variant.review_state === "ready_for_review"
-                    ? "accent"
-                    : "inactive"
-              }
-            >
-              {PLATFORM_LABELS[variant.platform]} ·{" "}
-              {REVIEW_STATE_LABELS[variant.review_state]}
-            </StatusBadge>
-          ))}
+        <span className="flex items-start justify-between gap-3">
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold leading-5 text-ink-primary">
+              {card.item.title}
+            </span>
+            <span className="mt-1 block text-[11px] leading-4 text-ink-muted">
+              {CONTENT_TYPE_LABELS[card.item.content_type]}
+              {card.item.topic ? ` · ${card.item.topic}` : ""}
+            </span>
+          </span>
+          <ArrowRight
+            aria-hidden="true"
+            className="mt-0.5 size-3.5 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5 group-hover:text-highlight"
+          />
         </span>
 
-        <span className="mt-2 block text-[11px] leading-5 text-ink-muted">
+        {card.variants.length > 0 ? (
+          <span className="mt-2.5 flex flex-wrap gap-1">
+            {card.variants.map((variant) => (
+              <StatusBadge
+                key={variant.id}
+                tone={
+                  variant.review_state === "approved"
+                    ? "configured"
+                    : variant.review_state === "ready_for_review"
+                      ? "accent"
+                      : "inactive"
+                }
+              >
+                {PLATFORM_LABELS[variant.platform]} ·{" "}
+                {REVIEW_STATE_LABELS[variant.review_state]}
+              </StatusBadge>
+            ))}
+          </span>
+        ) : null}
+
+        <span className="mt-2.5 block rounded-lg border border-edge/60 bg-panel/35 px-2.5 py-2 text-[11px] leading-5 text-ink-muted">
           Scripture:{" "}
           {card.item.scripture_reference
             ? SCRIPTURE_VERIFICATION_LABELS[
@@ -171,7 +220,7 @@ function Card({ card }: { card: BoardCard }) {
         </span>
 
         {card.staleApprovals > 0 ? (
-          <span className="mt-2 block rounded-md border border-gold-dim/50 bg-gold/10 px-2 py-1 text-[11px] text-gold">
+          <span className="mt-2 block rounded-lg border border-gold-dim/50 bg-gold/10 px-2.5 py-1.5 text-[11px] leading-4 text-gold">
             {card.staleApprovals} approval
             {card.staleApprovals === 1 ? "" : "s"} withdrawn after a content
             change.
@@ -179,7 +228,7 @@ function Card({ card }: { card: BoardCard }) {
         ) : null}
 
         {scheduled.length > 0 ? (
-          <span className="mt-2 block text-[11px] text-ink-secondary">
+          <span className="mt-2 block text-[11px] font-medium text-ink-secondary">
             Scheduled{" "}
             {formatInTimeZone(
               new Date(scheduled[0]!.scheduled_for),
@@ -198,18 +247,6 @@ function Card({ card }: { card: BoardCard }) {
   );
 }
 
-/**
- * The Production Board.
- *
- * Every column is **derived from records**. There is no stored board position
- * and no action that sets one: a card sits in Approve because an approval
- * exists and still matches its content, not because somebody dragged it there.
- * Dragging is deliberately absent rather than decorative — a drag that moved a
- * card without meeting the conditions would be the board lying about the work.
- *
- * `Publish` is not a column. Nothing publishes, so there is nowhere for a card
- * to arrive.
- */
 export default async function ProductionBoardPage() {
   const supabase = await createSupabaseServerClient();
   const {
@@ -225,6 +262,19 @@ export default async function ProductionBoardPage() {
     loadPipelineData(),
   ]);
   const byStage = groupByStage(cards);
+  const scriptureAttention = (byStage.get("verify_scripture") ?? []).length;
+  const reviewReady = (byStage.get("review") ?? []).length;
+  const approved = (byStage.get("approve") ?? []).length;
+  const scheduled = (byStage.get("schedule") ?? []).length;
+  const activePipelineJobs = pipeline.jobs.filter(
+    ({ job }) =>
+      job.status !== "ready_for_review" &&
+      job.status !== "cancelled" &&
+      job.status !== "failed",
+  ).length;
+  const failedPipelineJobs = pipeline.jobs.filter(
+    ({ job }) => job.status === "failed",
+  ).length;
 
   return (
     <DashboardShell
@@ -232,83 +282,214 @@ export default async function ProductionBoardPage() {
       pathname="/dashboard/production"
       email={user.email ?? null}
     >
-      <div className="flex w-full flex-col gap-6">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-ink-primary sm:text-3xl">
-            Production Board
-          </h2>
-          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-ink-secondary">
-            Every column is worked out from the records — Scripture
-            verification, saved scripts, video compositions, approvals and
-            schedules. Cards move because the work moved, not because they were
-            dragged.
-          </p>
-        </div>
+      <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-6">
+        <section className="relative overflow-hidden rounded-3xl border border-edge bg-panel px-5 py-6 shadow-sm sm:px-7 sm:py-7">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 w-2/5 bg-[radial-gradient(circle_at_center,var(--color-highlight-soft),transparent_68%)] opacity-20"
+          />
+          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-edge bg-panel-hover/70 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
+                <GitBranch
+                  aria-hidden="true"
+                  className="size-3.5 text-highlight"
+                />
+                Production command centre
+              </div>
+              <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
+                Production Board
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary sm:text-base">
+                See where every content item genuinely sits based on Scripture,
+                script, video, review, approval and scheduling records. Board
+                position is derived from evidence rather than manually assigned.
+              </p>
+            </div>
 
-        {cards.length === 0 ? (
-          <div className="pp-glass rounded-xl border border-edge">
-            <EmptyState
-              icon={Gauge}
-              title="Nothing in production yet."
-              description="Create a content item and it will appear here, in the column its records put it in."
-              action={
-                <Link
-                  href="/dashboard/content/new"
-                  className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-                >
-                  Create Content
-                </Link>
-              }
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/content"
+                className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-panel-hover/50 px-4 py-2.5 text-sm font-semibold text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+              >
+                Content Library
+              </Link>
+              <Link
+                href="/dashboard/content/new"
+                className="inline-flex items-center gap-2 rounded-xl bg-highlight px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+              >
+                Create Content
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section
+          aria-label="Production summary"
+          className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6"
+        >
+          <MetricCard
+            label="In production"
+            value={cards.length}
+            description="Content items currently represented on the derived board."
+            icon={Gauge}
+          />
+          <MetricCard
+            label="Scripture attention"
+            value={scriptureAttention}
+            description="Items blocked until Scripture is verified again or confirmed."
+            icon={CircleAlert}
+          />
+          <MetricCard
+            label="Ready for review"
+            value={reviewReady}
+            description="Items that have genuinely reached the human review stage."
+            icon={ShieldCheck}
+          />
+          <MetricCard
+            label="Approved"
+            value={approved}
+            description="Items with a valid approval that still matches current content."
+            icon={CheckCircle2}
+          />
+          <MetricCard
+            label="Scheduled"
+            value={scheduled}
+            description="Approved content with an active schedule record."
+            icon={CheckCircle2}
+          />
+          <MetricCard
+            label="Active pipeline jobs"
+            value={activePipelineJobs}
+            description="Generation jobs still progressing before the review handoff."
+            icon={GitBranch}
+          />
+        </section>
+
+        {failedPipelineJobs > 0 ? (
+          <section className="rounded-2xl border border-red-900/50 bg-red-950/25 px-4 py-3.5 sm:px-5">
+            <div className="flex items-start gap-3">
+              <CircleAlert
+                aria-hidden="true"
+                className="mt-0.5 size-4 shrink-0 text-red-200"
+              />
+              <div>
+                <h3 className="text-sm font-semibold text-red-100">
+                  Pipeline attention required
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-red-200/90">
+                  {failedPipelineJobs} production job
+                  {failedPipelineJobs === 1 ? " has" : "s have"} failed and will
+                  not advance until explicitly retried or cancelled.
+                </p>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        <section className="pp-glass overflow-hidden rounded-2xl border border-edge">
+          <div className="border-b border-edge px-4 py-4 sm:px-5">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-[11px] font-semibold tracking-[0.13em] text-ink-muted uppercase">
+                  Evidence-derived workflow
+                </p>
+                <h3 className="mt-1 text-xl font-semibold tracking-tight text-ink-primary">
+                  Current production stages
+                </h3>
+                <p className="mt-1 max-w-3xl text-xs leading-5 text-ink-secondary">
+                  Cards move only when the underlying records change. There is
+                  no drag-and-drop shortcut that can bypass Scripture
+                  verification, review, approval or scheduling requirements.
+                </p>
+              </div>
+              <p className="text-xs text-ink-muted">
+                {cards.length}{" "}
+                {cards.length === 1 ? "content item" : "content items"}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-4 sm:p-5">
+            {cards.length === 0 ? (
+              <EmptyState
+                icon={Gauge}
+                title="Nothing in production yet."
+                description="Create a content item and it will appear here in the stage its records genuinely support."
+                action={
+                  <Link
+                    href="/dashboard/content/new"
+                    className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                  >
+                    Create Content
+                  </Link>
+                }
+              />
+            ) : (
+              <div className="flex gap-4 overflow-x-auto pb-2">
+                {BOARD_STAGES.map((stage) => {
+                  const stageCards = byStage.get(stage) ?? [];
+                  return (
+                    <section
+                      key={stage}
+                      className="flex w-80 shrink-0 flex-col rounded-2xl border border-edge bg-panel/55"
+                    >
+                      <div className="border-b border-edge/70 px-4 py-3.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <h4 className="text-sm font-semibold text-ink-primary">
+                            {PRODUCTION_STAGE_LABELS[stage]}
+                          </h4>
+                          <span className="flex size-7 items-center justify-center rounded-full border border-edge bg-panel-hover/60 text-xs font-semibold text-ink-secondary">
+                            {stageCards.length}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 min-h-8 text-[11px] leading-4 text-ink-muted">
+                          {STAGE_NOTES[stage]}
+                        </p>
+                      </div>
+
+                      <div className="min-h-24 px-3 py-3">
+                        {stageCards.length === 0 ? (
+                          <div className="rounded-xl border border-dashed border-edge px-3 py-5 text-center text-xs text-ink-muted">
+                            Nothing here.
+                          </div>
+                        ) : (
+                          <ul className="flex flex-col gap-2.5">
+                            {stageCards.map((card) => (
+                              <Card key={card.item.id} card={card} />
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-edge bg-panel/55 px-4 py-4 sm:px-5">
+          <div className="flex items-start gap-3">
+            <ShieldCheck
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-highlight"
             />
+            <div>
+              <h3 className="text-sm font-semibold text-ink-primary">
+                Production truth boundary
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-ink-secondary">
+                {UNREACHABLE_STAGES.map(
+                  (stage) => PRODUCTION_STAGE_LABELS[stage],
+                ).join(", ")}{" "}
+                is not a board column. Publishing reports through the separate
+                Publish Queue, which preserves per-platform attempts and
+                outcomes instead of flattening them into a card position.
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="flex gap-4 overflow-x-auto pb-2">
-            {BOARD_STAGES.map((stage) => {
-              const stageCards = byStage.get(stage) ?? [];
-              return (
-                <section
-                  key={stage}
-                  className="pp-glass flex w-72 shrink-0 flex-col rounded-xl border border-edge"
-                >
-                  <div className="border-b border-edge/70 px-3.5 py-3">
-                    <h3 className="flex items-center justify-between gap-2 text-sm font-semibold text-ink-primary">
-                      {PRODUCTION_STAGE_LABELS[stage]}
-                      <span className="text-xs font-normal text-ink-muted">
-                        {stageCards.length}
-                      </span>
-                    </h3>
-                    {STAGE_NOTES[stage] ? (
-                      <p className="mt-1 text-[11px] leading-4 text-ink-muted">
-                        {STAGE_NOTES[stage]}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="px-3 py-3">
-                    {stageCards.length === 0 ? (
-                      <p className="text-xs text-ink-muted">Nothing here.</p>
-                    ) : (
-                      <ul className="flex flex-col gap-2">
-                        {stageCards.map((card) => (
-                          <Card key={card.item.id} card={card} />
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        )}
-
-        <p className="text-xs text-ink-muted">
-          {UNREACHABLE_STAGES.map(
-            (stage) => PRODUCTION_STAGE_LABELS[stage],
-          ).join(", ")}{" "}
-          is not shown as a column. Publishing runs from the Publish Queue with
-          its own record of every attempt; this board tracks preparation up to
-          scheduling.
-        </p>
+        </section>
 
         <SectionCard
           title="Production pipeline"
