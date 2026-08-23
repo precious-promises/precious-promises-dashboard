@@ -30,3 +30,4 @@ jobs:
             git commit -m "style: format Section 9 file"
             git push
           fi
+# Trigger formatter after workflow creation.
