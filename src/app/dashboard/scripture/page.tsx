@@ -105,9 +105,7 @@ export default async function ScriptureStudioPage(
   const filter = parseFilter(searchParams.verification);
   const allItems = await listScriptureItems(null);
   const items = filter
-    ? allItems.filter(
-        (item) => item.scripture_verification_status === filter,
-      )
+    ? allItems.filter((item) => item.scripture_verification_status === filter)
     : allItems;
 
   const manuallyVerified = allItems.filter(
@@ -275,7 +273,8 @@ export default async function ScriptureStudioPage(
                     {!alreadyVerified && !verifiable ? (
                       <div className="mt-3 rounded-lg border border-edge bg-panel-raised/35 px-3 py-2 text-xs leading-5 text-ink-muted">
                         Manual verification is unavailable until both the
-                        Scripture reference and stored verse wording are present.
+                        Scripture reference and stored verse wording are
+                        present.
                       </div>
                     ) : null}
 
@@ -289,7 +288,10 @@ export default async function ScriptureStudioPage(
 
                       {alreadyVerified ? (
                         <span className="inline-flex items-center gap-2 rounded-lg border border-edge bg-panel-raised/40 px-3.5 py-2 text-xs font-medium text-ink-secondary">
-                          <CheckCircle2 className="size-4 text-highlight" aria-hidden="true" />
+                          <CheckCircle2
+                            className="size-4 text-highlight"
+                            aria-hidden="true"
+                          />
                           Manual verification recorded
                         </span>
                       ) : (
