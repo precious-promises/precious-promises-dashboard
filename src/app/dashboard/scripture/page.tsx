@@ -107,9 +107,7 @@ export default async function ScriptureStudioPage(
   const filter = parseFilter(searchParams.verification);
   const allItems = await listScriptureItems(null);
   const items = filter
-    ? allItems.filter(
-        (item) => item.scripture_verification_status === filter,
-      )
+    ? allItems.filter((item) => item.scripture_verification_status === filter)
     : allItems;
 
   const manuallyVerified = allItems.filter(
@@ -209,7 +207,10 @@ export default async function ScriptureStudioPage(
                   Scripture attention required
                 </p>
                 <p className="mt-1 text-xs leading-5 text-ink-secondary">
-                  {verificationRequired} {verificationRequired === 1 ? "item has" : "items have"} Scripture marked as requiring verification. Review the stored reference and wording before approval or publishing.
+                  {verificationRequired}{" "}
+                  {verificationRequired === 1 ? "item has" : "items have"}{" "}
+                  Scripture marked as requiring verification. Review the stored
+                  reference and wording before approval or publishing.
                 </p>
               </div>
             </div>
@@ -365,8 +366,8 @@ export default async function ScriptureStudioPage(
                 Scripture truth boundary
               </p>
               <p className="mt-2 text-sm leading-6 text-ink-secondary">
-                Scripture Studio reads and verifies the wording already stored on
-                a content item. It does not generate, complete, correct or
+                Scripture Studio reads and verifies the wording already stored
+                on a content item. It does not generate, complete, correct or
                 translate a verse. Manual verification is a human assertion
                 about the current stored wording; changing that wording through
                 the Content Library resets verification. Declarations, prayers
