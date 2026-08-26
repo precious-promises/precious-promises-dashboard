@@ -191,7 +191,10 @@ export default async function ScriptStudioPage(
 
         <section className="rounded-xl border border-edge bg-panel-raised/35 p-4 sm:p-5">
           <div className="mb-3 flex items-start gap-3">
-            <FileText aria-hidden="true" className="mt-0.5 size-5 text-highlight" />
+            <FileText
+              aria-hidden="true"
+              className="mt-0.5 size-5 text-highlight"
+            />
             <div>
               <h3 className="text-sm font-semibold text-ink-primary">
                 Choose the content item
