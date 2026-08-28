@@ -5,6 +5,7 @@ on:
     branches:
       - refinement/video-creation-studio-section-12-premium-v2
 
+# Temporary workflow for the Section 12 refinement branch.
 jobs:
   validate:
     runs-on: ubuntu-latest
