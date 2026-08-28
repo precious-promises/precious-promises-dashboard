@@ -68,7 +68,9 @@ export default async function VideoStudioPage() {
     listContentItems(EMPTY_FILTERS),
   ]);
   const capability = describeRenderCapability();
-  const draftCount = projects.filter((project) => project.status === "draft").length;
+  const draftCount = projects.filter(
+    (project) => project.status === "draft",
+  ).length;
   const reviewCount = projects.filter(
     (project) => project.status === "ready_for_review",
   ).length;
@@ -96,8 +98,8 @@ export default async function VideoStudioPage() {
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
                 Turn a content item into a structured video project with
                 Scripture, teaching, declarations, prayer, branding, media,
-                timing and a browser preview — while keeping authoring, rendering,
-                approval and publication as separate evidence states.
+                timing and a browser preview — while keeping authoring,
+                rendering, approval and publication as separate evidence states.
               </p>
             </div>
 
@@ -174,11 +176,15 @@ export default async function VideoStudioPage() {
                   key={step}
                   className="rounded-xl border border-edge/70 bg-panel/40 px-4 py-4"
                 >
-                  <span className="text-xs font-semibold text-highlight">{step}</span>
+                  <span className="text-xs font-semibold text-highlight">
+                    {step}
+                  </span>
                   <p className="mt-2 text-sm font-semibold text-ink-primary">
                     {title}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-ink-muted">{detail}</p>
+                  <p className="mt-1 text-xs leading-5 text-ink-muted">
+                    {detail}
+                  </p>
                 </div>
               ))}
             </div>
@@ -190,7 +196,9 @@ export default async function VideoStudioPage() {
                 <Film aria-hidden="true" className="size-4 text-ink-muted" />
                 Server rendering
               </span>
-              <StatusBadge tone={capability.connected ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={capability.connected ? "configured" : "inactive"}
+              >
                 {capability.connected ? "Connected" : "Not connected"}
               </StatusBadge>
             </div>
@@ -198,9 +206,9 @@ export default async function VideoStudioPage() {
               {capability.detail}
             </p>
             <p className="mt-3 border-t border-edge/70 pt-3 text-xs leading-5 text-ink-secondary">
-              A configured or connected render path is not proof that any project
-              has rendered. Completion requires a genuine output asset on the
-              render job.
+              A configured or connected render path is not proof that any
+              project has rendered. Completion requires a genuine output asset
+              on the render job.
             </p>
           </div>
         </section>
@@ -283,7 +291,8 @@ export default async function VideoStudioPage() {
                       <div>
                         <p className="text-ink-muted">Timeline</p>
                         <p className="mt-1 font-medium text-ink-secondary">
-                          {formatDuration(project.duration_estimate_seconds)} estimated
+                          {formatDuration(project.duration_estimate_seconds)}{" "}
+                          estimated
                         </p>
                       </div>
                       <div>
@@ -315,17 +324,21 @@ export default async function VideoStudioPage() {
               encoded video file.
             </p>
             <p>
-              <strong className="text-ink-primary">Render ≠ approval.</strong>{" "}
-              A genuine output file is production evidence, not permission to
+              <strong className="text-ink-primary">Render ≠ approval.</strong> A
+              genuine output file is production evidence, not permission to
               publish it.
             </p>
             <p>
-              <strong className="text-ink-primary">Approval ≠ publication.</strong>{" "}
+              <strong className="text-ink-primary">
+                Approval ≠ publication.
+              </strong>{" "}
               Scheduling, provider confirmation and public watchability remain
               separate states elsewhere in the dashboard.
             </p>
             <p>
-              <strong className="text-ink-primary">Scripture ≠ authored prose.</strong>{" "}
+              <strong className="text-ink-primary">
+                Scripture ≠ authored prose.
+              </strong>{" "}
               Scripture scenes reference the stored verse; declarations, prayer
               and teaching remain visibly distinct authored content.
             </p>
