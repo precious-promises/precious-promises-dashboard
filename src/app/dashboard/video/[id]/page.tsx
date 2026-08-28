@@ -143,7 +143,9 @@ export default async function VideoProjectPage(
   const backgroundSceneIds = scenes
     .filter((scene) => scene.media_asset_id !== null)
     .map((scene) => scene.id);
-  const completedRenders = jobs.filter((job) => job.status === "completed").length;
+  const completedRenders = jobs.filter(
+    (job) => job.status === "completed",
+  ).length;
   const activeRenders = jobs.filter(
     (job) => job.status === "queued" || job.status === "rendering",
   ).length;
@@ -193,7 +195,9 @@ export default async function VideoProjectPage(
                 </h2>
                 <StatusBadge
                   tone={
-                    project.status === "ready_for_review" ? "accent" : "inactive"
+                    project.status === "ready_for_review"
+                      ? "accent"
+                      : "inactive"
                   }
                 >
                   {VIDEO_PROJECT_STATUS_LABELS[project.status]}
@@ -217,14 +221,26 @@ export default async function VideoProjectPage(
         </section>
 
         <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-          <Metric label="Scenes" value={scenes.length} detail="Real timeline layers" />
+          <Metric
+            label="Scenes"
+            value={scenes.length}
+            detail="Real timeline layers"
+          />
           <Metric
             label="Duration"
             value={formatDuration(project.duration_estimate_seconds)}
             detail="Composition estimate"
           />
-          <Metric label="Media Slots" value={assets.length} detail="Attached asset records" />
-          <Metric label="Render Jobs" value={jobs.length} detail="Every request retained" />
+          <Metric
+            label="Media Slots"
+            value={assets.length}
+            detail="Attached asset records"
+          />
+          <Metric
+            label="Render Jobs"
+            value={jobs.length}
+            detail="Every request retained"
+          />
           <Metric
             label="Active Renders"
             value={activeRenders}
@@ -250,14 +266,19 @@ export default async function VideoProjectPage(
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 p-4">
             <div className="flex items-center gap-2">
-              <CheckCircle2 aria-hidden="true" className="size-4 text-highlight" />
+              <CheckCircle2
+                aria-hidden="true"
+                className="size-4 text-highlight"
+              />
               <h3 className="text-sm font-semibold text-ink-primary">
                 Evidence boundary
               </h3>
             </div>
             <div className="mt-3 space-y-2 text-xs leading-5 text-ink-secondary">
               <p>Browser preview is not a rendered file.</p>
-              <p>A completed render is not approval, scheduling or publication.</p>
+              <p>
+                A completed render is not approval, scheduling or publication.
+              </p>
               <p>
                 Scripture is referenced from the content record; authored prose
                 stays separate from Scripture.
@@ -405,7 +426,10 @@ export default async function VideoProjectPage(
           </div>
           <div className="rounded-2xl border border-edge/80 bg-panel-raised/30 p-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
-              <PackageCheck aria-hidden="true" className="size-4 text-highlight" />
+              <PackageCheck
+                aria-hidden="true"
+                className="size-4 text-highlight"
+              />
               Completed output
             </div>
             <p className="mt-2 text-xs leading-5 text-ink-muted">

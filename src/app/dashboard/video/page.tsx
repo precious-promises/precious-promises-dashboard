@@ -75,7 +75,9 @@ export default async function VideoStudioPage() {
     listContentItems(EMPTY_FILTERS),
   ]);
   const capability = describeRenderCapability();
-  const draftCount = projects.filter((project) => project.status === "draft").length;
+  const draftCount = projects.filter(
+    (project) => project.status === "draft",
+  ).length;
   const reviewCount = projects.filter(
     (project) => project.status === "ready_for_review",
   ).length;
@@ -128,7 +130,11 @@ export default async function VideoStudioPage() {
             value={projects.length}
             detail="Real saved video projects"
           />
-          <Metric label="Draft" value={draftCount} detail="Still being authored" />
+          <Metric
+            label="Draft"
+            value={draftCount}
+            detail="Still being authored"
+          />
           <Metric
             label="Ready for Review"
             value={reviewCount}
@@ -150,7 +156,10 @@ export default async function VideoStudioPage() {
           <div className="rounded-2xl border border-edge bg-panel/70 p-5 shadow-sm">
             <div className="flex items-start gap-3">
               <div className="rounded-xl border border-edge bg-panel-raised/60 p-2.5">
-                <MonitorPlay aria-hidden="true" className="size-5 text-highlight" />
+                <MonitorPlay
+                  aria-hidden="true"
+                  className="size-5 text-highlight"
+                />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center justify-between gap-2">
@@ -162,8 +171,12 @@ export default async function VideoStudioPage() {
                       Server rendering
                     </h3>
                   </div>
-                  <StatusBadge tone={capability.connected ? "configured" : "inactive"}>
-                    {capability.connected ? "Available in runtime" : "Not connected"}
+                  <StatusBadge
+                    tone={capability.connected ? "configured" : "inactive"}
+                  >
+                    {capability.connected
+                      ? "Available in runtime"
+                      : "Not connected"}
                   </StatusBadge>
                 </div>
                 <p className="mt-2 text-sm leading-6 text-ink-secondary">
@@ -179,7 +192,10 @@ export default async function VideoStudioPage() {
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 p-5">
             <div className="flex items-center gap-2">
-              <CheckCircle2 aria-hidden="true" className="size-4 text-highlight" />
+              <CheckCircle2
+                aria-hidden="true"
+                className="size-4 text-highlight"
+              />
               <h3 className="text-sm font-semibold text-ink-primary">
                 Composition truth
               </h3>
@@ -240,7 +256,10 @@ export default async function VideoStudioPage() {
                     <div>
                       <div className="flex items-start justify-between gap-3">
                         <span className="rounded-xl border border-edge/70 bg-panel/70 p-2">
-                          <Layers3 aria-hidden="true" className="size-4 text-ink-muted" />
+                          <Layers3
+                            aria-hidden="true"
+                            className="size-4 text-ink-muted"
+                          />
                         </span>
                         <StatusBadge
                           tone={
@@ -257,7 +276,8 @@ export default async function VideoStudioPage() {
                       </h3>
                       <p className="mt-1 text-xs leading-5 text-ink-muted">
                         {ASPECT_RATIO_LABELS[project.aspect_ratio]} ·{" "}
-                        {formatDuration(project.duration_estimate_seconds)} estimated
+                        {formatDuration(project.duration_estimate_seconds)}{" "}
+                        estimated
                       </p>
                     </div>
                     <div className="mt-4 flex items-center justify-between border-t border-edge/60 pt-3 text-xs text-ink-secondary">
@@ -279,7 +299,10 @@ export default async function VideoStudioPage() {
 
         <div className="rounded-2xl border border-edge/80 bg-panel-raised/25 px-4 py-3">
           <div className="flex items-start gap-2">
-            <Film aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-ink-muted" />
+            <Film
+              aria-hidden="true"
+              className="mt-0.5 size-4 shrink-0 text-ink-muted"
+            />
             <p className="text-xs leading-5 text-ink-muted">
               Scripture scenes reference the stored Scripture record and cannot
               hold an editable copy. Explanation, declaration, prayer and outro
