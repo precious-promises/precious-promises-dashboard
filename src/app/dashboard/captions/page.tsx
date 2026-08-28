@@ -105,7 +105,8 @@ export default async function CaptionStudioPage(
   const items = await listContentItems(EMPTY_FILTERS);
   const item = selectedId ? await getContentItem(selectedId) : null;
   const variants = item ? await listVariantsForItem(item.id) : [];
-  const current = variants.find((variant) => variant.platform === platform) ?? null;
+  const current =
+    variants.find((variant) => variant.platform === platform) ?? null;
 
   const drafts = item ? await draftedGenerationsFor(item.id) : [];
   const variantDrafts = drafts.filter((draft) =>
@@ -200,7 +201,11 @@ export default async function CaptionStudioPage(
           <Metric
             label="Platform Variants"
             value={variants.length}
-            detail={item ? "Saved variants for the selected item." : "Choose an item to inspect variants."}
+            detail={
+              item
+                ? "Saved variants for the selected item."
+                : "Choose an item to inspect variants."
+            }
           />
           <Metric
             label="Draft"
@@ -215,7 +220,11 @@ export default async function CaptionStudioPage(
           <Metric
             label="AI Drafts"
             value={variantDrafts.length}
-            detail={isAiConfigured() ? "Saved AI variant drafts." : "AI provider not configured."}
+            detail={
+              isAiConfigured()
+                ? "Saved AI variant drafts."
+                : "AI provider not configured."
+            }
           />
         </div>
 
@@ -237,7 +246,8 @@ export default async function CaptionStudioPage(
               <div className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-3 text-sm">
                 <p className="font-medium text-ink-primary">{item.title}</p>
                 <p className="mt-1 text-xs text-ink-muted">
-                  Scripture {scriptureRecorded ? "recorded" : "not fully recorded"}
+                  Scripture{" "}
+                  {scriptureRecorded ? "recorded" : "not fully recorded"}
                 </p>
               </div>
             ) : null}
@@ -276,7 +286,10 @@ export default async function CaptionStudioPage(
                   title="Platform variants"
                   description="Each platform has its own wording and review state. A missing variant is not treated as complete."
                 >
-                  <nav aria-label="Platform" className="grid gap-2 sm:grid-cols-3">
+                  <nav
+                    aria-label="Platform"
+                    className="grid gap-2 sm:grid-cols-3"
+                  >
                     {VARIANT_PLATFORMS.map((option) => {
                       const isActive = option === platform;
                       const existing = variants.find(
@@ -309,7 +322,9 @@ export default async function CaptionStudioPage(
                                 {REVIEW_STATE_LABELS[existing.review_state]}
                               </StatusBadge>
                             ) : (
-                              <span className="text-xs text-ink-muted">None</span>
+                              <span className="text-xs text-ink-muted">
+                                None
+                              </span>
                             )}
                           </div>
                           <p className="mt-2 text-xs leading-5 text-ink-muted">
@@ -408,7 +423,10 @@ export default async function CaptionStudioPage(
                     </div>
                     <div className="flex gap-3">
                       <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-highlight" />
-                      <p>Approval, scheduling and publishing remain separate steps.</p>
+                      <p>
+                        Approval, scheduling and publishing remain separate
+                        steps.
+                      </p>
                     </div>
                   </div>
                 </SectionCard>
