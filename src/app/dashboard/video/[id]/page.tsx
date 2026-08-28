@@ -1,3 +1,12 @@
+import {
+  ArrowLeft,
+  CheckCircle2,
+  Clapperboard,
+  Clock3,
+  Film,
+  Layers3,
+  PackageCheck,
+} from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -5,6 +14,7 @@ import { notFound, redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { ScriptureReadOnly } from "@/components/scripture/scripture-panel-readonly";
 import { SectionCard } from "@/components/ui/section-card";
+import { StatusBadge } from "@/components/ui/status-badge";
 import { AssetSlots } from "@/components/video/asset-slots";
 import { LayerPanel } from "@/components/video/layer-panel";
 import { MobileProjectView } from "@/components/video/mobile-project-view";
@@ -17,6 +27,7 @@ import { LOGIN_PATH } from "@/lib/auth/routes";
 import { getContentItem } from "@/lib/content/repository";
 import { listMediaAssets } from "@/lib/media/repository";
 import { getLatestRevision } from "@/lib/scripts/repository";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { buildPreview } from "@/lib/video/preview";
 import {
   getVideoProject,
@@ -24,7 +35,11 @@ import {
   listRenderJobs,
   listScenes,
 } from "@/lib/video/repository";
-import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { formatDuration } from "@/lib/video/scenes";
+import {
+  ASPECT_RATIO_LABELS,
+  VIDEO_PROJECT_STATUS_LABELS,
+} from "@/lib/video/types";
 
 export const metadata: Metadata = {
   title: "Video project · Precious Promises",
@@ -56,6 +71,28 @@ const NOTICES: Record<string, string> = {
 function firstParam(value: string | string[] | undefined): string | null {
   const raw = Array.isArray(value) ? value[0] : value;
   return raw && raw.trim() !== "" ? raw : null;
+}
+
+function Metric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-edge/80 bg-panel-raised/40 px-4 py-3.5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+        {label}
+      </p>
+      <p className="mt-1.5 text-xl font-semibold tracking-tight text-ink-primary">
+        {value}
+      </p>
+      <p className="mt-1 text-[11px] leading-4 text-ink-muted">{detail}</p>
+    </div>
+  );
 }
 
 /**
@@ -106,6 +143,12 @@ export default async function VideoProjectPage(
   const backgroundSceneIds = scenes
     .filter((scene) => scene.media_asset_id !== null)
     .map((scene) => scene.id);
+  const completedRenders = jobs.filter(
+    (job) => job.status === "completed",
+  ).length;
+  const activeRenders = jobs.filter(
+    (job) => job.status === "queued" || job.status === "rendering",
+  ).length;
 
   const requestedSceneId = firstParam(searchParams.scene);
   const selectedIndex = Math.max(
@@ -120,31 +163,139 @@ export default async function VideoProjectPage(
       pathname="/dashboard/video"
       email={user.email ?? null}
     >
-      <div className="flex w-full flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <Link
             href="/dashboard/video"
-            className="text-sm text-ink-secondary underline underline-offset-2 transition-colors hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+            className="inline-flex items-center gap-1.5 text-sm text-ink-secondary transition-colors hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
           >
-            ← All video projects
+            <ArrowLeft aria-hidden="true" className="size-4" />
+            All video projects
           </Link>
           {notice && NOTICES[notice] ? (
             <p
               role="status"
-              className="rounded-lg border border-edge-strong/70 bg-panel-raised/60 px-3 py-1.5 text-xs text-ink-secondary"
+              className="rounded-xl border border-edge-strong/70 bg-panel-raised/60 px-3 py-2 text-xs leading-5 text-ink-secondary"
             >
               {NOTICES[notice]}
             </p>
           ) : null}
         </div>
 
-        <div className="pp-glass rounded-xl border border-edge px-4 py-4">
-          <ProjectSettingsForm project={project} />
-        </div>
+        <section className="relative overflow-hidden rounded-3xl border border-edge bg-[radial-gradient(circle_at_top_right,var(--color-panel-hover),transparent_42%),linear-gradient(135deg,var(--color-panel-raised),var(--color-panel))] p-5 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-highlight">
+                <Clapperboard aria-hidden="true" className="size-4" />
+                Video composition workspace
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <h2 className="text-2xl font-semibold tracking-tight text-ink-primary sm:text-3xl">
+                  {project.name}
+                </h2>
+                <StatusBadge
+                  tone={
+                    project.status === "ready_for_review"
+                      ? "accent"
+                      : "inactive"
+                  }
+                >
+                  {VIDEO_PROJECT_STATUS_LABELS[project.status]}
+                </StatusBadge>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-ink-secondary">
+                Arrange the composition, inspect every scene, attach real media
+                records and request rendering without confusing any production
+                state with approval or publication.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs text-ink-secondary">
+              <span className="rounded-lg border border-edge bg-panel-raised/55 px-2.5 py-1.5">
+                {ASPECT_RATIO_LABELS[project.aspect_ratio]}
+              </span>
+              <span className="rounded-lg border border-edge bg-panel-raised/55 px-2.5 py-1.5">
+                Revision {project.current_revision}
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          <Metric
+            label="Scenes"
+            value={scenes.length}
+            detail="Real timeline layers"
+          />
+          <Metric
+            label="Duration"
+            value={formatDuration(project.duration_estimate_seconds)}
+            detail="Composition estimate"
+          />
+          <Metric
+            label="Media Slots"
+            value={assets.length}
+            detail="Attached asset records"
+          />
+          <Metric
+            label="Render Jobs"
+            value={jobs.length}
+            detail="Every request retained"
+          />
+          <Metric
+            label="Active Renders"
+            value={activeRenders}
+            detail="Queued or rendering"
+          />
+          <Metric
+            label="Completed Files"
+            value={completedRenders}
+            detail="Jobs with completed evidence"
+          />
+        </section>
+
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="pp-glass rounded-2xl border border-edge px-4 py-4 sm:px-5">
+            <div className="mb-3 flex items-center gap-2">
+              <Film aria-hidden="true" className="size-4 text-highlight" />
+              <h3 className="text-sm font-semibold text-ink-primary">
+                Project settings
+              </h3>
+            </div>
+            <ProjectSettingsForm project={project} />
+          </div>
+
+          <div className="rounded-2xl border border-edge bg-panel-raised/35 p-4">
+            <div className="flex items-center gap-2">
+              <CheckCircle2
+                aria-hidden="true"
+                className="size-4 text-highlight"
+              />
+              <h3 className="text-sm font-semibold text-ink-primary">
+                Evidence boundary
+              </h3>
+            </div>
+            <div className="mt-3 space-y-2 text-xs leading-5 text-ink-secondary">
+              <p>Browser preview is not a rendered file.</p>
+              <p>
+                A completed render is not approval, scheduling or publication.
+              </p>
+              <p>
+                Scripture is referenced from the content record; authored prose
+                stays separate from Scripture.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* Mobile: a management view, not a shrunken editor. */}
         <div className="lg:hidden">
-          <div className="pp-glass rounded-xl border border-edge px-4 py-4">
+          <div className="pp-glass rounded-2xl border border-edge px-4 py-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Layers3 aria-hidden="true" className="size-4 text-highlight" />
+              <h3 className="text-sm font-semibold text-ink-primary">
+                Mobile production view
+              </h3>
+            </div>
             <MobileProjectView
               project={project}
               scenes={scenes}
@@ -160,7 +311,11 @@ export default async function VideoProjectPage(
               <LayerPanel projectId={project.id} />
             </SectionCard>
 
-            <SectionCard title="Scripture" headingLevel={3}>
+            <SectionCard
+              title="Scripture source"
+              description="Read-only. A Scripture scene references this record rather than copying its words."
+              headingLevel={3}
+            >
               {item ? (
                 <ScriptureReadOnly item={item} />
               ) : (
@@ -170,7 +325,11 @@ export default async function VideoProjectPage(
               )}
             </SectionCard>
 
-            <SectionCard title="Media slots" headingLevel={3}>
+            <SectionCard
+              title="Media slots"
+              description={`${mediaAssets.length} media ${mediaAssets.length === 1 ? "asset is" : "assets are"} available in the library.`}
+              headingLevel={3}
+            >
               <AssetSlots
                 projectId={project.id}
                 assets={assets}
@@ -195,7 +354,11 @@ export default async function VideoProjectPage(
               </div>
             </SectionCard>
 
-            <SectionCard title="Timeline" headingLevel={3}>
+            <SectionCard
+              title="Timeline"
+              description={`${scenes.length} ${scenes.length === 1 ? "scene" : "scenes"} · ${formatDuration(project.duration_estimate_seconds)} estimated composition length.`}
+              headingLevel={3}
+            >
               <Timeline
                 projectId={project.id}
                 scenes={scenes}
@@ -207,7 +370,7 @@ export default async function VideoProjectPage(
 
           <div className="flex flex-col gap-4">
             <SectionCard
-              title="Scene"
+              title="Scene inspector"
               description={
                 selected
                   ? `Scene ${selected.scene_order} of ${scenes.length}.`
@@ -230,11 +393,51 @@ export default async function VideoProjectPage(
               )}
             </SectionCard>
 
-            <SectionCard title="Render" headingLevel={3}>
+            <SectionCard
+              title="Render evidence"
+              description="Requests and outcomes are retained. Completion requires a real output asset."
+              headingLevel={3}
+            >
               <RenderPanel projectId={project.id} jobs={jobs} />
             </SectionCard>
           </div>
         </div>
+
+        <section className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-edge/80 bg-panel-raised/30 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
+              <Layers3 aria-hidden="true" className="size-4 text-highlight" />
+              Composition
+            </div>
+            <p className="mt-2 text-xs leading-5 text-ink-muted">
+              Scenes, timing, transitions and media assignments describe what
+              should be rendered. They are authoring evidence only.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-edge/80 bg-panel-raised/30 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
+              <Clock3 aria-hidden="true" className="size-4 text-highlight" />
+              Render lifecycle
+            </div>
+            <p className="mt-2 text-xs leading-5 text-ink-muted">
+              Queued, rendering, completed, failed and cancelled are render-job
+              states. They do not describe platform publication.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-edge/80 bg-panel-raised/30 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
+              <PackageCheck
+                aria-hidden="true"
+                className="size-4 text-highlight"
+              />
+              Completed output
+            </div>
+            <p className="mt-2 text-xs leading-5 text-ink-muted">
+              A completed job requires output-media evidence. That file still
+              needs separate review, approval, scheduling and publication steps.
+            </p>
+          </div>
+        </section>
       </div>
     </DashboardShell>
   );
