@@ -347,7 +347,7 @@ export default async function CaptionStudioPage(
                   <ScriptureReadOnly item={item} />
                   <div className="mt-4 border-t border-edge/70 pt-4">
                     <Link
-                      href={`/dashboard/scripture?verification=${item.scripture_verification}`}
+                      href={`/dashboard/scripture?verification=${item.scripture_verification_status}`}
                       className="text-xs font-medium text-highlight hover:underline"
                     >
                       Open Scripture Studio
