@@ -211,7 +211,11 @@ export default async function MediaAssetsPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 ["1", "Record", "Name, media type and provider metadata"],
-                ["2", "Locate", "Provider reference says where bytes should live"],
+                [
+                  "2",
+                  "Locate",
+                  "Provider reference says where bytes should live",
+                ],
                 ["3", "Clear", "Rights state records intended usage status"],
                 ["4", "Use", "Attachment or rendering is separate evidence"],
               ].map(([step, title, detail]) => (
