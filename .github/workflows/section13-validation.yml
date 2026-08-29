@@ -1,0 +1,30 @@
+name: Section 13 Validation
+
+on:
+  push:
+    branches:
+      - refinement/media-assets-section-13-premium
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check Section 13 formatting
+        run: pnpm exec prettier --check src/app/dashboard/media/page.tsx
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit and component tests
+        run: pnpm test
+      - name: Build
+        run: pnpm build
