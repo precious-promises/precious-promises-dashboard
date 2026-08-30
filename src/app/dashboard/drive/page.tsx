@@ -90,10 +90,12 @@ export default async function DriveBrowserPage(
   const atRoot = result.folderId === result.rootFolderId;
   const folders = result.files.filter((file) => isFolder(file.mimeType));
   const usableFiles = result.files.filter(
-    (file) => !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) !== null,
+    (file) =>
+      !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) !== null,
   );
   const unsupportedFiles = result.files.filter(
-    (file) => !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) === null,
+    (file) =>
+      !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) === null,
   );
   const importedOnPage = usableFiles.filter((file) => imported.has(file.id));
 
@@ -213,7 +215,10 @@ export default async function DriveBrowserPage(
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
-              <ShieldCheck aria-hidden="true" className="size-4 text-ink-muted" />
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-4 text-ink-muted"
+              />
               Root-folder boundary
             </div>
             <p className="mt-3 text-xs leading-5 text-ink-muted">
@@ -341,8 +346,8 @@ export default async function DriveBrowserPage(
               </p>
               <p className="text-xs text-ink-muted">
                 An imported reference therefore proves that the dashboard knows
-                about an asset. It does not prove a later read, render, upload or
-                public publication succeeded.
+                about an asset. It does not prove a later read, render, upload
+                or public publication succeeded.
               </p>
             </div>
           </SectionCard>
@@ -395,12 +400,16 @@ export default async function DriveBrowserPage(
           </p>
           <div className="mt-3 grid gap-3 text-xs leading-5 text-ink-secondary md:grid-cols-2 xl:grid-cols-4">
             <p>
-              <strong className="text-ink-primary">Implemented ≠ connected.</strong>{" "}
+              <strong className="text-ink-primary">
+                Implemented ≠ connected.
+              </strong>{" "}
               The Drive adapter can exist while no usable owner credential is
               present.
             </p>
             <p>
-              <strong className="text-ink-primary">Connected ≠ unrestricted.</strong>{" "}
+              <strong className="text-ink-primary">
+                Connected ≠ unrestricted.
+              </strong>{" "}
               Every requested folder still has to pass the approved-root check.
             </p>
             <p>
@@ -409,9 +418,11 @@ export default async function DriveBrowserPage(
               in Drive.
             </p>
             <p>
-              <strong className="text-ink-primary">Reference ≠ publication.</strong>{" "}
-              A known media asset is not evidence of a completed render, platform
-              upload or publicly available post.
+              <strong className="text-ink-primary">
+                Reference ≠ publication.
+              </strong>{" "}
+              A known media asset is not evidence of a completed render,
+              platform upload or publicly available post.
             </p>
           </div>
         </section>
