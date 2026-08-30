@@ -88,13 +88,19 @@ export default async function DriveBrowserPage(
   const imported = await loadImportedFileIds();
 
   const atRoot = result.folderId === result.rootFolderId;
-  const folderCount = result.files.filter((file) => isFolder(file.mimeType)).length;
+  const folderCount = result.files.filter((file) =>
+    isFolder(file.mimeType),
+  ).length;
   const supportedFiles = result.files.filter(
-    (file) => !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) !== null,
+    (file) =>
+      !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) !== null,
   );
-  const importedInView = supportedFiles.filter((file) => imported.has(file.id)).length;
+  const importedInView = supportedFiles.filter((file) =>
+    imported.has(file.id),
+  ).length;
   const unsupportedCount = result.files.filter(
-    (file) => !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) === null,
+    (file) =>
+      !isFolder(file.mimeType) && mediaTypeForMime(file.mimeType) === null,
   ).length;
 
   return (
@@ -207,7 +213,11 @@ export default async function DriveBrowserPage(
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 ["1", "Authorise", "Drive requires its own live credential"],
-                ["2", "Contain", "Every requested folder is re-checked against the root"],
+                [
+                  "2",
+                  "Contain",
+                  "Every requested folder is re-checked against the root",
+                ],
                 ["3", "Browse", "Only returned Drive metadata is shown here"],
                 ["4", "Import", "Register a reference; do not copy file bytes"],
               ].map(([step, title, detail]) => (
@@ -215,11 +225,15 @@ export default async function DriveBrowserPage(
                   key={step}
                   className="rounded-xl border border-edge/70 bg-panel/40 px-4 py-4"
                 >
-                  <span className="text-xs font-semibold text-highlight">{step}</span>
+                  <span className="text-xs font-semibold text-highlight">
+                    {step}
+                  </span>
                   <p className="mt-2 text-sm font-semibold text-ink-primary">
                     {title}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-ink-muted">{detail}</p>
+                  <p className="mt-1 text-xs leading-5 text-ink-muted">
+                    {detail}
+                  </p>
                 </div>
               ))}
             </div>
@@ -227,7 +241,10 @@ export default async function DriveBrowserPage(
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
             <span className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
-              <ShieldCheck aria-hidden="true" className="size-4 text-ink-muted" />
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-4 text-ink-muted"
+              />
               Root boundary
             </span>
             <p className="mt-3 text-xs leading-5 text-ink-muted">
@@ -334,7 +351,9 @@ export default async function DriveBrowserPage(
             </p>
             <p className="mt-3 text-sm leading-6 text-ink-secondary">
               That Google grant covers the whole Drive. The narrower
-              <strong className="mx-1 text-ink-primary">product boundary</strong>
+              <strong className="mx-1 text-ink-primary">
+                product boundary
+              </strong>
               is enforced in application code by proving each target belongs to
               the approved root before listing or reading it.
             </p>
@@ -350,7 +369,9 @@ export default async function DriveBrowserPage(
           </p>
           <div className="mt-3 grid gap-3 text-xs leading-5 text-ink-secondary md:grid-cols-2 xl:grid-cols-4">
             <p>
-              <strong className="text-ink-primary">Implemented ≠ connected.</strong>{" "}
+              <strong className="text-ink-primary">
+                Implemented ≠ connected.
+              </strong>{" "}
               Drive code can exist while no live account credential is usable.
             </p>
             <p>
@@ -362,9 +383,11 @@ export default async function DriveBrowserPage(
               Import stores a reference; the original bytes remain in Drive.
             </p>
             <p>
-              <strong className="text-ink-primary">Imported ≠ published.</strong>{" "}
-              A media reference proves neither render use nor provider upload nor
-              public availability.
+              <strong className="text-ink-primary">
+                Imported ≠ published.
+              </strong>{" "}
+              A media reference proves neither render use nor provider upload
+              nor public availability.
             </p>
           </div>
         </section>
