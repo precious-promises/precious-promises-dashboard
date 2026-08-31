@@ -354,7 +354,10 @@ export default async function GrowthCentrePage() {
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
-              <ShieldCheck aria-hidden="true" className="size-4 text-ink-muted" />
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-4 text-ink-muted"
+              />
               Growth truth boundary
             </div>
             <ul className="mt-4 space-y-3 text-xs leading-5 text-ink-muted">
@@ -374,9 +377,10 @@ export default async function GrowthCentrePage() {
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(300px,0.6fr)]">
             <div>
               <p className="text-sm leading-6 text-ink-secondary">
-                Findings are only shown within comparison sets that keep platform
-                and content shape sufficiently alike. A long teaching and a
-                thirty-second Short are not treated as interchangeable evidence.
+                Findings are only shown within comparison sets that keep
+                platform and content shape sufficiently alike. A long teaching
+                and a thirty-second Short are not treated as interchangeable
+                evidence.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-3">
@@ -555,7 +559,9 @@ export default async function GrowthCentrePage() {
                     </div>
                     <p className="mt-1 text-[11px] text-ink-muted">
                       {GOAL_METRIC_LABELS[progress.goal.metric]} ·{" "}
-                      {Number(progress.goal.target_value).toLocaleString("en-GB")}{" "}
+                      {Number(progress.goal.target_value).toLocaleString(
+                        "en-GB",
+                      )}{" "}
                       by {progress.goal.period_end}
                     </p>
                     <p className="mt-2 text-xs leading-5 text-ink-secondary">
