@@ -5,6 +5,7 @@ on:
     branches:
       - refinement/growth-centre-section-15-premium
 
+# Temporary validation gate for the Growth Centre refinement.
 jobs:
   validate:
     runs-on: ubuntu-latest
