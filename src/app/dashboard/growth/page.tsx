@@ -638,7 +638,10 @@ export default async function GrowthCentrePage() {
           description="Observational by design: these platforms do not provide randomised simultaneous assignment here."
         >
           <div className="mb-4 flex items-center gap-2 text-xs text-ink-muted">
-            <FlaskConical className="h-4 w-4 text-highlight" aria-hidden="true" />
+            <FlaskConical
+              className="h-4 w-4 text-highlight"
+              aria-hidden="true"
+            />
             No result is declared automatically.
           </div>
 
@@ -770,7 +773,10 @@ export default async function GrowthCentrePage() {
 
         <section className="rounded-2xl border border-gold/20 bg-gold/5 px-5 py-4">
           <div className="flex items-start gap-3">
-            <Target className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+            <Target
+              className="mt-0.5 h-4 w-4 shrink-0 text-gold"
+              aria-hidden="true"
+            />
             <div>
               <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-gold">
                 Growth truth boundary
