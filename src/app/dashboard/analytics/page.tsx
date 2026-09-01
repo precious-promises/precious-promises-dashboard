@@ -222,7 +222,9 @@ export default async function AnalyticsPage() {
                   Measurement before interpretation
                 </h3>
               </div>
-              <StatusBadge tone={overview.hasAnyData ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={overview.hasAnyData ? "configured" : "inactive"}
+              >
                 {overview.hasAnyData
                   ? `Last fetched ${describeFreshness(overview.lastFetchedAt)}`
                   : "Nothing fetched"}
@@ -277,7 +279,9 @@ export default async function AnalyticsPage() {
           description="Totals across measured posts. If nobody has reported a metric, the dashboard shows a dash rather than manufacturing zero."
           action={
             stale && overview.hasAnyData ? (
-              <StatusBadge tone="accent">Figures may be out of date</StatusBadge>
+              <StatusBadge tone="accent">
+                Figures may be out of date
+              </StatusBadge>
             ) : null
           }
         >
@@ -436,10 +440,10 @@ export default async function AnalyticsPage() {
             title="Synchronisation"
             description="Manual and scheduled refresh use the same analytics pipeline."
             action={
-              <StatusBadge tone={schedulingConnected ? "configured" : "inactive"}>
-                {schedulingConnected
-                  ? "Scheduled"
-                  : "Implemented, not running"}
+              <StatusBadge
+                tone={schedulingConnected ? "configured" : "inactive"}
+              >
+                {schedulingConnected ? "Scheduled" : "Implemented, not running"}
               </StatusBadge>
             }
           >
