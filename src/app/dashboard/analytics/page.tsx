@@ -222,7 +222,9 @@ export default async function AnalyticsPage() {
                   Figures carry source and freshness
                 </h3>
               </div>
-              <StatusBadge tone={overview.hasAnyData ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={overview.hasAnyData ? "configured" : "inactive"}
+              >
                 {overview.hasAnyData
                   ? `Last fetched ${describeFreshness(overview.lastFetchedAt)}`
                   : "Nothing fetched"}
@@ -231,7 +233,10 @@ export default async function AnalyticsPage() {
 
             <div className="mt-5 grid gap-3 sm:grid-cols-3">
               <div className="rounded-xl border border-edge/70 bg-panel/40 px-4 py-4">
-                <Database aria-hidden="true" className="size-4 text-highlight" />
+                <Database
+                  aria-hidden="true"
+                  className="size-4 text-highlight"
+                />
                 <p className="mt-2 text-sm font-semibold text-ink-primary">
                   Preserve readings
                 </p>
@@ -249,7 +254,10 @@ export default async function AnalyticsPage() {
                 </p>
               </div>
               <div className="rounded-xl border border-edge/70 bg-panel/40 px-4 py-4">
-                <Activity aria-hidden="true" className="size-4 text-highlight" />
+                <Activity
+                  aria-hidden="true"
+                  className="size-4 text-highlight"
+                />
                 <p className="mt-2 text-sm font-semibold text-ink-primary">
                   Keep semantics
                 </p>
@@ -262,7 +270,10 @@ export default async function AnalyticsPage() {
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
-              <ShieldCheck aria-hidden="true" className="size-4 text-ink-muted" />
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-4 text-ink-muted"
+              />
               Analytics truth boundary
             </div>
             <ul className="mt-4 space-y-3 text-xs leading-5 text-ink-muted">
@@ -281,7 +292,9 @@ export default async function AnalyticsPage() {
           description="Across every measured post. A metric no platform has reported shows a dash, not a zero."
           action={
             stale && overview.hasAnyData ? (
-              <StatusBadge tone="accent">Figures may be out of date</StatusBadge>
+              <StatusBadge tone="accent">
+                Figures may be out of date
+              </StatusBadge>
             ) : null
           }
         >
@@ -433,13 +446,18 @@ export default async function AnalyticsPage() {
             title="Scheduled synchronisation"
             description="Whether figures refresh on their own."
             action={
-              <StatusBadge tone={schedulingConnected ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={schedulingConnected ? "configured" : "inactive"}
+              >
                 {schedulingConnected ? "Scheduled" : "Implemented, not running"}
               </StatusBadge>
             }
           >
             <div className="flex items-start gap-3">
-              <RefreshCw aria-hidden="true" className="mt-1 size-4 text-highlight" />
+              <RefreshCw
+                aria-hidden="true"
+                className="mt-1 size-4 text-highlight"
+              />
               <p className="text-sm leading-6 text-ink-secondary">
                 {schedulingConnected
                   ? "A Trigger.dev project is configured, so the daily sync runs on its own."
