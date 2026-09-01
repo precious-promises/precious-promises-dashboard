@@ -202,7 +202,11 @@ export default async function AnalyticsPage() {
                 ? describeFreshness(overview.lastFetchedAt)
                 : "None"
             }
-            detail={stale && overview.hasAnyData ? "Figures may be stale" : "Freshness is explicit"}
+            detail={
+              stale && overview.hasAnyData
+                ? "Figures may be stale"
+                : "Freshness is explicit"
+            }
           />
         </section>
 
@@ -217,7 +221,9 @@ export default async function AnalyticsPage() {
                   Publication, access and measurement stay separate
                 </h3>
               </div>
-              <StatusBadge tone={overview.hasAnyData ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={overview.hasAnyData ? "configured" : "inactive"}
+              >
                 {overview.hasAnyData
                   ? `Last fetched ${describeFreshness(overview.lastFetchedAt)}`
                   : "Nothing fetched"}
@@ -229,7 +235,11 @@ export default async function AnalyticsPage() {
                 ["1", "Publish", "A provider-confirmed post exists"],
                 ["2", "Authorise", "Analytics permission is actually granted"],
                 ["3", "Fetch", "The provider returns a real observation"],
-                ["4", "Interpret", "Source and freshness travel with the figure"],
+                [
+                  "4",
+                  "Interpret",
+                  "Source and freshness travel with the figure",
+                ],
               ].map(([step, title, detail]) => (
                 <div
                   key={step}
@@ -251,7 +261,10 @@ export default async function AnalyticsPage() {
 
           <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
             <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
-              <ShieldCheck aria-hidden="true" className="size-4 text-ink-muted" />
+              <ShieldCheck
+                aria-hidden="true"
+                className="size-4 text-ink-muted"
+              />
               Analytics truth boundary
             </div>
             <ul className="mt-4 space-y-3 text-xs leading-5 text-ink-muted">
@@ -269,7 +282,9 @@ export default async function AnalyticsPage() {
           description="Across measured published posts only. A metric no platform has reported shows a dash, not a zero."
           action={
             stale && overview.hasAnyData ? (
-              <StatusBadge tone="accent">Figures may be out of date</StatusBadge>
+              <StatusBadge tone="accent">
+                Figures may be out of date
+              </StatusBadge>
             ) : null
           }
         >
@@ -421,7 +436,9 @@ export default async function AnalyticsPage() {
             title="Scheduled synchronisation"
             description="Whether figures refresh automatically."
             action={
-              <StatusBadge tone={schedulingConnected ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={schedulingConnected ? "configured" : "inactive"}
+              >
                 {schedulingConnected ? "Scheduled" : "Implemented, not running"}
               </StatusBadge>
             }
@@ -463,7 +480,10 @@ export default async function AnalyticsPage() {
                   className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-4"
                 >
                   <div className="flex items-center gap-2">
-                    <Activity aria-hidden="true" className="size-4 text-ink-muted" />
+                    <Activity
+                      aria-hidden="true"
+                      className="size-4 text-ink-muted"
+                    />
                     <p className="text-sm font-semibold text-ink-primary">
                       {PLATFORM_LABELS[entry.platform]}
                     </p>
