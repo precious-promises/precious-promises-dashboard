@@ -218,7 +218,9 @@ export default async function AnalyticsPage() {
                   Source, permission and freshness stay separate
                 </h3>
               </div>
-              <StatusBadge tone={overview.hasAnyData ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={overview.hasAnyData ? "configured" : "inactive"}
+              >
                 {overview.hasAnyData
                   ? `Last fetched ${describeFreshness(overview.lastFetchedAt)}`
                   : "Nothing fetched"}
@@ -228,9 +230,21 @@ export default async function AnalyticsPage() {
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 ["1", "Publish", "A real platform post must exist first"],
-                ["2", "Authorise", "Analytics permission must actually be granted"],
-                ["3", "Observe", "A provider or manual entry records a reading"],
-                ["4", "Date", "Every usable reading keeps its freshness evidence"],
+                [
+                  "2",
+                  "Authorise",
+                  "Analytics permission must actually be granted",
+                ],
+                [
+                  "3",
+                  "Observe",
+                  "A provider or manual entry records a reading",
+                ],
+                [
+                  "4",
+                  "Date",
+                  "Every usable reading keeps its freshness evidence",
+                ],
               ].map(([step, title, detail]) => (
                 <div
                   key={step}
@@ -270,7 +284,9 @@ export default async function AnalyticsPage() {
           description="Across every measured post. A metric no platform has reported shows a dash, not a zero."
           action={
             stale && overview.hasAnyData ? (
-              <StatusBadge tone="accent">Figures may be out of date</StatusBadge>
+              <StatusBadge tone="accent">
+                Figures may be out of date
+              </StatusBadge>
             ) : null
           }
         >
@@ -423,7 +439,9 @@ export default async function AnalyticsPage() {
             title="Scheduled synchronisation"
             description="Whether figures refresh on their own."
             action={
-              <StatusBadge tone={schedulingConnected ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={schedulingConnected ? "configured" : "inactive"}
+              >
                 {schedulingConnected ? "Scheduled" : "Implemented, not running"}
               </StatusBadge>
             }
