@@ -1,5 +1,13 @@
-import { TrendingUp } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  Clock3,
+  DatabaseZap,
+  ShieldCheck,
+  TrendingUp,
+} from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { ManualEntryForm } from "@/components/analytics/manual-entry-form";
@@ -23,27 +31,14 @@ import {
 } from "@/lib/analytics/types";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { analyticsSchedulingConnected } from "@/trigger/analytics";
 import { PLATFORM_LABELS } from "@/lib/variants/types";
+import { analyticsSchedulingConnected } from "@/trigger/analytics";
 
 export const metadata: Metadata = {
   title: "Analytics · Precious Promises",
   robots: { index: false, follow: false },
 };
 
-/**
- * Analytics.
- *
- * **There is no sample data on this page, and there never will be.** Every
- * figure comes from a real observation of a real post, or it is not a figure —
- * it is an em dash with a reason beside it.
- *
- * That is the whole design. A dashboard that shows "0 views" when the truth is
- * "YouTube is not connected" teaches its owner that the numbers are decorative,
- * and once he believes that, the real numbers cannot reach him either.
- */
-
-/** One headline figure, or an honest account of its absence. */
 function MetricTile({
   metric,
   value,
@@ -52,21 +47,19 @@ function MetricTile({
   value: MetricReading;
 }) {
   return (
-    <div className="rounded-lg border border-edge/70 bg-panel-raised/40 px-4 py-3.5">
-      <p className="text-xs font-medium text-ink-muted">
+    <div className="rounded-2xl border border-edge/80 bg-panel-raised/45 px-4 py-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
         {METRIC_LABELS[metric]}
       </p>
-
       <p
-        className={`mt-1 text-2xl font-semibold tabular-nums ${
+        className={`mt-2 text-2xl font-semibold tabular-nums tracking-tight ${
           value.available ? "text-ink-primary" : "text-ink-muted"
         }`}
       >
         {formatReading(value)}
       </p>
-
       {value.available ? (
-        <p className="mt-1 text-[11px] leading-4 text-ink-muted">
+        <p className="mt-1 text-[11px] leading-5 text-ink-muted">
           {METRIC_SOURCE_LABELS[value.source]} · observed{" "}
           {describeFreshness(value.observedAt)}
         </p>
@@ -76,13 +69,35 @@ function MetricTile({
             {UNAVAILABLE_LABELS[value.reason]}
           </p>
           {value.lastKnown ? (
-            <p className="mt-0.5 text-[11px] leading-4 text-ink-muted">
+            <p className="mt-0.5 text-[11px] leading-5 text-ink-muted">
               Last read {describeFreshness(value.lastKnown.observedAt)}:{" "}
               {Math.round(value.lastKnown.value).toLocaleString("en-GB")}
             </p>
           ) : null}
         </>
       )}
+    </div>
+  );
+}
+
+function EvidenceMetric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string | number;
+  detail: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-edge/80 bg-panel-raised/45 px-4 py-4 shadow-sm">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-muted">
+        {label}
+      </p>
+      <p className="mt-2 text-2xl font-semibold tracking-tight text-ink-primary">
+        {value}
+      </p>
+      <p className="mt-1 text-xs leading-5 text-ink-muted">{detail}</p>
     </div>
   );
 }
@@ -99,6 +114,13 @@ export default async function AnalyticsPage() {
 
   const overview = await loadAnalyticsOverview();
   const stale = isStale(overview.lastFetchedAt);
+  const schedulingConnected = analyticsSchedulingConnected();
+  const measurablePlatforms = overview.readiness.filter(
+    (entry) => entry.analyticsAuthorised && entry.blockedBy === null,
+  ).length;
+  const connectedPlatforms = overview.readiness.filter(
+    (entry) => entry.accountConnected,
+  ).length;
 
   const headlineMetrics: MetricName[] = [
     "views_or_plays",
@@ -113,146 +135,141 @@ export default async function AnalyticsPage() {
       pathname="/dashboard/analytics"
       email={user.email ?? null}
     >
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-6">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-ink-primary sm:text-3xl">
-            Analytics
-          </h2>
-          <p className="mt-1.5 max-w-2xl text-sm leading-6 text-ink-secondary">
-            What has actually been measured. Every figure carries where it came
-            from and when it was read — and where nothing has been measured,
-            this page says so rather than showing a zero.
-          </p>
-        </div>
+      <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
+        <section className="overflow-hidden rounded-3xl border border-edge bg-[radial-gradient(circle_at_top_right,rgba(250,204,21,0.13),transparent_34%),linear-gradient(135deg,rgba(30,22,58,0.96),rgba(17,15,31,0.98))] px-5 py-6 shadow-xl sm:px-7 sm:py-8">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+            <div className="max-w-3xl">
+              <div className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-highlight-soft">
+                <BarChart3 aria-hidden="true" className="size-4" />
+                Measurement command centre
+              </div>
+              <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                Analytics
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
+                Read only what has genuinely been observed. Every figure keeps
+                its platform source and freshness, while missing access,
+                unsupported metrics and failed refreshes remain visibly
+                different from a genuine measured zero.
+              </p>
+            </div>
 
-        <SectionCard
-          title="Where the figures come from"
-          description="Analytics permission is a separate grant from publishing permission. A connected account is not automatically a measurable one."
-          action={
-            <StatusBadge tone={overview.hasAnyData ? "configured" : "inactive"}>
-              {overview.hasAnyData
-                ? `Last fetched ${describeFreshness(overview.lastFetchedAt)}`
-                : "Nothing fetched"}
-            </StatusBadge>
-          }
+            <div className="flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/growth"
+                className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+              >
+                Growth Centre
+              </Link>
+              <Link
+                href="/dashboard/accounts"
+                className="rounded-xl bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+              >
+                Connected Accounts
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section
+          aria-label="Analytics evidence summary"
+          className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
         >
-          <ul className="flex flex-col gap-2.5">
-            {overview.readiness.map((entry) => {
-              const capability = analyticsCapabilityFor(entry.platform);
+          <EvidenceMetric
+            label="Published"
+            value={overview.publishedCount}
+            detail="Posts recorded as genuinely published"
+          />
+          <EvidenceMetric
+            label="Measured"
+            value={overview.measuredCount}
+            detail="Published posts with observations"
+          />
+          <EvidenceMetric
+            label="Connected"
+            value={connectedPlatforms}
+            detail="Platform accounts connected"
+          />
+          <EvidenceMetric
+            label="Measurable"
+            value={measurablePlatforms}
+            detail="Platforms currently analytics-ready"
+          />
+          <EvidenceMetric
+            label="Last fetch"
+            value={
+              overview.hasAnyData
+                ? describeFreshness(overview.lastFetchedAt)
+                : "None"
+            }
+            detail={stale && overview.hasAnyData ? "Figures may be stale" : "Freshness is explicit"}
+          />
+        </section>
 
-              return (
-                <li
-                  key={entry.platform}
-                  className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-3"
+        <section className="grid gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.55fr)]">
+          <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5 sm:px-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                  Measurement state
+                </p>
+                <h3 className="mt-2 text-lg font-semibold text-ink-primary">
+                  Publication, access and measurement stay separate
+                </h3>
+              </div>
+              <StatusBadge tone={overview.hasAnyData ? "configured" : "inactive"}>
+                {overview.hasAnyData
+                  ? `Last fetched ${describeFreshness(overview.lastFetchedAt)}`
+                  : "Nothing fetched"}
+              </StatusBadge>
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                ["1", "Publish", "A provider-confirmed post exists"],
+                ["2", "Authorise", "Analytics permission is actually granted"],
+                ["3", "Fetch", "The provider returns a real observation"],
+                ["4", "Interpret", "Source and freshness travel with the figure"],
+              ].map(([step, title, detail]) => (
+                <div
+                  key={step}
+                  className="rounded-xl border border-edge/70 bg-panel/40 px-4 py-4"
                 >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-ink-primary">
-                      {PLATFORM_LABELS[entry.platform]}
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <StatusBadge
-                        tone={
-                          entry.analyticsAuthorised && entry.blockedBy === null
-                            ? "configured"
-                            : entry.providerImplemented
-                              ? "accent"
-                              : "inactive"
-                        }
-                      >
-                        {entry.blockedBy === null
-                          ? "Analytics available"
-                          : UNAVAILABLE_LABELS[entry.blockedBy]}
-                      </StatusBadge>
-                      {entry.analyticsAuthorised ? (
-                        <AnalyticsRefreshButton platform={entry.platform} />
-                      ) : null}
-                    </span>
-                  </div>
+                  <span className="text-xs font-semibold text-highlight">
+                    {step}
+                  </span>
+                  <p className="mt-2 text-sm font-semibold text-ink-primary">
+                    {title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-ink-muted">
+                    {detail}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </div>
 
-                  <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] sm:grid-cols-4">
-                    <div>
-                      <dt className="text-ink-muted">Adapter</dt>
-                      <dd className="text-ink-secondary">
-                        {entry.providerImplemented ? "Built" : "None"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-muted">Account</dt>
-                      <dd className="text-ink-secondary">
-                        {entry.accountConnected ? "Connected" : "Not connected"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-muted">Publishing</dt>
-                      <dd className="text-ink-secondary">
-                        {entry.publishingAuthorised
-                          ? "Authorised"
-                          : "Not authorised"}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt className="text-ink-muted">Last sync</dt>
-                      <dd className="text-ink-secondary">
-                        {entry.lastSuccessfulSync
-                          ? describeFreshness(
-                              entry.lastSuccessfulSync.completed_at ??
-                                entry.lastSuccessfulSync.started_at,
-                            )
-                          : "Never"}
-                      </dd>
-                    </div>
-                  </dl>
-
-                  {entry.lastSync && entry.lastSync.status === "failed" ? (
-                    // Shown apart from the last success, never instead of it.
-                    // A failed refresh does not delete the figures it failed to
-                    // update.
-                    <p className="mt-2 rounded-md border border-gold-dim/50 bg-gold/10 px-2.5 py-1.5 text-[11px] leading-5 text-gold">
-                      Latest refresh failed
-                      {entry.lastSync.error_category
-                        ? ` (${entry.lastSync.error_category})`
-                        : ""}
-                      {entry.lastSuccessfulSync
-                        ? `. Figures shown were read ${describeFreshness(entry.lastSuccessfulSync.completed_at ?? entry.lastSuccessfulSync.started_at)}.`
-                        : "."}
-                    </p>
-                  ) : null}
-
-                  {entry.blockedBy ? (
-                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">
-                      {UNAVAILABLE_DETAIL[entry.blockedBy]}
-                      {entry.action ? ` ${entry.action}` : ""}
-                    </p>
-                  ) : null}
-
-                  {entry.missingScopes.length > 0 ? (
-                    <p className="mt-1.5 text-[11px] leading-5 text-ink-muted">
-                      Missing permission:{" "}
-                      <span className="font-mono">
-                        {entry.missingScopes.join(", ")}
-                      </span>
-                    </p>
-                  ) : null}
-
-                  {!entry.providerImplemented ? (
-                    <p className="mt-1.5 text-[11px] leading-5 text-ink-muted">
-                      {capability.detail}
-                    </p>
-                  ) : null}
-                </li>
-              );
-            })}
-          </ul>
-        </SectionCard>
+          <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
+            <div className="flex items-center gap-2 text-sm font-semibold text-ink-primary">
+              <ShieldCheck aria-hidden="true" className="size-4 text-ink-muted" />
+              Analytics truth boundary
+            </div>
+            <ul className="mt-4 space-y-3 text-xs leading-5 text-ink-muted">
+              <li>Connected account ≠ analytics authorised.</li>
+              <li>Unavailable ≠ zero.</li>
+              <li>Failed refresh ≠ lost historical measurement.</li>
+              <li>Platform metrics ≠ directly equivalent definitions.</li>
+              <li>Implemented schedule ≠ running schedule.</li>
+            </ul>
+          </div>
+        </section>
 
         <SectionCard
           title="Totals"
-          description="Across every measured post. A metric no platform has reported shows a dash, not a zero."
+          description="Across measured published posts only. A metric no platform has reported shows a dash, not a zero."
           action={
             stale && overview.hasAnyData ? (
-              <StatusBadge tone="accent">
-                Figures may be out of date
-              </StatusBadge>
+              <StatusBadge tone="accent">Figures may be out of date</StatusBadge>
             ) : null
           }
         >
@@ -279,8 +296,7 @@ export default async function AnalyticsPage() {
                   />
                 ))}
               </div>
-
-              <p className="mt-3 text-xs leading-5 text-ink-muted">
+              <p className="mt-4 text-xs leading-5 text-ink-muted">
                 {overview.measuredCount} of {overview.publishedCount} published{" "}
                 {overview.publishedCount === 1 ? "post has" : "posts have"} been
                 measured. The rest are unmeasured, which is not the same as
@@ -291,59 +307,178 @@ export default async function AnalyticsPage() {
         </SectionCard>
 
         <SectionCard
-          title="Scheduled synchronisation"
-          description="Whether figures refresh on their own."
-          action={
-            <StatusBadge
-              tone={analyticsSchedulingConnected() ? "configured" : "inactive"}
-            >
-              {analyticsSchedulingConnected()
-                ? "Scheduled"
-                : "Implemented, not running"}
-            </StatusBadge>
-          }
+          title="Platform readiness"
+          description="Analytics permission is separate from publishing permission. A connected account is not automatically measurable."
         >
-          <p className="text-sm leading-6 text-ink-secondary">
-            {analyticsSchedulingConnected()
-              ? "A Trigger.dev project is configured, so the daily sync runs on its own."
-              : "The daily sync task is written and type-checked, but no Trigger.dev project is connected — so nothing runs on a schedule. Refreshing by hand above works regardless, and uses exactly the same code the scheduled run would."}
-          </p>
-        </SectionCard>
-
-        <SectionCard
-          title="Enter a figure by hand"
-          description="Mainly for TikTok, which reports nothing this dashboard can legitimately read. Anything entered here is permanently labelled as entered by hand."
-        >
-          <ManualEntryForm />
-        </SectionCard>
-
-        <SectionCard
-          title="By platform"
-          description="Raw metric names are preserved per platform. YouTube views, Instagram views and TikTok video views are counted differently, and this page does not pretend otherwise."
-        >
-          <ul className="flex flex-col gap-2">
+          <ul className="grid gap-3 xl:grid-cols-2">
             {overview.readiness.map((entry) => {
               const capability = analyticsCapabilityFor(entry.platform);
 
               return (
                 <li
                   key={entry.platform}
-                  className="rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                  className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-4"
                 >
-                  <p className="text-sm font-medium text-ink-primary">
-                    {PLATFORM_LABELS[entry.platform]}
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-sm font-semibold text-ink-primary">
+                      {PLATFORM_LABELS[entry.platform]}
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <StatusBadge
+                        tone={
+                          entry.analyticsAuthorised && entry.blockedBy === null
+                            ? "configured"
+                            : entry.providerImplemented
+                              ? "accent"
+                              : "inactive"
+                        }
+                      >
+                        {entry.blockedBy === null
+                          ? "Analytics available"
+                          : UNAVAILABLE_LABELS[entry.blockedBy]}
+                      </StatusBadge>
+                      {entry.analyticsAuthorised ? (
+                        <AnalyticsRefreshButton platform={entry.platform} />
+                      ) : null}
+                    </span>
+                  </div>
+
+                  <dl className="mt-4 grid grid-cols-2 gap-3 text-[11px] sm:grid-cols-4">
+                    <div className="rounded-lg border border-edge/60 bg-panel/35 px-3 py-2">
+                      <dt className="text-ink-muted">Adapter</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.providerImplemented ? "Built" : "None"}
+                      </dd>
+                    </div>
+                    <div className="rounded-lg border border-edge/60 bg-panel/35 px-3 py-2">
+                      <dt className="text-ink-muted">Account</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.accountConnected ? "Connected" : "Not connected"}
+                      </dd>
+                    </div>
+                    <div className="rounded-lg border border-edge/60 bg-panel/35 px-3 py-2">
+                      <dt className="text-ink-muted">Publishing</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.publishingAuthorised
+                          ? "Authorised"
+                          : "Not authorised"}
+                      </dd>
+                    </div>
+                    <div className="rounded-lg border border-edge/60 bg-panel/35 px-3 py-2">
+                      <dt className="text-ink-muted">Last sync</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.lastSuccessfulSync
+                          ? describeFreshness(
+                              entry.lastSuccessfulSync.completed_at ??
+                                entry.lastSuccessfulSync.started_at,
+                            )
+                          : "Never"}
+                      </dd>
+                    </div>
+                  </dl>
+
+                  {entry.lastSync && entry.lastSync.status === "failed" ? (
+                    <p className="mt-3 rounded-lg border border-gold-dim/50 bg-gold/10 px-3 py-2 text-[11px] leading-5 text-gold">
+                      Latest refresh failed
+                      {entry.lastSync.error_category
+                        ? ` (${entry.lastSync.error_category})`
+                        : ""}
+                      {entry.lastSuccessfulSync
+                        ? `. Figures shown were read ${describeFreshness(entry.lastSuccessfulSync.completed_at ?? entry.lastSuccessfulSync.started_at)}.`
+                        : "."}
+                    </p>
+                  ) : null}
+
+                  {entry.blockedBy ? (
+                    <p className="mt-3 text-[11px] leading-5 text-ink-muted">
+                      {UNAVAILABLE_DETAIL[entry.blockedBy]}
+                      {entry.action ? ` ${entry.action}` : ""}
+                    </p>
+                  ) : null}
+
+                  {entry.missingScopes.length > 0 ? (
+                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">
+                      Missing permission:{" "}
+                      <span className="font-mono">
+                        {entry.missingScopes.join(", ")}
+                      </span>
+                    </p>
+                  ) : null}
+
+                  {!entry.providerImplemented ? (
+                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">
+                      {capability.detail}
+                    </p>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        </SectionCard>
+
+        <section className="grid gap-4 xl:grid-cols-2">
+          <SectionCard
+            title="Scheduled synchronisation"
+            description="Whether figures refresh automatically."
+            action={
+              <StatusBadge tone={schedulingConnected ? "configured" : "inactive"}>
+                {schedulingConnected ? "Scheduled" : "Implemented, not running"}
+              </StatusBadge>
+            }
+          >
+            <div className="mb-4 flex items-center gap-2 text-xs text-ink-muted">
+              <Clock3 aria-hidden="true" className="size-4" />
+              Automation status is runtime configuration, not feature existence.
+            </div>
+            <p className="text-sm leading-6 text-ink-secondary">
+              {schedulingConnected
+                ? "A Trigger.dev project is configured, so the daily sync runs on its own."
+                : "The daily sync task is written and type-checked, but no Trigger.dev project is connected — so nothing runs on a schedule. Refreshing by hand above works regardless, and uses exactly the same code the scheduled run would."}
+            </p>
+          </SectionCard>
+
+          <SectionCard
+            title="Manual observation"
+            description="For metrics that cannot legitimately be read through an available provider API. Manual values remain permanently labelled as manual."
+          >
+            <div className="mb-4 flex items-center gap-2 text-xs text-ink-muted">
+              <DatabaseZap aria-hidden="true" className="size-4" />
+              Manual entry is provenance, not API measurement.
+            </div>
+            <ManualEntryForm />
+          </SectionCard>
+        </section>
+
+        <SectionCard
+          title="By platform"
+          description="Raw metric availability stays platform-specific. The dashboard does not pretend unlike platform definitions are interchangeable."
+        >
+          <ul className="grid gap-3 xl:grid-cols-3">
+            {overview.readiness.map((entry) => {
+              const capability = analyticsCapabilityFor(entry.platform);
+
+              return (
+                <li
+                  key={entry.platform}
+                  className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-4"
+                >
+                  <div className="flex items-center gap-2">
+                    <Activity aria-hidden="true" className="size-4 text-ink-muted" />
+                    <p className="text-sm font-semibold text-ink-primary">
+                      {PLATFORM_LABELS[entry.platform]}
+                    </p>
+                  </div>
                   {capability.metrics.length === 0 ? (
-                    <p className="mt-1 text-[11px] leading-5 text-ink-muted">
+                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">
                       No metrics are available from this platform through any
                       API this dashboard can legitimately use.
                     </p>
                   ) : (
-                    <ul className="mt-1.5 flex flex-wrap gap-1.5">
+                    <ul className="mt-3 flex flex-wrap gap-1.5">
                       {capability.metrics.map((metric) => (
                         <li
                           key={metric}
-                          className="rounded border border-edge/70 px-1.5 py-0.5 text-[11px] text-ink-muted"
+                          className="rounded-md border border-edge/70 bg-panel/35 px-2 py-1 text-[11px] text-ink-muted"
                         >
                           {METRIC_LABELS[metric]}
                         </li>
