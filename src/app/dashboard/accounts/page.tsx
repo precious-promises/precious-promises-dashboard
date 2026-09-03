@@ -360,16 +360,34 @@ export default async function ConnectedAccountsPage(
                 </h3>
               </div>
               <StatusBadge tone={workerReady ? "configured" : "inactive"}>
-                {workerReady ? "Secure writes available" : "Credential writes blocked"}
+                {workerReady
+                  ? "Secure writes available"
+                  : "Credential writes blocked"}
               </StatusBadge>
             </div>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                ["1", "Configure", "Server credentials and redirect settings must exist"],
-                ["2", "Connect", "The owner must complete the provider authorisation"],
-                ["3", "Authorise", "Required scopes and provider permissions must be granted"],
-                ["4", "Confirm", "Current provider capability is read where the API supports it"],
+                [
+                  "1",
+                  "Configure",
+                  "Server credentials and redirect settings must exist",
+                ],
+                [
+                  "2",
+                  "Connect",
+                  "The owner must complete the provider authorisation",
+                ],
+                [
+                  "3",
+                  "Authorise",
+                  "Required scopes and provider permissions must be granted",
+                ],
+                [
+                  "4",
+                  "Confirm",
+                  "Current provider capability is read where the API supports it",
+                ],
               ].map(([step, title, detail]) => (
                 <div
                   key={step}
