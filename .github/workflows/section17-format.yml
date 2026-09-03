@@ -1,0 +1,28 @@
+name: Section 17 Format
+
+on:
+  push:
+    branches:
+      - refinement/connected-accounts-section-17-premium-sep2
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prettier --write src/app/dashboard/accounts/page.tsx
+      - name: Commit formatting
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/app/dashboard/accounts/page.tsx
+          git diff --cached --quiet || git commit -m "Format Section 17 Connected Accounts page"
+          git push
