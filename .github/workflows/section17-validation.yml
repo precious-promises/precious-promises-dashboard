@@ -30,3 +30,4 @@ jobs:
         run: pnpm build
 
 # Temporary validation only; remove before opening the Section 17 PR.
+# Re-triggered after formatter output so every gate reads the final page.
