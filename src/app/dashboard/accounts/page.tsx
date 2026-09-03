@@ -313,8 +313,8 @@ export default async function ConnectedAccountsPage(
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
                 See exactly which services are configured, which accounts have
                 granted access and which capabilities are genuinely available.
-                Connection, publishing permission, analytics permission and
-                live provider capability remain separate facts.
+                Connection, publishing permission, analytics permission and live
+                provider capability remain separate facts.
               </p>
             </div>
 
@@ -387,8 +387,16 @@ export default async function ConnectedAccountsPage(
               {[
                 ["1", "Implemented", "An adapter exists in this codebase"],
                 ["2", "Configured", "Required server settings are present"],
-                ["3", "Connected", "The provider granted an account authorisation"],
-                ["4", "Capable", "The exact downstream action is currently allowed"],
+                [
+                  "3",
+                  "Connected",
+                  "The provider granted an account authorisation",
+                ],
+                [
+                  "4",
+                  "Capable",
+                  "The exact downstream action is currently allowed",
+                ],
               ].map(([step, title, detail]) => (
                 <div
                   key={step}
@@ -472,12 +480,13 @@ export default async function ConnectedAccountsPage(
               </p>
               <ul className="mt-3 space-y-3 text-xs leading-5 text-ink-muted">
                 <li>
-                  Permissions requested: {YOUTUBE_SCOPES.map(shortScopeName).join(", ")}.
+                  Permissions requested:{" "}
+                  {YOUTUBE_SCOPES.map(shortScopeName).join(", ")}.
                 </li>
                 <li>
                   One upload costs {QUOTA_COST.videosInsert} of a default{" "}
-                  {DEFAULT_DAILY_QUOTA_UNITS.toLocaleString("en-GB")} daily quota
-                  — about {UPLOADS_PER_DEFAULT_QUOTA} uploads.
+                  {DEFAULT_DAILY_QUOTA_UNITS.toLocaleString("en-GB")} daily
+                  quota — about {UPLOADS_PER_DEFAULT_QUOTA} uploads.
                 </li>
                 <li>
                   Privacy requests are limited to{" "}
@@ -551,10 +560,12 @@ export default async function ConnectedAccountsPage(
                 )}
                 <li>
                   Long-lived tokens last {LONG_LIVED_TOKEN_DAYS} days and are
-                  refreshed when used. A completely unused connection can expire.
+                  refreshed when used. A completely unused connection can
+                  expire.
                 </li>
                 <li>
-                  Content publishing requires Meta App Review outside app-role users.
+                  Content publishing requires Meta App Review outside app-role
+                  users.
                 </li>
               </ul>
             </div>
@@ -653,7 +664,7 @@ export default async function ConnectedAccountsPage(
                 {tiktokDirectPost &&
                 tiktokCapability.privacyLevelOptions.length > 0 ? (
                   <p className="mt-2 text-xs text-ink-muted">
-                    Audiences TikTok currently offers: {" "}
+                    Audiences TikTok currently offers:{" "}
                     {tiktokCapability.privacyLevelOptions
                       .map((level) => PRIVACY_LEVEL_LABELS[level])
                       .join(", ")}
