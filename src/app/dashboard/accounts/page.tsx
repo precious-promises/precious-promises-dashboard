@@ -258,10 +258,10 @@ export default async function ConnectedAccountsPage(
                 Connected Accounts
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-white/70 sm:text-base">
-                Control the external services this dashboard may use. Connection,
-                publishing permission, analytics permission and live capability
-                remain separate facts. Credentials stay encrypted on the server
-                and are never rendered into this page.
+                Control the external services this dashboard may use.
+                Connection, publishing permission, analytics permission and live
+                capability remain separate facts. Credentials stay encrypted on
+                the server and are never rendered into this page.
               </p>
             </div>
 
@@ -327,18 +327,40 @@ export default async function ConnectedAccountsPage(
             </h3>
             <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                ["1", "Configure", "Server credentials and trusted storage exist"],
-                ["2", "Authorise", "The platform actually grants requested scopes"],
-                ["3", "Verify", "Account-specific capability is read back where required"],
-                ["4", "Use", "Publishing or analytics still obey their own gates"],
+                [
+                  "1",
+                  "Configure",
+                  "Server credentials and trusted storage exist",
+                ],
+                [
+                  "2",
+                  "Authorise",
+                  "The platform actually grants requested scopes",
+                ],
+                [
+                  "3",
+                  "Verify",
+                  "Account-specific capability is read back where required",
+                ],
+                [
+                  "4",
+                  "Use",
+                  "Publishing or analytics still obey their own gates",
+                ],
               ].map(([step, title, detail]) => (
                 <div
                   key={step}
                   className="rounded-xl border border-edge/70 bg-panel/40 px-4 py-4"
                 >
-                  <span className="text-xs font-semibold text-highlight">{step}</span>
-                  <p className="mt-2 text-sm font-semibold text-ink-primary">{title}</p>
-                  <p className="mt-1 text-xs leading-5 text-ink-muted">{detail}</p>
+                  <span className="text-xs font-semibold text-highlight">
+                    {step}
+                  </span>
+                  <p className="mt-2 text-sm font-semibold text-ink-primary">
+                    {title}
+                  </p>
+                  <p className="mt-1 text-xs leading-5 text-ink-muted">
+                    {detail}
+                  </p>
                 </div>
               ))}
             </div>
@@ -371,13 +393,18 @@ export default async function ConnectedAccountsPage(
           >
             {(youtubeProblems.length > 0 || !workerReady) && (
               <div className="mb-4 rounded-xl border border-edge/70 bg-panel/35 px-4 py-3">
-                <p className="text-sm font-medium text-ink-primary">Setup required</p>
+                <p className="text-sm font-medium text-ink-primary">
+                  Setup required
+                </p>
                 <ul className="mt-2 list-disc space-y-1 pl-5 text-xs leading-5 text-ink-muted">
                   {youtubeProblems.map((problem) => (
                     <li key={problem}>{problem}</li>
                   ))}
                   {!workerReady ? (
-                    <li>No trusted server credential is configured for encrypted credential storage.</li>
+                    <li>
+                      No trusted server credential is configured for encrypted
+                      credential storage.
+                    </li>
                   ) : null}
                 </ul>
               </div>
@@ -393,7 +420,10 @@ export default async function ConnectedAccountsPage(
               <ul className="flex flex-col gap-3">
                 {youtubeAccounts.map((account) => (
                   <li key={account.id}>
-                    <AccountCard account={account} disconnectAction={disconnectYouTube} />
+                    <AccountCard
+                      account={account}
+                      disconnectAction={disconnectYouTube}
+                    />
                   </li>
                 ))}
               </ul>
@@ -405,44 +435,62 @@ export default async function ConnectedAccountsPage(
                 disabled={!canConnectYouTube}
                 className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {youtubeAccounts.length === 0 ? "Connect YouTube" : "Reconnect YouTube"}
+                {youtubeAccounts.length === 0
+                  ? "Connect YouTube"
+                  : "Reconnect YouTube"}
               </button>
             </form>
 
             <dl className="mt-5 grid gap-3 text-xs sm:grid-cols-2">
               <div className="rounded-xl border border-edge/70 bg-panel/35 px-3 py-3">
-                <dt className="font-medium text-ink-primary">Daily upload quota</dt>
+                <dt className="font-medium text-ink-primary">
+                  Daily upload quota
+                </dt>
                 <dd className="mt-1 leading-5 text-ink-muted">
-                  {QUOTA_COST.videosInsert} units per upload from a default {DEFAULT_DAILY_QUOTA_UNITS.toLocaleString("en-GB")} units — about {UPLOADS_PER_DEFAULT_QUOTA} uploads.
+                  {QUOTA_COST.videosInsert} units per upload from a default{" "}
+                  {DEFAULT_DAILY_QUOTA_UNITS.toLocaleString("en-GB")} units —
+                  about {UPLOADS_PER_DEFAULT_QUOTA} uploads.
                 </dd>
               </div>
               <div className="rounded-xl border border-edge/70 bg-panel/35 px-3 py-3">
-                <dt className="font-medium text-ink-primary">Requestable privacy</dt>
+                <dt className="font-medium text-ink-primary">
+                  Requestable privacy
+                </dt>
                 <dd className="mt-1 leading-5 text-ink-muted">
-                  {REQUESTABLE_PRIVACY_STATUSES.join(" and ")} only. Platform compliance rules may further restrict visibility.
+                  {REQUESTABLE_PRIVACY_STATUSES.join(" and ")} only. Platform
+                  compliance rules may further restrict visibility.
                 </dd>
               </div>
             </dl>
 
             <div className="mt-4">
-              <p className="text-xs font-medium text-ink-primary">Requested scopes</p>
+              <p className="text-xs font-medium text-ink-primary">
+                Requested scopes
+              </p>
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {YOUTUBE_SCOPES.map((scope) => (
-                  <li key={scope} className="rounded-lg border border-edge/70 bg-panel/35 px-2 py-1 font-mono text-[11px] text-ink-muted">
+                  <li
+                    key={scope}
+                    className="rounded-lg border border-edge/70 bg-panel/35 px-2 py-1 font-mono text-[11px] text-ink-muted"
+                  >
                     {shortScopeName(scope)}
                   </li>
                 ))}
               </ul>
             </div>
 
-            <p className="mt-4 text-xs leading-5 text-ink-muted">{MEDIA_RETRIEVAL_DETAIL}</p>
+            <p className="mt-4 text-xs leading-5 text-ink-muted">
+              {MEDIA_RETRIEVAL_DETAIL}
+            </p>
           </SectionCard>
 
           <SectionCard
             title="Instagram"
             description="Instagram Login · professional Business or Creator account"
             action={
-              <StatusBadge tone={canConnectInstagram ? "configured" : "inactive"}>
+              <StatusBadge
+                tone={canConnectInstagram ? "configured" : "inactive"}
+              >
                 {canConnectInstagram ? "Ready to connect" : "Not configured"}
               </StatusBadge>
             }
@@ -465,7 +513,10 @@ export default async function ConnectedAccountsPage(
               <ul className="flex flex-col gap-3">
                 {instagramAccounts.map((account) => (
                   <li key={account.id}>
-                    <AccountCard account={account} disconnectAction={disconnectInstagram} />
+                    <AccountCard
+                      account={account}
+                      disconnectAction={disconnectInstagram}
+                    />
                   </li>
                 ))}
               </ul>
@@ -477,15 +528,36 @@ export default async function ConnectedAccountsPage(
                 disabled={!canConnectInstagram}
                 className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {instagramAccounts.length === 0 ? "Connect Instagram" : "Reconnect Instagram"}
+                {instagramAccounts.length === 0
+                  ? "Connect Instagram"
+                  : "Reconnect Instagram"}
               </button>
             </form>
 
             <ul className="mt-5 space-y-3 text-xs leading-5 text-ink-muted">
-              <li><span className="font-medium text-ink-primary">Reels:</span> {MEDIA_DELIVERY.reels.detail}</li>
-              <li><span className="font-medium text-ink-primary">Images/carousels:</span> {MEDIA_DELIVERY.image.detail}</li>
-              {!STORIES_SUPPORTED ? <li><span className="font-medium text-ink-primary">Stories:</span> not implemented.</li> : null}
-              <li><span className="font-medium text-ink-primary">Token life:</span> long-lived access lasts {LONG_LIVED_TOKEN_DAYS} days and is refreshed when used.</li>
+              <li>
+                <span className="font-medium text-ink-primary">Reels:</span>{" "}
+                {MEDIA_DELIVERY.reels.detail}
+              </li>
+              <li>
+                <span className="font-medium text-ink-primary">
+                  Images/carousels:
+                </span>{" "}
+                {MEDIA_DELIVERY.image.detail}
+              </li>
+              {!STORIES_SUPPORTED ? (
+                <li>
+                  <span className="font-medium text-ink-primary">Stories:</span>{" "}
+                  not implemented.
+                </li>
+              ) : null}
+              <li>
+                <span className="font-medium text-ink-primary">
+                  Token life:
+                </span>{" "}
+                long-lived access lasts {LONG_LIVED_TOKEN_DAYS} days and is
+                refreshed when used.
+              </li>
             </ul>
           </SectionCard>
 
@@ -516,7 +588,10 @@ export default async function ConnectedAccountsPage(
               <ul className="flex flex-col gap-3">
                 {driveAccounts.map((account) => (
                   <li key={account.id}>
-                    <AccountCard account={account} disconnectAction={disconnectGoogleDrive} />
+                    <AccountCard
+                      account={account}
+                      disconnectAction={disconnectGoogleDrive}
+                    />
                   </li>
                 ))}
               </ul>
@@ -528,12 +603,17 @@ export default async function ConnectedAccountsPage(
                 disabled={!canConnectDrive}
                 className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {driveAccounts.length === 0 ? "Connect Google Drive" : "Reconnect Google Drive"}
+                {driveAccounts.length === 0
+                  ? "Connect Google Drive"
+                  : "Reconnect Google Drive"}
               </button>
             </form>
 
             <p className="mt-4 text-xs leading-5 text-ink-muted">
-              Google has no folder-scoped read permission. The application therefore requests read-only Drive access and separately proves that every listing/read stays inside the approved root. It cannot write, delete or change sharing.
+              Google has no folder-scoped read permission. The application
+              therefore requests read-only Drive access and separately proves
+              that every listing/read stays inside the approved root. It cannot
+              write, delete or change sharing.
             </p>
           </SectionCard>
 
@@ -557,22 +637,35 @@ export default async function ConnectedAccountsPage(
             {tiktokCapability ? (
               <div className="mb-4 rounded-xl border border-edge/70 bg-panel/35 px-4 py-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-sm font-medium text-ink-primary">Direct posting</p>
-                  <StatusBadge tone={tiktokDirectPost ? "configured" : "inactive"}>
+                  <p className="text-sm font-medium text-ink-primary">
+                    Direct posting
+                  </p>
+                  <StatusBadge
+                    tone={tiktokDirectPost ? "configured" : "inactive"}
+                  >
                     {tiktokDirectPost ? "Available" : "Not available"}
                   </StatusBadge>
                 </div>
                 <p className="mt-2 text-xs leading-5 text-ink-muted">
-                  Connected is not the same as approved to post. This state is read from TikTok for the connected creator rather than inferred from connection alone.
+                  Connected is not the same as approved to post. This state is
+                  read from TikTok for the connected creator rather than
+                  inferred from connection alone.
                 </p>
                 {tiktokCapability.problems.length > 0 ? (
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-ink-muted">
-                    {tiktokCapability.problems.map((problem) => <li key={problem}>{problem}</li>)}
+                    {tiktokCapability.problems.map((problem) => (
+                      <li key={problem}>{problem}</li>
+                    ))}
                   </ul>
                 ) : null}
-                {tiktokDirectPost && tiktokCapability.privacyLevelOptions.length > 0 ? (
+                {tiktokDirectPost &&
+                tiktokCapability.privacyLevelOptions.length > 0 ? (
                   <p className="mt-2 text-xs text-ink-muted">
-                    Audiences TikTok currently offers: {tiktokCapability.privacyLevelOptions.map((level) => PRIVACY_LEVEL_LABELS[level]).join(", ")}.
+                    Audiences TikTok currently offers:{" "}
+                    {tiktokCapability.privacyLevelOptions
+                      .map((level) => PRIVACY_LEVEL_LABELS[level])
+                      .join(", ")}
+                    .
                   </p>
                 ) : null}
               </div>
@@ -588,7 +681,10 @@ export default async function ConnectedAccountsPage(
               <ul className="flex flex-col gap-3">
                 {tiktokAccounts.map((account) => (
                   <li key={account.id}>
-                    <AccountCard account={account} disconnectAction={disconnectTikTok} />
+                    <AccountCard
+                      account={account}
+                      disconnectAction={disconnectTikTok}
+                    />
                   </li>
                 ))}
               </ul>
@@ -600,22 +696,42 @@ export default async function ConnectedAccountsPage(
                 disabled={!canConnectTikTok}
                 className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {tiktokAccounts.length === 0 ? "Connect TikTok" : "Reconnect TikTok"}
+                {tiktokAccounts.length === 0
+                  ? "Connect TikTok"
+                  : "Reconnect TikTok"}
               </button>
             </form>
 
             <div className="mt-4">
-              <p className="text-xs font-medium text-ink-primary">Requested scopes</p>
+              <p className="text-xs font-medium text-ink-primary">
+                Requested scopes
+              </p>
               <ul className="mt-2 flex flex-wrap gap-1.5">
                 {TIKTOK_SCOPES.map((scope) => (
-                  <li key={scope} className="rounded-lg border border-edge/70 bg-panel/35 px-2 py-1 font-mono text-[11px] text-ink-muted">{scope}</li>
+                  <li
+                    key={scope}
+                    className="rounded-lg border border-edge/70 bg-panel/35 px-2 py-1 font-mono text-[11px] text-ink-muted"
+                  >
+                    {scope}
+                  </li>
                 ))}
               </ul>
             </div>
             <ul className="mt-4 space-y-2 text-xs leading-5 text-ink-muted">
-              <li><span className="font-medium text-ink-primary">Direct post:</span> {DELIVERY_MODE_DETAIL.direct_post}</li>
-              <li><span className="font-medium text-ink-primary">Drafts:</span> {DELIVERY_MODE_DETAIL.inbox}</li>
-              <li><span className="font-medium text-ink-primary">Media:</span> {PULL_FROM_URL_REFUSAL}</li>
+              <li>
+                <span className="font-medium text-ink-primary">
+                  Direct post:
+                </span>{" "}
+                {DELIVERY_MODE_DETAIL.direct_post}
+              </li>
+              <li>
+                <span className="font-medium text-ink-primary">Drafts:</span>{" "}
+                {DELIVERY_MODE_DETAIL.inbox}
+              </li>
+              <li>
+                <span className="font-medium text-ink-primary">Media:</span>{" "}
+                {PULL_FROM_URL_REFUSAL}
+              </li>
             </ul>
           </SectionCard>
         </section>
@@ -628,33 +744,97 @@ export default async function ConnectedAccountsPage(
             {analytics.readiness.map((entry) => {
               const capability = analyticsCapabilityFor(entry.platform);
               return (
-                <li key={entry.platform} className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-4">
+                <li
+                  key={entry.platform}
+                  className="rounded-xl border border-edge/70 bg-panel-raised/40 px-4 py-4"
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-ink-primary">{PLATFORM_LABELS[entry.platform]}</span>
-                    <StatusBadge tone={entry.blockedBy === null ? "configured" : entry.providerImplemented ? "accent" : "inactive"}>
-                      {entry.blockedBy === null ? "Analytics available" : UNAVAILABLE_LABELS[entry.blockedBy]}
+                    <span className="text-sm font-semibold text-ink-primary">
+                      {PLATFORM_LABELS[entry.platform]}
+                    </span>
+                    <StatusBadge
+                      tone={
+                        entry.blockedBy === null
+                          ? "configured"
+                          : entry.providerImplemented
+                            ? "accent"
+                            : "inactive"
+                      }
+                    >
+                      {entry.blockedBy === null
+                        ? "Analytics available"
+                        : UNAVAILABLE_LABELS[entry.blockedBy]}
                     </StatusBadge>
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-[11px] sm:grid-cols-4">
-                    <div><dt className="text-ink-muted">Account</dt><dd className="mt-1 text-ink-secondary">{entry.accountConnected ? "Connected" : "Not connected"}</dd></div>
-                    <div><dt className="text-ink-muted">Publishing</dt><dd className="mt-1 text-ink-secondary">{entry.publishingAuthorised ? "Authorised" : "Not authorised"}</dd></div>
-                    <div><dt className="text-ink-muted">Analytics</dt><dd className="mt-1 text-ink-secondary">{entry.analyticsAuthorised ? "Authorised" : "Not authorised"}</dd></div>
-                    <div><dt className="text-ink-muted">Last sync</dt><dd className="mt-1 text-ink-secondary">{entry.lastSuccessfulSync ? describeFreshness(entry.lastSuccessfulSync.completed_at ?? entry.lastSuccessfulSync.started_at) : "Never"}</dd></div>
+                    <div>
+                      <dt className="text-ink-muted">Account</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.accountConnected ? "Connected" : "Not connected"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-muted">Publishing</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.publishingAuthorised
+                          ? "Authorised"
+                          : "Not authorised"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-muted">Analytics</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.analyticsAuthorised
+                          ? "Authorised"
+                          : "Not authorised"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-ink-muted">Last sync</dt>
+                      <dd className="mt-1 text-ink-secondary">
+                        {entry.lastSuccessfulSync
+                          ? describeFreshness(
+                              entry.lastSuccessfulSync.completed_at ??
+                                entry.lastSuccessfulSync.started_at,
+                            )
+                          : "Never"}
+                      </dd>
+                    </div>
                   </dl>
                   {entry.lastSync?.status === "failed" ? (
-                    <p className="mt-3 text-[11px] leading-5 text-gold">Latest analytics refresh failed{entry.lastSync.error_category ? ` (${entry.lastSync.error_category})` : ""}. Previously read figures are kept.</p>
+                    <p className="mt-3 text-[11px] leading-5 text-gold">
+                      Latest analytics refresh failed
+                      {entry.lastSync.error_category
+                        ? ` (${entry.lastSync.error_category})`
+                        : ""}
+                      . Previously read figures are kept.
+                    </p>
                   ) : null}
                   {entry.blockedBy ? (
-                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">{UNAVAILABLE_DETAIL[entry.blockedBy]}{entry.action ? ` ${entry.action}` : ""}</p>
+                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">
+                      {UNAVAILABLE_DETAIL[entry.blockedBy]}
+                      {entry.action ? ` ${entry.action}` : ""}
+                    </p>
                   ) : null}
-                  {!entry.providerImplemented ? <p className="mt-2 text-[11px] leading-5 text-ink-muted">{capability.detail}</p> : null}
-                  {entry.platform === "youtube" && entry.accountConnected && !entry.analyticsAuthorised ? (
+                  {!entry.providerImplemented ? (
+                    <p className="mt-2 text-[11px] leading-5 text-ink-muted">
+                      {capability.detail}
+                    </p>
+                  ) : null}
+                  {entry.platform === "youtube" &&
+                  entry.accountConnected &&
+                  !entry.analyticsAuthorised ? (
                     <form action={grantYouTubeAnalytics} className="mt-3">
-                      <button type="submit" className="rounded-lg border border-edge-strong bg-panel-raised/60 px-3.5 py-2 text-xs font-medium text-ink-primary transition-colors hover:bg-panel-hover">
+                      <button
+                        type="submit"
+                        className="rounded-lg border border-edge-strong bg-panel-raised/60 px-3.5 py-2 text-xs font-medium text-ink-primary transition-colors hover:bg-panel-hover"
+                      >
                         Grant analytics permission
                       </button>
                       <p className="mt-1.5 text-[11px] leading-5 text-ink-muted">
-                        This requests read-only YouTube analytics access. Publishing access remains unchanged, and nothing is recorded until Google grants it.
+                        This requests read-only YouTube analytics access.
+                        Publishing access remains unchanged, and nothing is
+                        recorded until Google grants it.
                       </p>
                     </form>
                   ) : null}
@@ -665,13 +845,23 @@ export default async function ConnectedAccountsPage(
         </SectionCard>
 
         {unimplemented.length > 0 ? (
-          <SectionCard title="Other platforms" description="Named publishing platforms with no implemented adapter.">
+          <SectionCard
+            title="Other platforms"
+            description="Named publishing platforms with no implemented adapter."
+          >
             <ul className="flex flex-col gap-2">
               {unimplemented.map((status) => (
-                <li key={status.platform} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5">
+                <li
+                  key={status.platform}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-edge/70 bg-panel-raised/40 px-3.5 py-2.5"
+                >
                   <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink-primary">{PLATFORM_LABELS[status.platform]}</span>
-                    <span className="block text-xs text-ink-muted">{status.detail}</span>
+                    <span className="block text-sm font-medium text-ink-primary">
+                      {PLATFORM_LABELS[status.platform]}
+                    </span>
+                    <span className="block text-xs text-ink-muted">
+                      {status.detail}
+                    </span>
                   </span>
                   <StatusBadge tone="coming-soon">Coming soon</StatusBadge>
                 </li>
