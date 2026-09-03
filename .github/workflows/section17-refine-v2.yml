@@ -1,0 +1,22 @@
+name: Section 17 Refine V2
+on:
+  push:
+    branches:
+      - refinement/connected-accounts-section-17-premium
+permissions:
+  contents: write
+jobs:
+  refine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refinement/connected-accounts-section-17-premium
+      - run: python scripts/section17_refine.py
+      - run: |
+          git config user.name "precious-promises-content-dashboard"
+          git config user.email "precious.promises888@gmail.com"
+          git add src/app/dashboard/accounts/page.tsx
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Refine Section 17 Connected Accounts"
+          git push origin HEAD:refinement/connected-accounts-section-17-premium
