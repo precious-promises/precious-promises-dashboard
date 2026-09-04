@@ -8,6 +8,8 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -21,6 +23,17 @@ jobs:
           cache: pnpm
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      - name: Format Section 19
+        run: pnpm exec prettier --write src/app/dashboard/settings/page.tsx
+      - name: Commit formatting if needed
+        run: |
+          if ! git diff --quiet -- src/app/dashboard/settings/page.tsx; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add src/app/dashboard/settings/page.tsx
+            git commit -m "Format Section 19 settings page"
+            git push
+          fi
       - name: Check Section 19 formatting
         run: pnpm exec prettier --check src/app/dashboard/settings/page.tsx
       - name: Lint
@@ -31,4 +44,3 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
-      # Temporary section-specific gate; remove before opening the PR.
