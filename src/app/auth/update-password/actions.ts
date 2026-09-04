@@ -26,10 +26,12 @@ const recoveryPasswordSchema = z
     }
   });
 
+type RecoveryPasswordField = "newPassword" | "confirmPassword";
+
 export interface RecoveryPasswordState {
   error?: string;
   notice?: string;
-  fieldErrors?: Partial<Record<"newPassword" | "confirmPassword", string>>;
+  fieldErrors?: Partial<Record<RecoveryPasswordField, string>>;
 }
 
 /** Set a new password for a user who has an authenticated recovery session. */
@@ -43,12 +45,12 @@ export async function updateRecoveredPassword(
   });
 
   if (!parsed.success) {
-    const fieldErrors: RecoveryPasswordState["fieldErrors"] = {};
+    const fieldErrors: Partial<Record<RecoveryPasswordField, string>> = {};
     for (const issue of parsed.error.issues) {
       const field = issue.path[0];
       if (
         (field === "newPassword" || field === "confirmPassword") &&
-        fieldErrors?.[field] === undefined
+        fieldErrors[field] === undefined
       ) {
         fieldErrors[field] = issue.message;
       }
@@ -71,9 +73,12 @@ export async function updateRecoveredPassword(
 
   if (error) {
     return {
-      error: "The password could not be updated. Request a new reset link and try again.",
+      error:
+        "The password could not be updated. Request a new reset link and try again.",
     };
   }
 
-  return { notice: "Password updated successfully. You can now use it to sign in." };
+  return {
+    notice: "Password updated successfully. You can now use it to sign in.",
+  };
 }
