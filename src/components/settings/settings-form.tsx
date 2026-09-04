@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -191,7 +192,15 @@ export function SettingsForm({
         </div>
       </div>
 
-      <SaveButton />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <SaveButton />
+        <Link
+          href="/dashboard/settings/password"
+          className="inline-flex w-fit items-center justify-center rounded-lg border border-edge-strong bg-panel-raised/60 px-4 py-2.5 text-sm font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+        >
+          Change dashboard password
+        </Link>
+      </div>
     </form>
   );
 }
