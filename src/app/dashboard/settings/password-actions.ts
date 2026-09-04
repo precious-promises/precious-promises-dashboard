@@ -90,7 +90,7 @@ export async function changePassword(
 
   const { error } = await supabase.auth.updateUser({
     password: parsed.data.newPassword,
-    currentPassword: parsed.data.currentPassword,
+    current_password: parsed.data.currentPassword,
   });
 
   if (error) {
