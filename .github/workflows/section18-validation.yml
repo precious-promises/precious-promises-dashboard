@@ -26,3 +26,5 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+
+# Trigger validation after the Section 18 page refinement commit.
