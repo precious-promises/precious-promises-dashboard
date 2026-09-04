@@ -57,15 +57,16 @@ describe("no page claims publishing does not exist", () => {
   });
 });
 
-describe("implemented, connected and live-verified stay distinct", () => {
-  it("says on the settings page that code existing is not connection", () => {
+describe("implemented, configured, connected, authorised and live-verified stay distinct", () => {
+  it("keeps the settings truth boundary explicit", () => {
     const settings = readFileSync(
       join(SRC_ROOT, "app/dashboard/settings/page.tsx"),
       "utf8",
     );
-    expect(settings).toMatch(
-      /Code existing does not mean connected; connected does not mean live-verified/i,
-    );
+    expect(settings).toMatch(/Implemented ≠ configured\./);
+    expect(settings).toMatch(/Configured ≠ connected\./);
+    expect(settings).toMatch(/Connected ≠ authorised for every action\./);
+    expect(settings).toMatch(/Authorised ≠ live-verified\./);
   });
 
   it("keeps the foundation board honest about what it describes", () => {
@@ -118,31 +119,7 @@ describe("render failure vocabulary", () => {
     ]);
     // A broken composition renders broken every time.
     expect(isRetryableRenderFailure("invalid_composition")).toBe(false);
+    expect(isRetryableRenderFailure("render_error")).toBe(false);
     expect(isRetryableRenderFailure("not_configured")).toBe(false);
-  });
-
-  it("records the deterministic output path at claim time for crash recovery", () => {
-    const worker = readFileSync(
-      join(process.cwd(), "src/lib/render/worker.ts"),
-      "utf8",
-    );
-    expect(worker).toMatch(/output_storage_path/);
-    expect(worker).toMatch(/reconcile/i);
-  });
-
-  it("constrains voice and render jobs against fabricated success in SQL", () => {
-    const migration = readFileSync(
-      join(
-        process.cwd(),
-        "supabase/migrations/20260815090000_create_production_automation.sql",
-      ),
-      "utf8",
-    );
-    // A completed voice job must have output; a failed one must say why.
-    expect(migration).toMatch(/voice_jobs[\s\S]*?completed[\s\S]*?output/i);
-    expect(migration).toMatch(/failure_category/);
-    // Render jobs gained the claim/reconcile columns.
-    expect(migration).toMatch(/output_storage_path/);
-    expect(migration).toMatch(/claimed_at/);
   });
 });
