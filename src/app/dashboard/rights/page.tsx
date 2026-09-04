@@ -115,7 +115,9 @@ export default async function RightsPage() {
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-xs leading-5 text-white/65">
-              <p className="font-semibold text-white">Administrative boundary</p>
+              <p className="font-semibold text-white">
+                Administrative boundary
+              </p>
               <p className="mt-1 max-w-xs">
                 This register records what is known and warns about gaps. It is
                 not legal advice, does not independently verify a licence and
@@ -167,7 +169,9 @@ export default async function RightsPage() {
                   Record the facts that support a usage decision
                 </h3>
               </div>
-              <StatusBadge tone={warnings.length > 0 ? "inactive" : "configured"}>
+              <StatusBadge
+                tone={warnings.length > 0 ? "inactive" : "configured"}
+              >
                 {warnings.length > 0
                   ? `${warnings.length} warning${warnings.length === 1 ? "" : "s"}`
                   : "No current warnings"}
@@ -312,7 +316,8 @@ export default async function RightsPage() {
                           record.rights_source,
                         ]
                           .filter(Boolean)
-                          .join(" · ") || "No source or licence details recorded"}
+                          .join(" · ") ||
+                          "No source or licence details recorded"}
                       </p>
                     </div>
                     <StatusBadge
@@ -334,7 +339,8 @@ export default async function RightsPage() {
                         Evidence
                       </p>
                       <p className="mt-1 text-xs leading-5 text-ink-secondary">
-                        {record.proof_reference ?? "No proof reference recorded"}
+                        {record.proof_reference ??
+                          "No proof reference recorded"}
                       </p>
                     </div>
                     <div className="rounded-xl border border-edge/60 bg-panel/35 px-3 py-2.5">
@@ -342,7 +348,9 @@ export default async function RightsPage() {
                         Dates
                       </p>
                       <p className="mt-1 text-xs leading-5 text-ink-secondary">
-                        {record.starts_on ? `Starts ${record.starts_on}` : "No start recorded"}
+                        {record.starts_on
+                          ? `Starts ${record.starts_on}`
+                          : "No start recorded"}
                         {record.expires_on
                           ? ` · Expires ${record.expires_on}`
                           : " · No expiry recorded"}
@@ -385,7 +393,10 @@ export default async function RightsPage() {
         <section className="grid gap-4 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]">
           <div className="rounded-2xl border border-edge bg-panel-raised/35 px-5 py-5">
             <div className="flex items-center gap-2">
-              <FileCheck2 aria-hidden="true" className="size-4 text-highlight" />
+              <FileCheck2
+                aria-hidden="true"
+                className="size-4 text-highlight"
+              />
               <p className="text-sm font-semibold text-ink-primary">
                 Before recording
               </p>
@@ -393,8 +404,12 @@ export default async function RightsPage() {
             <ul className="mt-4 space-y-3 text-xs leading-5 text-ink-muted">
               <li>Record only information you actually have.</li>
               <li>Leave unknown fields empty rather than inferring terms.</li>
-              <li>Use the proof reference to point to evidence, not a conclusion.</li>
-              <li>Use status and notes to surface uncertainty or restrictions.</li>
+              <li>
+                Use the proof reference to point to evidence, not a conclusion.
+              </li>
+              <li>
+                Use status and notes to surface uncertainty or restrictions.
+              </li>
             </ul>
           </div>
 
