@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
@@ -65,12 +66,20 @@ export function LoginForm() {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="password"
-          className="text-sm font-medium text-ink-secondary"
-        >
-          Password
-        </label>
+        <div className="flex items-center justify-between gap-3">
+          <label
+            htmlFor="password"
+            className="text-sm font-medium text-ink-secondary"
+          >
+            Password
+          </label>
+          <Link
+            href="/login/forgot-password"
+            className="text-xs font-medium text-highlight-soft underline-offset-4 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <input
           id="password"
           name="password"
