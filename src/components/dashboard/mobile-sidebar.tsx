@@ -95,7 +95,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
             type="button"
             aria-label="Close navigation menu"
             onClick={close}
-            className="absolute inset-0 size-full cursor-default bg-ink/80 backdrop-blur-sm"
+            className="absolute inset-0 size-full cursor-default bg-ink/90 backdrop-blur-sm"
           />
 
           <div
@@ -104,7 +104,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
             aria-modal="true"
             aria-label="Dashboard navigation"
             tabIndex={-1}
-            className="pp-glass absolute inset-y-0 left-0 flex w-[17rem] max-w-[85vw] flex-col border-r border-edge bg-panel focus:outline-none"
+            className="absolute inset-y-0 left-0 flex w-[17rem] max-w-[85vw] flex-col border-r border-edge bg-panel shadow-[24px_0_70px_rgba(0,0,0,0.5)] focus:outline-none"
           >
             <div className="flex items-center justify-between gap-3 border-b border-edge px-4 py-4">
               <BrandMark />
