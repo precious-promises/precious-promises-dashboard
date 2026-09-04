@@ -5,6 +5,9 @@ on:
     branches:
       - refinement/rights-licences-section-18-premium
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -16,6 +19,17 @@ jobs:
           node-version: 22.22.2
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Format Section 18
+        run: pnpm exec prettier --write src/app/dashboard/rights/page.tsx
+      - name: Commit formatting if needed
+        run: |
+          if ! git diff --quiet -- src/app/dashboard/rights/page.tsx; then
+            git config user.name "precious-promises-content-dashboard"
+            git config user.email "precious.promises888@gmail.com"
+            git add src/app/dashboard/rights/page.tsx
+            git commit -m "Format Section 18 rights page"
+            git push
+          fi
       - name: Check Section 18 formatting
         run: pnpm exec prettier --check src/app/dashboard/rights/page.tsx
       - name: Lint
@@ -26,5 +40,3 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
-
-# Trigger validation after the Section 18 page refinement commit.
