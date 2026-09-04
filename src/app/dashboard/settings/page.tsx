@@ -233,9 +233,9 @@ export default async function SettingsPage() {
                 <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-secondary">
                   Preferences below affect the defaults read by studios and
                   rendering workflows. Operational readiness beside them is
-                  informational: it reports server-side configuration or a
-                  known project connection, not a guarantee that an external
-                  provider is healthy or that an action has succeeded.
+                  informational: it reports server-side configuration or a known
+                  project connection, not a guarantee that an external provider
+                  is healthy or that an action has succeeded.
                 </p>
               </div>
             </div>
