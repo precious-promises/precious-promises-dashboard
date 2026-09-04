@@ -27,9 +27,14 @@ export async function requestPasswordReset(
   _previous: ResetRequestState,
   formData: FormData,
 ): Promise<ResetRequestState> {
-  const parsed = resetRequestSchema.safeParse({ email: formData.get("email") });
+  const parsed = resetRequestSchema.safeParse({
+    email: formData.get("email"),
+  });
   if (!parsed.success) {
-    return { fieldError: parsed.error.issues[0]?.message ?? "Enter a valid email address" };
+    return {
+      fieldError:
+        parsed.error.issues[0]?.message ?? "Enter a valid email address",
+    };
   }
 
   try {
@@ -37,10 +42,21 @@ export async function requestPasswordReset(
     const { APP_URL } = getServerEnv();
     const redirectTo = `${APP_URL.replace(/\/$/, "")}/auth/confirm?next=/auth/update-password`;
 
-    await supabase.auth.resetPasswordForEmail(parsed.data.email, { redirectTo });
+    const { error } = await supabase.auth.resetPasswordForEmail(
+      parsed.data.email,
+      { redirectTo },
+    );
+
+    if (error) {
+      return {
+        error:
+          "Password recovery could not be started. Please try again shortly.",
+      };
+    }
   } catch {
     return {
-      error: "Password recovery is temporarily unavailable. Please try again shortly.",
+      error:
+        "Password recovery is temporarily unavailable. Please try again shortly.",
     };
   }
 
