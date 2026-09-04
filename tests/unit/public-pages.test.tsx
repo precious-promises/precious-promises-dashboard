@@ -93,7 +93,7 @@ describe("login page", () => {
     expect(screen.getByRole("button", { name: "Sign In" })).toBeInTheDocument();
   });
 
-  it("offers no sign-up, social login or password reset", () => {
+  it("offers no sign-up or social login and provides password recovery", () => {
     render(<LoginPage />);
 
     expect(
@@ -102,7 +102,9 @@ describe("login page", () => {
     expect(
       screen.queryByRole("button", { name: /google|facebook|apple|github/i }),
     ).toBeNull();
-    expect(screen.queryByText(/forgot|reset your password/i)).toBeNull();
+    expect(
+      screen.getByRole("link", { name: /forgot password/i }),
+    ).toHaveAttribute("href", "/login/forgot-password");
   });
 
   it("does not expose the owner's identity to anonymous visitors", () => {
