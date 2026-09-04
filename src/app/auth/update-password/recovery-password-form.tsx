@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useActionState, useEffect, useRef } from "react";
 import { useFormStatus } from "react-dom";
 
-import {
-  type RecoveryPasswordState,
-  updateRecoveredPassword,
-} from "./actions";
+import { type RecoveryPasswordState, updateRecoveredPassword } from "./actions";
 
 const INITIAL_STATE: RecoveryPasswordState = {};
 const FIELD =
@@ -42,7 +39,12 @@ export function RecoveryPasswordForm() {
   }, [state.notice]);
 
   return (
-    <form ref={formRef} action={formAction} className="flex flex-col gap-4" noValidate>
+    <form
+      ref={formRef}
+      action={formAction}
+      className="flex flex-col gap-4"
+      noValidate
+    >
       {state.error ? (
         <p
           role="alert"
@@ -82,7 +84,10 @@ export function RecoveryPasswordForm() {
           className={FIELD}
         />
         {state.fieldErrors?.newPassword ? (
-          <p id="recovery-new-password-error" className="mt-1.5 text-sm text-red-300">
+          <p
+            id="recovery-new-password-error"
+            className="mt-1.5 text-sm text-red-300"
+          >
             {state.fieldErrors.newPassword}
           </p>
         ) : (
@@ -111,7 +116,10 @@ export function RecoveryPasswordForm() {
           className={FIELD}
         />
         {state.fieldErrors?.confirmPassword ? (
-          <p id="recovery-confirm-password-error" className="mt-1.5 text-sm text-red-300">
+          <p
+            id="recovery-confirm-password-error"
+            className="mt-1.5 text-sm text-red-300"
+          >
             {state.fieldErrors.confirmPassword}
           </p>
         ) : null}

@@ -82,7 +82,10 @@ export function PasswordForm() {
           className={FIELD}
         />
         {state.fieldErrors?.currentPassword ? (
-          <p id="current-password-error" className="mt-1.5 text-sm text-red-300">
+          <p
+            id="current-password-error"
+            className="mt-1.5 text-sm text-red-300"
+          >
             {state.fieldErrors.currentPassword}
           </p>
         ) : null}
@@ -137,7 +140,10 @@ export function PasswordForm() {
             className={FIELD}
           />
           {state.fieldErrors?.confirmPassword ? (
-            <p id="confirm-password-error" className="mt-1.5 text-sm text-red-300">
+            <p
+              id="confirm-password-error"
+              className="mt-1.5 text-sm text-red-300"
+            >
               {state.fieldErrors.confirmPassword}
             </p>
           ) : null}

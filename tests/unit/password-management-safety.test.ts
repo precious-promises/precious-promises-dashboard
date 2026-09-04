@@ -9,7 +9,8 @@ describe("password management safety", () => {
   const changePagePath = "src/app/dashboard/settings/password/page.tsx";
   const resetRequestActionPath = "src/app/login/forgot-password/actions.ts";
   const recoveryActionPath = "src/app/auth/update-password/actions.ts";
-  const recoveryFormPath = "src/app/auth/update-password/recovery-password-form.tsx";
+  const recoveryFormPath =
+    "src/app/auth/update-password/recovery-password-form.tsx";
   const recoveryPagePath = "src/app/auth/update-password/page.tsx";
   const confirmRoutePath = "src/app/auth/confirm/route.ts";
 
@@ -87,7 +88,10 @@ describe("password management safety", () => {
   });
 
   it("recovery password updates require an authenticated recovery session", () => {
-    const action = readFileSync(join(process.cwd(), recoveryActionPath), "utf8");
+    const action = readFileSync(
+      join(process.cwd(), recoveryActionPath),
+      "utf8",
+    );
     const page = readFileSync(join(process.cwd(), recoveryPagePath), "utf8");
 
     expect(action).toContain("supabase.auth.getUser()");

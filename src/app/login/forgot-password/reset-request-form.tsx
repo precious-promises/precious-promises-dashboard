@@ -4,10 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
-import {
-  type ResetRequestState,
-  requestPasswordReset,
-} from "./actions";
+import { type ResetRequestState, requestPasswordReset } from "./actions";
 
 const INITIAL_STATE: ResetRequestState = {};
 const FIELD_CLASSES =
@@ -54,7 +51,10 @@ export function ResetRequestForm() {
       ) : null}
 
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="reset-email" className="text-sm font-medium text-ink-secondary">
+        <label
+          htmlFor="reset-email"
+          className="text-sm font-medium text-ink-secondary"
+        >
           Email
         </label>
         <input
