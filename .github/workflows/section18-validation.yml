@@ -40,3 +40,5 @@ jobs:
         run: pnpm test
       - name: Build
         run: pnpm build
+
+# Validate again after the formatter commit so the exact branch head is covered.
