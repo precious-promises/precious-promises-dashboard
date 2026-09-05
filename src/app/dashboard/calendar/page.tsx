@@ -10,6 +10,7 @@ import {
   Repeat2,
   Send,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -85,7 +86,7 @@ const NOTICES: Record<string, string> = {
 };
 
 const FILTER_FIELD =
-  "w-full rounded-xl border border-edge bg-panel-raised/55 px-3 py-2 text-sm text-ink-primary outline-none transition-colors focus-visible:border-highlight focus-visible:ring-2 focus-visible:ring-highlight/20";
+  "w-full rounded-xl border border-edge bg-[#080d18] px-3 py-2 text-sm text-ink-primary outline-none transition-colors focus-visible:border-highlight focus-visible:ring-2 focus-visible:ring-highlight/20";
 
 function firstParam(value: string | string[] | undefined): string | null {
   const raw = Array.isArray(value) ? value[0] : value;
@@ -99,14 +100,6 @@ function countStatus(
   return entries.filter((entry) => entry.post.status === status).length;
 }
 
-/**
- * Premium Content Calendar command centre.
- *
- * Every card is derived from real schedule rows, recurring rules and valid
- * approvals. No sample events are inserted. A calendar entry is an intention,
- * not proof of publication; publishing still re-checks approval and connection
- * state at execution time.
- */
 export default async function CalendarPage(
   props: PageProps<"/dashboard/calendar">,
 ) {
@@ -181,7 +174,6 @@ export default async function CalendarPage(
   const pausedCount = countStatus(allEntries, "paused");
   const cancelledCount = countStatus(allEntries, "cancelled");
   const monthValue = `${year}-${String(month).padStart(2, "0")}`;
-
   const monthHref = (value: string) => `/dashboard/calendar?month=${value}`;
 
   return (
@@ -190,106 +182,126 @@ export default async function CalendarPage(
       pathname="/dashboard/calendar"
       email={user.email ?? null}
     >
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-        <section className="relative overflow-hidden rounded-2xl border border-edge bg-panel-raised/45 p-5 shadow-[0_18px_60px_rgba(0,0,0,0.16)] sm:p-6 lg:p-7">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 sm:gap-6">
+        <section className="relative overflow-hidden rounded-[24px] border border-edge/80 bg-[#090e1b] shadow-[0_30px_90px_rgba(0,0,0,0.34)]">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(92,225,230,0.12),transparent_34%),radial-gradient(circle_at_bottom_left,rgba(197,163,92,0.08),transparent_34%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(112,55,221,0.24),transparent_33%),radial-gradient(circle_at_78%_8%,rgba(201,169,97,0.11),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.018),transparent_44%)]"
           />
-          <div className="relative flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="relative grid gap-6 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1fr_auto] xl:items-end xl:px-8">
             <div className="max-w-3xl">
-              <div className="mb-3 flex items-center gap-2 text-xs font-semibold tracking-[0.18em] text-highlight uppercase">
-                <CalendarRange aria-hidden="true" className="size-4" />
-                Publishing command centre
+              <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.19em] text-gold">
+                <Sparkles aria-hidden="true" className="size-3.5" />
+                Publishing Command Centre
               </div>
-              <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-ink-primary sm:text-4xl lg:text-[42px]">
                 Content Calendar
               </h2>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-secondary sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
                 Plan approved Precious Promises content, see the real publishing
                 rhythm and manage upcoming slots from one place. Times display
-                in
-                {` ${timeZone}`}; schedule records do not claim a post was
+                in {timeZone}; schedule records do not claim a post was
                 published.
               </p>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/approvals"
-                className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-panel-raised/70 px-4 py-2 text-sm font-medium text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-              >
-                <ShieldCheck
-                  aria-hidden="true"
-                  className="size-4 text-highlight"
-                />
-                Review approvals
-              </Link>
-              <a
-                href="#schedule-content"
-                className="inline-flex items-center gap-2 rounded-xl bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-              >
-                <Plus aria-hidden="true" className="size-4" />
-                Schedule content
-              </a>
-            </div>
-          </div>
-
-          <div className="relative mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
-            {[
-              {
-                label: "Scheduled",
-                value: scheduledCount,
-                detail: "Active intentions",
-                icon: Send,
-              },
-              {
-                label: "Today",
-                value: todayEntries.length,
-                detail: "Due today",
-                icon: Clock3,
-              },
-              {
-                label: "Approved",
-                value: schedulable.length,
-                detail: "Ready to schedule",
-                icon: CheckCircle2,
-              },
-              {
-                label: "Paused",
-                value: pausedCount,
-                detail: "Need attention",
-                icon: PauseCircle,
-              },
-              {
-                label: "Recurring",
-                value: activeRules,
-                detail: `${rules.length} total slots`,
-                icon: Repeat2,
-              },
-            ].map((metric) => (
-              <div
-                key={metric.label}
-                className="rounded-xl border border-edge/70 bg-panel/45 p-3.5 backdrop-blur-sm"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold tracking-[0.12em] text-ink-muted uppercase">
-                    {metric.label}
-                  </span>
-                  <metric.icon
-                    aria-hidden="true"
-                    className="size-4 text-highlight"
-                  />
-                </div>
-                <p className="mt-2 text-2xl font-semibold text-ink-primary">
-                  {metric.value}
-                </p>
-                <p className="mt-0.5 text-[11px] text-ink-muted">
-                  {metric.detail}
-                </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <a
+                  href="#schedule-content"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6931d6] to-[#7d39e6] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(103,46,214,0.28)] transition hover:brightness-110"
+                >
+                  <Plus aria-hidden="true" className="size-4" />
+                  Schedule content
+                </a>
+                <Link
+                  href="/dashboard/approvals"
+                  className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-white/[0.025] px-4 py-2.5 text-sm font-medium text-ink-primary transition hover:bg-white/[0.055]"
+                >
+                  <ShieldCheck aria-hidden="true" className="size-4" />
+                  Review approvals
+                </Link>
               </div>
-            ))}
+            </div>
+
+            <div className="flex items-center gap-3 rounded-2xl border border-edge/75 bg-black/15 px-4 py-3 xl:min-w-[270px]">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-sky-400/20 bg-sky-400/10 text-sky-300">
+                <CalendarRange aria-hidden="true" className="size-4" />
+              </span>
+              <span>
+                <span className="block text-xs font-semibold text-ink-primary">
+                  Display timezone
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-4 text-ink-muted">
+                  {timeZone}
+                </span>
+              </span>
+            </div>
           </div>
+        </section>
+
+        <section
+          aria-label="Calendar summary"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-5"
+        >
+          {[
+            {
+              label: "Scheduled",
+              value: scheduledCount,
+              detail: "Active intentions",
+              icon: Send,
+              tone: "text-[#bda7ff] border-[#7138dc]/25 bg-[#7138dc]/10",
+            },
+            {
+              label: "Today",
+              value: todayEntries.length,
+              detail: "Due today",
+              icon: Clock3,
+              tone: "text-sky-300 border-sky-400/20 bg-sky-400/10",
+            },
+            {
+              label: "Approved",
+              value: schedulable.length,
+              detail: "Ready to schedule",
+              icon: CheckCircle2,
+              tone: "text-emerald-300 border-emerald-400/20 bg-emerald-400/10",
+            },
+            {
+              label: "Paused",
+              value: pausedCount,
+              detail: "Need attention",
+              icon: PauseCircle,
+              tone: "text-gold border-gold-dim/35 bg-gold/10",
+            },
+            {
+              label: "Recurring",
+              value: activeRules,
+              detail: `${rules.length} total slots`,
+              icon: Repeat2,
+              tone: "text-ink-secondary border-edge bg-white/[0.025]",
+            },
+          ].map((metric) => (
+            <div
+              key={metric.label}
+              className="group relative overflow-hidden rounded-2xl border border-edge/75 bg-[#0a0f1d]/90 p-4 shadow-[0_16px_45px_rgba(0,0,0,0.2)] transition duration-200 hover:-translate-y-0.5 hover:border-edge-strong"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+                    {metric.label}
+                  </p>
+                  <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.035em] text-ink-primary">
+                    {metric.value}
+                  </p>
+                </div>
+                <span
+                  className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${metric.tone}`}
+                >
+                  <metric.icon aria-hidden="true" className="size-4" />
+                </span>
+              </div>
+              <p className="mt-3 text-xs leading-5 text-ink-muted">
+                {metric.detail}
+              </p>
+            </div>
+          ))}
         </section>
 
         {notice && NOTICES[notice] ? (
@@ -301,7 +313,7 @@ export default async function CalendarPage(
           </div>
         ) : null}
 
-        <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="grid grid-cols-1 gap-5 2xl:grid-cols-[minmax(0,1fr)_20rem]">
           <SectionCard
             title={grid.label}
             description={
@@ -332,7 +344,7 @@ export default async function CalendarPage(
             <form
               method="get"
               action="/dashboard/calendar"
-              className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-edge/70 bg-panel/35 p-3.5 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto_auto] xl:items-end"
+              className="mb-5 grid grid-cols-1 gap-3 rounded-xl border border-edge/70 bg-black/10 p-3.5 sm:grid-cols-2 xl:grid-cols-[1fr_1fr_1fr_auto_auto] xl:items-end"
             >
               <input type="hidden" name="month" value={monthValue} />
               <div>
@@ -356,7 +368,6 @@ export default async function CalendarPage(
                   ))}
                 </select>
               </div>
-
               <div>
                 <label
                   htmlFor="type"
@@ -378,7 +389,6 @@ export default async function CalendarPage(
                   ))}
                 </select>
               </div>
-
               <div>
                 <label
                   htmlFor="status"
@@ -400,16 +410,15 @@ export default async function CalendarPage(
                   ))}
                 </select>
               </div>
-
               <button
                 type="submit"
-                className="rounded-xl border border-edge-strong bg-panel-raised/65 px-4 py-2 text-sm font-semibold text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                className="rounded-xl border border-edge-strong bg-white/[0.035] px-4 py-2 text-sm font-semibold text-ink-primary transition hover:bg-white/[0.065]"
               >
                 Apply filters
               </button>
               <Link
                 href={`/dashboard/calendar?month=${monthValue}`}
-                className="rounded-xl px-3 py-2 text-center text-sm text-ink-muted transition-colors hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                className="rounded-xl px-3 py-2 text-center text-sm text-ink-muted transition-colors hover:text-ink-primary"
               >
                 Clear
               </Link>
@@ -431,7 +440,7 @@ export default async function CalendarPage(
             <MonthGrid grid={grid} timeZone={timeZone} now={now} />
           </SectionCard>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-5">
             <SectionCard
               title="Today’s Schedule"
               description={`${todayEntries.length} active ${todayEntries.length === 1 ? "post" : "posts"} due today.`}
@@ -454,7 +463,7 @@ export default async function CalendarPage(
                   {todayEntries.map((entry) => (
                     <li
                       key={entry.post.id}
-                      className="rounded-xl border border-edge/70 bg-panel-raised/30 p-3"
+                      className="rounded-xl border border-edge/70 bg-white/[0.02] p-3"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -482,7 +491,7 @@ export default async function CalendarPage(
               description="Stored schedule state, not platform delivery claims."
             >
               <div className="grid grid-cols-2 gap-2.5">
-                <div className="rounded-xl border border-edge/70 bg-panel-raised/30 p-3">
+                <div className="rounded-xl border border-edge/70 bg-white/[0.02] p-3">
                   <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
                     Scheduled
                   </p>
@@ -490,7 +499,7 @@ export default async function CalendarPage(
                     {scheduledCount}
                   </p>
                 </div>
-                <div className="rounded-xl border border-edge/70 bg-panel-raised/30 p-3">
+                <div className="rounded-xl border border-edge/70 bg-white/[0.02] p-3">
                   <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
                     Paused
                   </p>
@@ -498,7 +507,7 @@ export default async function CalendarPage(
                     {pausedCount}
                   </p>
                 </div>
-                <div className="rounded-xl border border-edge/70 bg-panel-raised/30 p-3">
+                <div className="rounded-xl border border-edge/70 bg-white/[0.02] p-3">
                   <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
                     Cancelled
                   </p>
@@ -506,7 +515,7 @@ export default async function CalendarPage(
                     {cancelledCount}
                   </p>
                 </div>
-                <div className="rounded-xl border border-edge/70 bg-panel-raised/30 p-3">
+                <div className="rounded-xl border border-edge/70 bg-white/[0.02] p-3">
                   <p className="text-[10px] font-semibold tracking-wide text-ink-muted uppercase">
                     Ready
                   </p>
@@ -524,17 +533,14 @@ export default async function CalendarPage(
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]">
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(20rem,0.75fr)]">
           <SectionCard
             title="Upcoming Schedule"
             description="Active schedule rows, soonest first."
           >
             {upcoming.length === 0 ? (
               <div className="rounded-xl border border-dashed border-edge px-4 py-8 text-center">
-                <Clock3
-                  aria-hidden="true"
-                  className="mx-auto size-6 text-ink-muted"
-                />
+                <Clock3 aria-hidden="true" className="mx-auto size-6 text-ink-muted" />
                 <p className="mt-2 text-sm font-medium text-ink-secondary">
                   Nothing upcoming
                 </p>
@@ -548,7 +554,7 @@ export default async function CalendarPage(
                   <li key={entry.post.id}>
                     <Link
                       href={`/dashboard/calendar?entry=${entry.post.id}&month=${monthValue}`}
-                      className="block rounded-xl border border-edge/70 bg-panel-raised/30 p-3.5 transition-colors hover:border-edge-strong hover:bg-panel-hover/50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                      className="block rounded-xl border border-edge/70 bg-white/[0.02] p-3.5 transition hover:border-edge-strong hover:bg-white/[0.045]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <span className="min-w-0">
@@ -623,7 +629,7 @@ export default async function CalendarPage(
                 <div className="mt-4 flex flex-wrap items-center gap-3">
                   <Link
                     href={`/dashboard/content/${selectedEntry.item.id}`}
-                    className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:bg-panel-hover hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                    className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:bg-panel-hover hover:text-ink-primary"
                   >
                     Open content
                   </Link>
@@ -637,7 +643,7 @@ export default async function CalendarPage(
                       />
                       <button
                         type="submit"
-                        className="rounded-lg border border-highlight-dim/60 bg-highlight/10 px-3 py-1.5 text-xs font-medium text-highlight transition-colors hover:bg-highlight/15 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                        className="rounded-lg border border-highlight-dim/60 bg-highlight/10 px-3 py-1.5 text-xs font-medium text-highlight transition-colors hover:bg-highlight/15"
                       >
                         Reinstate with current approval
                       </button>
@@ -645,10 +651,7 @@ export default async function CalendarPage(
                   ) : null}
 
                   {selectedEntry.post.status !== "cancelled" ? (
-                    <form
-                      action={cancelSchedule}
-                      className="flex flex-wrap gap-2"
-                    >
+                    <form action={cancelSchedule} className="flex flex-wrap gap-2">
                       <input
                         type="hidden"
                         name="scheduled_post_id"
@@ -659,11 +662,11 @@ export default async function CalendarPage(
                         name="reason"
                         placeholder="Cancellation reason"
                         maxLength={2000}
-                        className="rounded-lg border border-edge bg-panel-raised/55 px-2.5 py-1.5 text-xs text-ink-primary outline-none focus-visible:border-highlight"
+                        className="rounded-lg border border-edge bg-[#080d18] px-2.5 py-1.5 text-xs text-ink-primary outline-none focus-visible:border-highlight"
                       />
                       <button
                         type="submit"
-                        className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:bg-panel-hover hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                        className="rounded-lg border border-edge px-3 py-1.5 text-xs font-medium text-ink-secondary transition-colors hover:bg-panel-hover hover:text-ink-primary"
                       >
                         Cancel schedule
                       </button>
