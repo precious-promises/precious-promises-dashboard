@@ -102,10 +102,7 @@ export default async function ContentLibraryPage(
   ]);
 
   const filtered = hasActiveFilters(filters);
-  const activeWorkflowCount = Math.max(
-    counts.total - counts.archived,
-    0,
-  );
+  const activeWorkflowCount = Math.max(counts.total - counts.archived, 0);
 
   return (
     <DashboardShell
@@ -230,9 +227,14 @@ export default async function ContentLibraryPage(
                 </p>
               </div>
             </div>
-            <p className="text-xs font-medium text-ink-secondary" aria-live="polite">
+            <p
+              className="text-xs font-medium text-ink-secondary"
+              aria-live="polite"
+            >
               {items.length} {items.length === 1 ? "result" : "results"}
-              {filtered ? " in this filtered view" : " in the current library view"}
+              {filtered
+                ? " in this filtered view"
+                : " in the current library view"}
             </p>
           </div>
           <div className="px-4 py-4 sm:px-5">
