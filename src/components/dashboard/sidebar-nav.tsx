@@ -5,9 +5,7 @@ import { DASHBOARD_PATH } from "@/lib/auth/routes";
 import { cn } from "@/lib/utils";
 
 interface SidebarNavProps {
-  /** Current path, used to mark the active item. */
   pathname: string;
-  /** Called when a link is followed — lets the mobile drawer close itself. */
   onNavigate?: () => void;
 }
 
@@ -22,23 +20,17 @@ function NavRow({
 }) {
   const Icon = item.icon;
 
-  // An unbuilt module is not a link. Rendering it as a plain, non-focusable
-  // row means it cannot be clicked, tabbed to, or opened in a new tab — there
-  // is no route behind it to reach.
   if (item.status === "coming-soon" || item.href === undefined) {
     return (
       <li>
         <span
           aria-disabled="true"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-ink-muted/70"
+          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-ink-muted/65"
         >
-          <Icon aria-hidden="true" className="size-4 shrink-0" />
+          <Icon aria-hidden="true" className="size-[17px] shrink-0" />
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           <span className="sr-only">(coming soon)</span>
-          <span
-            aria-hidden="true"
-            className="shrink-0 text-[10px] font-medium tracking-wide text-ink-muted/60"
-          >
+          <span aria-hidden="true" className="text-[9px] font-semibold tracking-wider">
             SOON
           </span>
         </span>
@@ -53,19 +45,20 @@ function NavRow({
         onClick={onNavigate}
         aria-current={isActive ? "page" : undefined}
         className={cn(
-          "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+          "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight",
           isActive
-            ? "bg-highlight/15 text-ink-primary shadow-[inset_2px_0_0_0_var(--color-highlight)]"
-            : "text-ink-secondary hover:bg-panel-hover/60 hover:text-ink-primary",
+            ? "bg-gradient-to-r from-[#6928d9] to-[#7b2ce8] text-white shadow-[0_10px_26px_rgba(92,35,197,0.28)]"
+            : "text-ink-secondary hover:bg-white/[0.045] hover:text-ink-primary",
         )}
       >
         <Icon
           aria-hidden="true"
           className={cn(
-            "size-4 shrink-0",
-            isActive ? "text-highlight" : "text-ink-muted",
+            "size-[17px] shrink-0 transition-colors",
+            isActive ? "text-white" : "text-ink-muted group-hover:text-ink-secondary",
           )}
+          strokeWidth={1.8}
         />
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
       </Link>
@@ -73,15 +66,6 @@ function NavRow({
   );
 }
 
-/**
- * Whether a nav item covers the current path.
- *
- * A prefix match so `/dashboard/content/new` still highlights Content Library,
- * with a boundary check so `/dashboard/media` never lights up an item pointing
- * at `/dashboard/me`.
- *
- * `/dashboard` is matched exactly — as a prefix it would own every page.
- */
 function isActiveFor(href: string, pathname: string): boolean {
   if (href === DASHBOARD_PATH) {
     return pathname === href;
@@ -89,17 +73,13 @@ function isActiveFor(href: string, pathname: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-/**
- * The navigation list itself, shared by the desktop sidebar and the mobile
- * drawer so the two can never drift apart.
- */
 export function SidebarNav({ pathname, onNavigate }: SidebarNavProps) {
   return (
-    <nav aria-label="Dashboard sections" className="flex flex-col gap-5">
+    <nav aria-label="Dashboard sections" className="flex flex-col gap-4">
       {NAVIGATION.map((group, index) => (
         <div key={group.label ?? `group-${index}`}>
           {group.label ? (
-            <h3 className="px-3 pb-2 text-[10px] font-semibold tracking-[0.12em] text-ink-muted/70 uppercase">
+            <h3 className="px-3 pb-1.5 text-[9px] font-semibold tracking-[0.16em] text-ink-muted/55 uppercase">
               {group.label}
             </h3>
           ) : null}
