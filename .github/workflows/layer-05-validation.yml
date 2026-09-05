@@ -1,0 +1,43 @@
+name: Layer 05 production board validation
+
+on:
+  push:
+    branches:
+      - ux-rebuild/layer-05-production-board
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format changed file
+        run: |
+          pnpm exec prettier --write src/app/dashboard/production/page.tsx
+          if ! git diff --quiet -- src/app/dashboard/production/page.tsx; then
+            git config user.name "precious-promises-content-dashboard"
+            git config user.email "precious.promises888@gmail.com"
+            git add src/app/dashboard/production/page.tsx
+            git commit -m "Format Layer 05 production board"
+            git push
+          fi
+      - name: Check changed-file formatting
+        run: pnpm exec prettier --check src/app/dashboard/production/page.tsx
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit and component tests
+        run: pnpm test
+      - name: Build
+        run: pnpm build
