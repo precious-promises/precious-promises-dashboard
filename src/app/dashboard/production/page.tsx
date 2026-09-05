@@ -5,7 +5,9 @@ import {
   Gauge,
   GitBranch,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -38,8 +40,8 @@ import {
   UNREACHABLE_STAGES,
 } from "@/lib/production/stage";
 import { formatInTimeZone } from "@/lib/schedule/timezone";
-import { PLATFORM_LABELS, REVIEW_STATE_LABELS } from "@/lib/variants/types";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { PLATFORM_LABELS, REVIEW_STATE_LABELS } from "@/lib/variants/types";
 
 export const metadata: Metadata = {
   title: "Production Board · Precious Promises",
@@ -129,28 +131,44 @@ function MetricCard({
   value,
   description,
   icon: Icon,
+  accent,
 }: {
   label: string;
   value: number;
   description: string;
-  icon: typeof Gauge;
+  icon: LucideIcon;
+  accent: "purple" | "gold" | "blue" | "green" | "neutral";
 }) {
+  const accentClasses = {
+    purple: "border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]",
+    gold: "border-gold-dim/35 bg-gold/10 text-gold",
+    blue: "border-sky-400/20 bg-sky-400/10 text-sky-300",
+    green: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+    neutral: "border-edge bg-white/[0.025] text-ink-secondary",
+  } as const;
+
   return (
-    <div className="pp-glass rounded-2xl border border-edge p-4 sm:p-5">
+    <div className="group relative overflow-hidden rounded-2xl border border-edge/75 bg-[#0a0f1d]/90 p-4 shadow-[0_16px_45px_rgba(0,0,0,0.2)] transition duration-200 hover:-translate-y-0.5 hover:border-edge-strong sm:p-5">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      />
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold tracking-[0.13em] text-ink-muted uppercase">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
             {label}
           </p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink-primary">
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.035em] text-ink-primary">
             {value}
           </p>
         </div>
-        <span className="rounded-xl border border-edge bg-panel-hover/60 p-2.5 text-highlight">
-          <Icon aria-hidden="true" className="size-4" />
+        <span
+          className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${accentClasses[accent]}`}
+        >
+          <Icon aria-hidden="true" className="size-4" strokeWidth={1.8} />
         </span>
       </div>
-      <p className="mt-3 text-xs leading-5 text-ink-secondary">{description}</p>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">{description}</p>
     </div>
   );
 }
@@ -165,7 +183,7 @@ function Card({ card }: { card: BoardCard }) {
     <li>
       <Link
         href={`/dashboard/content/${card.item.id}`}
-        className="group block rounded-xl border border-edge/70 bg-panel-raised/45 px-3.5 py-3 transition-all hover:-translate-y-0.5 hover:border-edge-strong hover:bg-panel-hover/60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+        className="group block rounded-xl border border-edge/70 bg-[#0b1120]/80 px-3.5 py-3 shadow-[0_12px_30px_rgba(0,0,0,0.16)] transition-all hover:-translate-y-0.5 hover:border-edge-strong hover:bg-[#0e1526] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
       >
         <span className="flex items-start justify-between gap-3">
           <span className="min-w-0">
@@ -179,7 +197,7 @@ function Card({ card }: { card: BoardCard }) {
           </span>
           <ArrowRight
             aria-hidden="true"
-            className="mt-0.5 size-3.5 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5 group-hover:text-highlight"
+            className="mt-0.5 size-3.5 shrink-0 text-ink-muted transition-transform group-hover:translate-x-0.5 group-hover:text-[#bda7ff]"
           />
         </span>
 
@@ -203,7 +221,7 @@ function Card({ card }: { card: BoardCard }) {
           </span>
         ) : null}
 
-        <span className="mt-2.5 block rounded-lg border border-edge/60 bg-panel/35 px-2.5 py-2 text-[11px] leading-5 text-ink-muted">
+        <span className="mt-2.5 block rounded-lg border border-edge/60 bg-black/15 px-2.5 py-2 text-[11px] leading-5 text-ink-muted">
           Scripture:{" "}
           {card.item.scripture_reference
             ? SCRIPTURE_VERIFICATION_LABELS[
@@ -282,92 +300,108 @@ export default async function ProductionBoardPage() {
       pathname="/dashboard/production"
       email={user.email ?? null}
     >
-      <div className="mx-auto flex w-full max-w-[1700px] flex-col gap-6">
-        <section className="relative overflow-hidden rounded-3xl border border-edge bg-panel px-5 py-6 shadow-sm sm:px-7 sm:py-7">
+      <div className="mx-auto flex w-full max-w-[1680px] flex-col gap-5 sm:gap-6">
+        <section className="relative overflow-hidden rounded-[24px] border border-edge/80 bg-[#090e1b] shadow-[0_30px_90px_rgba(0,0,0,0.34)]">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-y-0 right-0 w-2/5 bg-[radial-gradient(circle_at_center,var(--color-highlight-soft),transparent_68%)] opacity-20"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(112,55,221,0.24),transparent_33%),radial-gradient(circle_at_78%_8%,rgba(201,169,97,0.11),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.018),transparent_44%)]"
           />
-          <div className="relative flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+          <div className="relative grid gap-6 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1fr_auto] xl:items-end xl:px-8">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-edge bg-panel-hover/70 px-3 py-1 text-[11px] font-semibold tracking-[0.14em] text-ink-muted uppercase">
-                <GitBranch
-                  aria-hidden="true"
-                  className="size-3.5 text-highlight"
-                />
-                Production command centre
+              <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.19em] text-gold">
+                <Sparkles aria-hidden="true" className="size-3.5" />
+                Production Command Centre
               </div>
-              <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-ink-primary sm:text-4xl lg:text-[42px]">
                 Production Board
               </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary sm:text-base">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
                 See where every content item genuinely sits based on Scripture,
-                script, video, review, approval and scheduling records. Board
-                position is derived from evidence rather than manually assigned.
+                script, video, review, approval and scheduling records. Position
+                is derived from evidence rather than manually assigned.
               </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <Link
+                  href="/dashboard/content/new"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6931d6] to-[#7d39e6] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(103,46,214,0.28)] transition hover:brightness-110"
+                >
+                  Create content
+                </Link>
+                <Link
+                  href="/dashboard/content"
+                  className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-white/[0.025] px-4 py-2.5 text-sm font-medium text-ink-primary transition hover:bg-white/[0.055]"
+                >
+                  Content Library
+                </Link>
+              </div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/content"
-                className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-panel-hover/50 px-4 py-2.5 text-sm font-semibold text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-              >
-                Content Library
-              </Link>
-              <Link
-                href="/dashboard/content/new"
-                className="inline-flex items-center gap-2 rounded-xl bg-highlight px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-              >
-                Create Content
-              </Link>
+            <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-edge/75 bg-black/15 px-4 py-3 xl:min-w-[300px]">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+                <ShieldCheck aria-hidden="true" className="size-4" />
+              </span>
+              <span>
+                <span className="block text-xs font-semibold text-ink-primary">
+                  Evidence-derived workflow
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-4 text-ink-muted">
+                  No drag-and-drop bypass of verification or approval.
+                </span>
+              </span>
             </div>
           </div>
         </section>
 
         <section
           aria-label="Production summary"
-          className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-6"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-6"
         >
           <MetricCard
             label="In production"
             value={cards.length}
-            description="Content items currently represented on the derived board."
+            description="Items represented on the derived board."
             icon={Gauge}
+            accent="purple"
           />
           <MetricCard
             label="Scripture attention"
             value={scriptureAttention}
-            description="Items blocked until Scripture is verified again or confirmed."
+            description="Blocked until Scripture is confirmed."
             icon={CircleAlert}
+            accent="gold"
           />
           <MetricCard
             label="Ready for review"
             value={reviewReady}
-            description="Items that have genuinely reached the human review stage."
+            description="Genuinely reached human review."
             icon={ShieldCheck}
+            accent="blue"
           />
           <MetricCard
             label="Approved"
             value={approved}
-            description="Items with a valid approval that still matches current content."
+            description="Valid approval still matching content."
             icon={CheckCircle2}
+            accent="green"
           />
           <MetricCard
             label="Scheduled"
             value={scheduled}
-            description="Approved content with an active schedule record."
+            description="Approved content with an active schedule."
             icon={CheckCircle2}
+            accent="neutral"
           />
           <MetricCard
-            label="Active pipeline jobs"
+            label="Active pipeline"
             value={activePipelineJobs}
-            description="Generation jobs still progressing before the review handoff."
+            description="Generation jobs still progressing."
             icon={GitBranch}
+            accent="purple"
           />
         </section>
 
         {failedPipelineJobs > 0 ? (
-          <section className="rounded-2xl border border-red-900/50 bg-red-950/25 px-4 py-3.5 sm:px-5">
+          <section className="rounded-2xl border border-red-900/50 bg-red-950/25 px-4 py-3.5 shadow-[0_14px_35px_rgba(0,0,0,0.18)] sm:px-5">
             <div className="flex items-start gap-3">
               <CircleAlert
                 aria-hidden="true"
@@ -387,23 +421,23 @@ export default async function ProductionBoardPage() {
           </section>
         ) : null}
 
-        <section className="pp-glass overflow-hidden rounded-2xl border border-edge">
-          <div className="border-b border-edge px-4 py-4 sm:px-5">
+        <section className="overflow-hidden rounded-2xl border border-edge/80 bg-[#0a0f1d]/92 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
+          <div className="border-b border-edge/70 px-4 py-4 sm:px-5">
             <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
               <div>
-                <p className="text-[11px] font-semibold tracking-[0.13em] text-ink-muted uppercase">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-gold">
                   Evidence-derived workflow
                 </p>
-                <h3 className="mt-1 text-xl font-semibold tracking-tight text-ink-primary">
+                <h3 className="mt-1 text-xl font-semibold tracking-[-0.025em] text-ink-primary sm:text-2xl">
                   Current production stages
                 </h3>
-                <p className="mt-1 max-w-3xl text-xs leading-5 text-ink-secondary">
-                  Cards move only when the underlying records change. There is
-                  no drag-and-drop shortcut that can bypass Scripture
-                  verification, review, approval or scheduling requirements.
+                <p className="mt-1 max-w-3xl text-xs leading-5 text-ink-muted">
+                  Cards move only when the underlying records change. Scripture
+                  verification, human review, approval and scheduling cannot be
+                  bypassed by moving a card.
                 </p>
               </div>
-              <p className="text-xs text-ink-muted">
+              <p className="text-xs font-medium text-ink-secondary">
                 {cards.length}{" "}
                 {cards.length === 1 ? "content item" : "content items"}
               </p>
@@ -419,9 +453,9 @@ export default async function ProductionBoardPage() {
                 action={
                   <Link
                     href="/dashboard/content/new"
-                    className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                    className="rounded-xl bg-gradient-to-r from-[#6931d6] to-[#7d39e6] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(103,46,214,0.28)] transition hover:brightness-110"
                   >
-                    Create Content
+                    Create content
                   </Link>
                 }
               />
@@ -432,14 +466,14 @@ export default async function ProductionBoardPage() {
                   return (
                     <section
                       key={stage}
-                      className="flex w-80 shrink-0 flex-col rounded-2xl border border-edge bg-panel/55"
+                      className="flex w-80 shrink-0 flex-col overflow-hidden rounded-2xl border border-edge/80 bg-[#090f1c]/85 shadow-[0_14px_35px_rgba(0,0,0,0.16)]"
                     >
-                      <div className="border-b border-edge/70 px-4 py-3.5">
+                      <div className="border-b border-edge/70 bg-white/[0.018] px-4 py-3.5">
                         <div className="flex items-center justify-between gap-2">
                           <h4 className="text-sm font-semibold text-ink-primary">
                             {PRODUCTION_STAGE_LABELS[stage]}
                           </h4>
-                          <span className="flex size-7 items-center justify-center rounded-full border border-edge bg-panel-hover/60 text-xs font-semibold text-ink-secondary">
+                          <span className="flex size-7 items-center justify-center rounded-full border border-[#7138dc]/25 bg-[#7138dc]/10 text-xs font-semibold text-[#c4b1ff]">
                             {stageCards.length}
                           </span>
                         </div>
@@ -469,17 +503,16 @@ export default async function ProductionBoardPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-edge bg-panel/55 px-4 py-4 sm:px-5">
+        <section className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/75 px-4 py-4 sm:px-5">
           <div className="flex items-start gap-3">
-            <ShieldCheck
-              aria-hidden="true"
-              className="mt-0.5 size-4 shrink-0 text-highlight"
-            />
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+              <ShieldCheck aria-hidden="true" className="size-4" />
+            </span>
             <div>
               <h3 className="text-sm font-semibold text-ink-primary">
                 Production truth boundary
               </h3>
-              <p className="mt-1 text-xs leading-5 text-ink-secondary">
+              <p className="mt-1 text-xs leading-5 text-ink-muted">
                 {UNREACHABLE_STAGES.map(
                   (stage) => PRODUCTION_STAGE_LABELS[stage],
                 ).join(", ")}{" "}
@@ -494,6 +527,7 @@ export default async function ProductionBoardPage() {
         <SectionCard
           title="Production pipeline"
           description={PIPELINE_HANDOFF_STATEMENT}
+          className="shadow-[0_18px_55px_rgba(0,0,0,0.2)]"
         >
           <PipelinePanel
             jobs={pipeline.jobs}
