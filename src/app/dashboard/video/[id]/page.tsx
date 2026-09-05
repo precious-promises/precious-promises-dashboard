@@ -193,8 +193,8 @@ export default async function VideoProjectPage(
                     </div>
                     <p className="mt-1 text-xs text-ink-muted">
                       {ASPECT_RATIO_LABELS[project.aspect_ratio]} ·{" "}
-                      {formatDuration(project.duration_estimate_seconds)} estimated
-                      · Revision {project.current_revision}
+                      {formatDuration(project.duration_estimate_seconds)}{" "}
+                      estimated · Revision {project.current_revision}
                     </p>
                   </div>
                 </div>
@@ -287,8 +287,8 @@ export default async function VideoProjectPage(
                 Manage the project without shrinking the desktop editor
               </h3>
               <p className="mt-1 text-xs leading-5 text-ink-muted">
-                The full timeline workspace remains a laptop/desktop tool. Mobile
-                keeps the project controls readable and touch-friendly.
+                The full timeline workspace remains a laptop/desktop tool.
+                Mobile keeps the project controls readable and touch-friendly.
               </p>
             </div>
             <div className="px-4 py-4">
@@ -432,8 +432,8 @@ export default async function VideoProjectPage(
                 Preview is not render. A render is not approval. Approval is not
                 publication. The Platform Captions shortcut opens the existing
                 social-platform caption and metadata workflow; this editor does
-                not claim automatic subtitle transcription unless that capability
-                is implemented and verified separately.
+                not claim automatic subtitle transcription unless that
+                capability is implemented and verified separately.
               </p>
             </div>
           </div>
