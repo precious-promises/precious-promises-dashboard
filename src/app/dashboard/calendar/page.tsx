@@ -540,7 +540,10 @@ export default async function CalendarPage(
           >
             {upcoming.length === 0 ? (
               <div className="rounded-xl border border-dashed border-edge px-4 py-8 text-center">
-                <Clock3 aria-hidden="true" className="mx-auto size-6 text-ink-muted" />
+                <Clock3
+                  aria-hidden="true"
+                  className="mx-auto size-6 text-ink-muted"
+                />
                 <p className="mt-2 text-sm font-medium text-ink-secondary">
                   Nothing upcoming
                 </p>
@@ -651,7 +654,10 @@ export default async function CalendarPage(
                   ) : null}
 
                   {selectedEntry.post.status !== "cancelled" ? (
-                    <form action={cancelSchedule} className="flex flex-wrap gap-2">
+                    <form
+                      action={cancelSchedule}
+                      className="flex flex-wrap gap-2"
+                    >
                       <input
                         type="hidden"
                         name="scheduled_post_id"
