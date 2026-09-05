@@ -5,6 +5,9 @@ on:
     branches:
       - ux-rebuild/layer-02-dashboard-overview
 
+permissions:
+  contents: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -18,10 +21,18 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Check changed-file formatting
+      - name: Format changed file
         run: |
-          pnpm exec prettier src/app/dashboard/page.tsx > /tmp/page.formatted.tsx
-          diff -u src/app/dashboard/page.tsx /tmp/page.formatted.tsx
+          pnpm exec prettier --write src/app/dashboard/page.tsx
+          if ! git diff --quiet -- src/app/dashboard/page.tsx; then
+            git config user.name "precious-promises-content-dashboard"
+            git config user.email "precious.promises888@gmail.com"
+            git add src/app/dashboard/page.tsx
+            git commit -m "Format Layer 02 dashboard overview"
+            git push
+          fi
+      - name: Check changed-file formatting
+        run: pnpm exec prettier --check src/app/dashboard/page.tsx
       - name: Lint
         run: pnpm lint
       - name: Typecheck
