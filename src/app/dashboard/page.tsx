@@ -767,7 +767,7 @@ export default async function DashboardPage() {
           <div className="xl:col-span-4">
             <SectionCard
               title="System Status"
-              description="Operational truth only. Implemented, configured, connected and live-verified remain separate states."
+              description="Operational truth only. Implemented is not connected; connected is not authorised; authorised is not live-verified."
               action={
                 <SectionLink href="/dashboard/settings">
                   Full readiness
