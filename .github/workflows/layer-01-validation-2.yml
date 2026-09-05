@@ -1,0 +1,30 @@
+name: Layer 01 shell validation rerun
+
+on:
+  push:
+    branches:
+      - ux-rebuild/layer-01-shell
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Check changed-file formatting
+        run: pnpm exec prettier --check src/components/dashboard/brand-mark.tsx src/components/dashboard/app-sidebar.tsx src/components/dashboard/sidebar-nav.tsx src/components/dashboard/owner-badge.tsx src/components/dashboard/top-bar.tsx src/components/dashboard/dashboard-shell.tsx src/components/dashboard/mobile-sidebar.tsx
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Unit and component tests
+        run: pnpm test
+      - name: Build
+        run: pnpm build
