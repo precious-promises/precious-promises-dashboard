@@ -363,7 +363,11 @@ export default async function DashboardPage() {
             <SectionCard
               title="Today’s Schedule"
               description="The posts genuinely scheduled for today, shown in each stored timezone."
-              action={<SectionLink href="/dashboard/calendar">Open calendar</SectionLink>}
+              action={
+                <SectionLink href="/dashboard/calendar">
+                  Open calendar
+                </SectionLink>
+              }
             >
               {todayEntries.length === 0 ? (
                 <EmptyState
@@ -380,7 +384,10 @@ export default async function DashboardPage() {
                         className="group flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
                       >
                         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]">
-                          <CalendarClock aria-hidden="true" className="size-4" />
+                          <CalendarClock
+                            aria-hidden="true"
+                            className="size-4"
+                          />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium text-ink-primary">
@@ -411,7 +418,9 @@ export default async function DashboardPage() {
               title="Approval Queue"
               description="Variants waiting for you. AI never approves content on your behalf."
               action={
-                <SectionLink href="/dashboard/approvals">Review queue</SectionLink>
+                <SectionLink href="/dashboard/approvals">
+                  Review queue
+                </SectionLink>
               }
             >
               {approvalQueue.length === 0 ? (
@@ -440,7 +449,9 @@ export default async function DashboardPage() {
                           </span>
                         </span>
                         <StatusBadge
-                          tone={row.blockers.length === 0 ? "accent" : "inactive"}
+                          tone={
+                            row.blockers.length === 0 ? "accent" : "inactive"
+                          }
                         >
                           {row.blockers.length === 0 ? "Review" : "Blocked"}
                         </StatusBadge>
@@ -456,7 +467,11 @@ export default async function DashboardPage() {
             <SectionCard
               title="Recent Content"
               description="Your latest stored content records, ordered by recent activity."
-              action={<SectionLink href="/dashboard/content">Open library</SectionLink>}
+              action={
+                <SectionLink href="/dashboard/content">
+                  Open library
+                </SectionLink>
+              }
             >
               {recentItems.length === 0 ? (
                 <EmptyState
@@ -508,7 +523,9 @@ export default async function DashboardPage() {
               title="Performance Snapshot"
               description="Measured platform data only. Unavailable data stays unavailable."
               action={
-                <SectionLink href="/dashboard/analytics">Open analytics</SectionLink>
+                <SectionLink href="/dashboard/analytics">
+                  Open analytics
+                </SectionLink>
               }
             >
               {analytics.publishedCount === 0 ? (
@@ -643,7 +660,9 @@ export default async function DashboardPage() {
               title="Content Calendar"
               description="The next approved items that have a real stored schedule time."
               action={
-                <SectionLink href="/dashboard/calendar">View calendar</SectionLink>
+                <SectionLink href="/dashboard/calendar">
+                  View calendar
+                </SectionLink>
               }
             >
               {upcoming.length === 0 ? (
@@ -690,7 +709,9 @@ export default async function DashboardPage() {
               title="Production Progress"
               description="Live counts derived from real production records across the content workflow."
               action={
-                <SectionLink href="/dashboard/production">Open board</SectionLink>
+                <SectionLink href="/dashboard/production">
+                  Open board
+                </SectionLink>
               }
             >
               <WorkflowPipeline counts={stageCounts} />
@@ -748,7 +769,9 @@ export default async function DashboardPage() {
               title="System Status"
               description="Operational truth only. Implemented, configured, connected and live-verified remain separate states."
               action={
-                <SectionLink href="/dashboard/settings">Full readiness</SectionLink>
+                <SectionLink href="/dashboard/settings">
+                  Full readiness
+                </SectionLink>
               }
             >
               <ul className="space-y-2">
