@@ -1,22 +1,26 @@
 import {
   AlertTriangle,
+  ArrowUpRight,
   BarChart3,
   CalendarDays,
   CalendarClock,
-  Captions,
   CheckCircle2,
   CheckSquare,
   ChevronRight,
   Clapperboard,
+  Clock3,
   FileText,
   Images,
+  Layers3,
   Library,
   MonitorPlay,
   Music2,
   ScrollText,
+  Send,
+  ShieldCheck,
   Sparkles,
-  WandSparkles,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -65,15 +69,7 @@ import { countItemsWithScripts } from "@/lib/scripts/repository";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isWorkerConfigured } from "@/lib/supabase/worker";
 import { PLATFORM_LABELS } from "@/lib/variants/types";
-import {
-  countVideoProjects,
-  listScenes,
-  listVideoProjects,
-} from "@/lib/video/repository";
-import {
-  VIDEO_PROJECT_STATUS_LABELS,
-  type VideoScene,
-} from "@/lib/video/types";
+import { countVideoProjects } from "@/lib/video/repository";
 import { isElevenLabsConfigured } from "@/lib/voice/server-config";
 import { analyticsSchedulingConnected } from "@/trigger/analytics";
 
@@ -108,25 +104,61 @@ function formatUpdated(value: string) {
   }).format(new Date(value));
 }
 
-function MiniMetric({
+function MetricCard({
   label,
   value,
   note,
+  icon: Icon,
+  accent,
 }: {
   label: string;
   value: string | number;
   note: string;
+  icon: LucideIcon;
+  accent: "purple" | "gold" | "blue" | "green";
 }) {
+  const accentClasses = {
+    purple: "border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]",
+    gold: "border-gold-dim/35 bg-gold/10 text-gold",
+    blue: "border-sky-400/20 bg-sky-400/10 text-sky-300",
+    green: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+  } as const;
+
   return (
-    <div className="rounded-xl border border-edge/80 bg-panel-raised/45 px-4 py-3.5 shadow-[0_14px_40px_rgba(0,0,0,0.16)]">
-      <p className="text-xs font-medium uppercase tracking-[0.12em] text-ink-muted">
-        {label}
-      </p>
-      <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-tight text-ink-primary">
-        {value}
-      </p>
-      <p className="mt-1 text-xs leading-5 text-ink-muted">{note}</p>
+    <div className="group relative overflow-hidden rounded-2xl border border-edge/75 bg-[#0a0f1d]/90 p-4 shadow-[0_16px_45px_rgba(0,0,0,0.2)] transition duration-200 hover:-translate-y-0.5 hover:border-edge-strong sm:p-5">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      />
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+            {label}
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.035em] text-ink-primary">
+            {value}
+          </p>
+        </div>
+        <span
+          className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${accentClasses[accent]}`}
+        >
+          <Icon aria-hidden="true" className="size-4" strokeWidth={1.8} />
+        </span>
+      </div>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">{note}</p>
     </div>
+  );
+}
+
+function SectionLink({ href, children }: { href: string; children: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-highlight-soft transition hover:text-ink-primary"
+    >
+      {children}
+      <ArrowUpRight aria-hidden="true" className="size-3" />
+    </Link>
   );
 }
 
@@ -150,7 +182,6 @@ export default async function DashboardPage() {
     board,
     socialAccounts,
     recentItems,
-    videoProjects,
   ] = await Promise.all([
     getContentCounts(),
     countScriptureNeedingAttention(),
@@ -161,7 +192,6 @@ export default async function DashboardPage() {
     loadBoard(),
     loadSocialAccounts(),
     listContentItems(EMPTY_FILTERS),
-    listVideoProjects(),
   ]);
 
   const analytics = await loadAnalyticsOverview();
@@ -185,11 +215,6 @@ export default async function DashboardPage() {
     .filter((row) => row.variant.review_state === "ready_for_review")
     .slice(0, 5);
   const latestContent = recentItems[0] ?? null;
-  const latestVideo =
-    videoProjects.find((project) => project.status !== "archived") ?? null;
-  const latestScenes: VideoScene[] = latestVideo
-    ? await listScenes(latestVideo.id)
-    : [];
 
   const stageCounts: Partial<Record<ProductionStage, number>> = {};
   for (const card of board) {
@@ -246,243 +271,231 @@ export default async function DashboardPage() {
       pathname={DASHBOARD_PATH}
       email={user.email ?? null}
     >
-      <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-6">
-        <section className="relative overflow-hidden rounded-2xl border border-edge bg-panel/78 px-5 py-5 shadow-[0_24px_70px_rgba(0,0,0,0.28)] backdrop-blur-xl sm:px-6 lg:px-7">
+      <div className="mx-auto flex w-full max-w-[1480px] flex-col gap-5 sm:gap-6">
+        <section className="relative overflow-hidden rounded-[24px] border border-edge/80 bg-[#090e1b] shadow-[0_30px_90px_rgba(0,0,0,0.34)]">
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_10%_0%,rgba(77,141,247,0.12),transparent_36%),radial-gradient(circle_at_92%_12%,rgba(201,169,97,0.09),transparent_30%)]"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(112,55,221,0.24),transparent_33%),radial-gradient(circle_at_78%_8%,rgba(201,169,97,0.11),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.018),transparent_44%)]"
           />
-          <div className="relative flex flex-col justify-between gap-5 xl:flex-row xl:items-end">
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.16em] text-gold">
+          <div className="relative grid gap-6 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1fr_auto] xl:items-end xl:px-8">
+            <div className="max-w-3xl">
+              <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.19em] text-gold">
                 <Sparkles aria-hidden="true" className="size-3.5" />
-                Precious Promises Command Centre
+                Creator Command Centre
               </div>
-              <h2 className="text-2xl font-semibold tracking-tight text-ink-primary sm:text-3xl lg:text-4xl">
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-ink-primary sm:text-4xl lg:text-[42px]">
                 {greeting}
               </h2>
-              <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-secondary">
-                Your content, approvals, production, scheduling and performance
-                in one premium workspace. Every figure below comes from stored
-                records; unavailable services stay clearly marked unavailable.
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
+                See what needs attention, what is moving through production and
+                what is ready to publish without leaving the overview.
               </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <Link
+                  href="/dashboard/content/new"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6931d6] to-[#7d39e6] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(103,46,214,0.28)] transition hover:brightness-110"
+                >
+                  <FileText aria-hidden="true" className="size-4" />
+                  Create content
+                </Link>
+                <Link
+                  href="/dashboard/calendar"
+                  className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-white/[0.025] px-4 py-2.5 text-sm font-medium text-ink-primary transition hover:bg-white/[0.055]"
+                >
+                  <CalendarDays aria-hidden="true" className="size-4" />
+                  Open calendar
+                </Link>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:w-[560px]">
-              <MiniMetric
-                label="Content"
-                value={counts.total}
-                note="Stored items"
-              />
-              <MiniMetric
-                label="Approvals"
-                value={awaitingApproval}
-                note="Waiting now"
-              />
-              <MiniMetric
-                label="Scheduled"
-                value={scheduled}
-                note="Future posts"
-              />
-              <MiniMetric
-                label="Published"
-                value={postedThisWeek}
-                note="Last 7 days"
-              />
+
+            <div className="flex items-center gap-3 rounded-2xl border border-edge/75 bg-black/15 px-4 py-3 xl:min-w-[260px]">
+              <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+                <ShieldCheck aria-hidden="true" className="size-4" />
+              </span>
+              <span>
+                <span className="block text-xs font-semibold text-ink-primary">
+                  Live workspace truth
+                </span>
+                <span className="mt-0.5 block text-[11px] leading-4 text-ink-muted">
+                  Stored records only. No decorative metrics.
+                </span>
+              </span>
             </div>
           </div>
         </section>
 
-        <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[1.18fr_0.82fr]">
-          <div className="flex min-w-0 flex-col gap-6">
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <SectionCard
-                title="Today’s Schedule"
-                description="What is genuinely scheduled for today, in each post’s stored timezone."
-                action={
-                  <Link
-                    href="/dashboard/calendar"
-                    className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                  >
-                    Open calendar
-                  </Link>
-                }
-              >
-                {todayEntries.length === 0 ? (
-                  <EmptyState
-                    icon={CalendarClock}
-                    title="Nothing scheduled today."
-                    description="There are no stored scheduled posts for today."
-                  />
-                ) : (
-                  <ul className="space-y-2">
-                    {todayEntries.map((entry) => (
-                      <li key={entry.post.id}>
-                        <Link
-                          href={`/dashboard/calendar?entry=${entry.post.id}`}
-                          className="group flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 px-3.5 py-3 transition hover:border-edge-strong hover:bg-panel-hover/55"
-                        >
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-highlight/20 bg-highlight/10 text-highlight-soft">
-                            <CalendarClock
-                              aria-hidden="true"
-                              className="size-4"
-                            />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-ink-primary">
-                              {entry.item.title}
-                            </span>
-                            <span className="block truncate text-xs text-ink-muted">
-                              {PLATFORM_LABELS[entry.variant.platform]} ·{" "}
-                              {formatInTimeZone(
-                                new Date(entry.post.scheduled_for),
-                                entry.post.timezone,
-                              )}
-                            </span>
-                          </span>
-                          <ChevronRight
-                            aria-hidden="true"
-                            className="size-4 text-ink-muted group-hover:text-ink-primary"
-                          />
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </SectionCard>
+        <section
+          aria-label="Dashboard metrics"
+          className="grid grid-cols-2 gap-3 lg:grid-cols-4"
+        >
+          <MetricCard
+            label="Content"
+            value={counts.total}
+            note="Stored content items"
+            icon={Layers3}
+            accent="purple"
+          />
+          <MetricCard
+            label="Awaiting approval"
+            value={awaitingApproval}
+            note="Needs your decision"
+            icon={CheckSquare}
+            accent="gold"
+          />
+          <MetricCard
+            label="Scheduled"
+            value={scheduled}
+            note="Future publish records"
+            icon={Clock3}
+            accent="blue"
+          />
+          <MetricCard
+            label="Published"
+            value={postedThisWeek}
+            note="Recorded in the last 7 days"
+            icon={Send}
+            accent="green"
+          />
+        </section>
 
-              <SectionCard
-                title="Content Calendar"
-                description="The next approved items with real stored schedule times."
-                action={
-                  <Link
-                    href="/dashboard/calendar"
-                    className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                  >
-                    View full calendar
-                  </Link>
-                }
-              >
-                {upcoming.length === 0 ? (
-                  <EmptyState
-                    icon={CalendarDays}
-                    title="Calendar is clear."
-                    description="Approve a platform variant and assign a time to make it appear here."
-                  />
-                ) : (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {upcoming.map((entry) => (
+        <div className="grid grid-cols-1 gap-5 xl:grid-cols-12">
+          <div className="xl:col-span-7">
+            <SectionCard
+              title="Today’s Schedule"
+              description="The posts genuinely scheduled for today, shown in each stored timezone."
+              action={
+                <SectionLink href="/dashboard/calendar">
+                  Open calendar
+                </SectionLink>
+              }
+            >
+              {todayEntries.length === 0 ? (
+                <EmptyState
+                  icon={CalendarClock}
+                  title="Nothing scheduled today."
+                  description="There are no stored scheduled posts for today."
+                />
+              ) : (
+                <ul className="space-y-2">
+                  {todayEntries.map((entry) => (
+                    <li key={entry.post.id}>
                       <Link
-                        key={entry.post.id}
                         href={`/dashboard/calendar?entry=${entry.post.id}`}
-                        className="rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
+                        className="group flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
                       >
-                        <span className="text-[11px] font-medium uppercase tracking-[0.1em] text-gold">
-                          {PLATFORM_LABELS[entry.variant.platform]}
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]">
+                          <CalendarClock
+                            aria-hidden="true"
+                            className="size-4"
+                          />
                         </span>
-                        <span className="mt-1 block line-clamp-2 text-sm font-medium text-ink-primary">
-                          {entry.item.title}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-ink-primary">
+                            {entry.item.title}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-ink-muted">
+                            {PLATFORM_LABELS[entry.variant.platform]} ·{" "}
+                            {formatInTimeZone(
+                              new Date(entry.post.scheduled_for),
+                              entry.post.timezone,
+                            )}
+                          </span>
                         </span>
-                        <span className="mt-2 block text-xs text-ink-muted">
-                          {formatInTimeZone(
-                            new Date(entry.post.scheduled_for),
-                            entry.post.timezone,
-                          )}
-                        </span>
+                        <ChevronRight
+                          aria-hidden="true"
+                          className="size-4 text-ink-muted transition group-hover:translate-x-0.5 group-hover:text-ink-primary"
+                        />
                       </Link>
-                    ))}
-                  </div>
-                )}
-              </SectionCard>
-            </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </SectionCard>
+          </div>
 
+          <div className="xl:col-span-5">
             <SectionCard
               title="Approval Queue"
-              description="Platform variants genuinely waiting for your decision. AI never approves them."
+              description="Variants waiting for you. AI never approves content on your behalf."
               action={
-                <Link
-                  href="/dashboard/approvals"
-                  className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                >
-                  Open approval queue
-                </Link>
+                <SectionLink href="/dashboard/approvals">
+                  Review queue
+                </SectionLink>
               }
             >
               {approvalQueue.length === 0 ? (
                 <EmptyState
-                  icon={CheckSquare}
-                  title="Nothing is waiting for approval."
+                  icon={CheckCircle2}
+                  title="Approval queue is clear."
                   description="Items marked ready for review will appear here."
                 />
               ) : (
-                <div className="overflow-hidden rounded-xl border border-edge/70">
-                  <ul className="divide-y divide-edge/70">
-                    {approvalQueue.map((row) => (
-                      <li key={row.variant.id}>
-                        <Link
-                          href={`/dashboard/approvals?variant=${row.variant.id}`}
-                          className="flex flex-col gap-2 bg-panel-raised/25 px-4 py-3.5 transition hover:bg-panel-hover/55 sm:flex-row sm:items-center sm:justify-between"
-                        >
-                          <span className="min-w-0">
-                            <span className="block truncate text-sm font-medium text-ink-primary">
-                              {row.item.title}
-                            </span>
-                            <span className="block text-xs text-ink-muted">
-                              {PLATFORM_LABELS[row.variant.platform]} ·{" "}
-                              {row.blockers.length === 0
-                                ? "Ready for your decision"
-                                : `${row.blockers.length} blocker${row.blockers.length === 1 ? "" : "s"}`}
-                            </span>
+                <ul className="space-y-2">
+                  {approvalQueue.map((row) => (
+                    <li key={row.variant.id}>
+                      <Link
+                        href={`/dashboard/approvals?variant=${row.variant.id}`}
+                        className="flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-medium text-ink-primary">
+                            {row.item.title}
                           </span>
-                          <StatusBadge
-                            tone={
-                              row.blockers.length === 0 ? "accent" : "inactive"
-                            }
-                          >
-                            {row.blockers.length === 0 ? "Review" : "Blocked"}
-                          </StatusBadge>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                          <span className="mt-0.5 block text-xs text-ink-muted">
+                            {PLATFORM_LABELS[row.variant.platform]} ·{" "}
+                            {row.blockers.length === 0
+                              ? "Ready for your decision"
+                              : `${row.blockers.length} blocker${row.blockers.length === 1 ? "" : "s"}`}
+                          </span>
+                        </span>
+                        <StatusBadge
+                          tone={
+                            row.blockers.length === 0 ? "accent" : "inactive"
+                          }
+                        >
+                          {row.blockers.length === 0 ? "Review" : "Blocked"}
+                        </StatusBadge>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
               )}
             </SectionCard>
+          </div>
 
-            <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-              <SectionCard
-                title="Recent Content"
-                description="Your most recently updated real content records."
-                action={
-                  <Link
-                    href="/dashboard/content"
-                    className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                  >
-                    Open library
-                  </Link>
-                }
-              >
-                {recentItems.length === 0 ? (
-                  <EmptyState
-                    icon={Library}
-                    title="No content yet."
-                    description="Create the first content item to start the workflow."
-                  />
-                ) : (
-                  <ul className="space-y-2">
+          <div className="xl:col-span-7">
+            <SectionCard
+              title="Recent Content"
+              description="Your latest stored content records, ordered by recent activity."
+              action={
+                <SectionLink href="/dashboard/content">
+                  Open library
+                </SectionLink>
+              }
+            >
+              {recentItems.length === 0 ? (
+                <EmptyState
+                  icon={Library}
+                  title="No content yet."
+                  description="Create the first content item to start the workflow."
+                />
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-edge/70">
+                  <ul className="divide-y divide-edge/65">
                     {recentItems.slice(0, 5).map((item) => (
                       <li key={item.id}>
                         <Link
                           href={`/dashboard/content/${item.id}`}
-                          className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/30 px-3.5 py-3 transition hover:border-edge-strong hover:bg-panel-hover/55"
+                          className="flex items-center gap-3 bg-white/[0.012] px-3.5 py-3 transition hover:bg-white/[0.04] sm:px-4"
                         >
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-edge bg-panel text-ink-muted">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-edge bg-[#080d19] text-ink-muted">
                             <FileText aria-hidden="true" className="size-4" />
                           </span>
                           <span className="min-w-0 flex-1">
                             <span className="block truncate text-sm font-medium text-ink-primary">
                               {item.title}
                             </span>
-                            <span className="block truncate text-xs text-ink-muted">
+                            <span className="mt-0.5 block truncate text-xs text-ink-muted">
                               {CONTENT_TYPE_LABELS[item.content_type]} ·{" "}
                               {formatUpdated(item.updated_at)}
                             </span>
@@ -500,87 +513,215 @@ export default async function DashboardPage() {
                       </li>
                     ))}
                   </ul>
-                )}
-              </SectionCard>
+                </div>
+              )}
+            </SectionCard>
+          </div>
 
-              <SectionCard
-                title="Performance Snapshot"
-                description="Measured platform data only — never invented zeros."
-                action={
-                  <Link
-                    href="/dashboard/analytics"
-                    className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                  >
-                    Open analytics
-                  </Link>
-                }
-              >
-                {analytics.publishedCount === 0 ? (
-                  <EmptyState
-                    icon={BarChart3}
-                    title="No measured performance yet."
-                    description="Nothing has been published and measured through a connected analytics source yet."
-                  />
-                ) : (
-                  <>
-                    <div className="grid grid-cols-2 gap-2">
-                      <MiniMetric
-                        label="Published"
-                        value={analytics.publishedCount}
-                        note="Measured records"
-                      />
-                      {(
-                        [
-                          "views_or_plays",
-                          "engagements",
-                          "watch_time_seconds",
-                        ] as MetricName[]
-                      )
-                        .slice(0, 3)
-                        .map((metric) => {
-                          const value = analytics.totals[metric];
-                          return (
-                            <MiniMetric
-                              key={metric}
-                              label={METRIC_LABELS[metric]}
-                              value={value ? formatReading(value) : "—"}
-                              note={
-                                value && !value.available
-                                  ? UNAVAILABLE_LABELS[value.reason]
-                                  : "Measured total"
-                              }
-                            />
-                          );
-                        })}
-                    </div>
-                    <p className="mt-3 text-xs leading-5 text-ink-muted">
-                      Last fetched{" "}
-                      {describeFreshness(analytics.lastFetchedAt).toLowerCase()}
-                      .
-                    </p>
-                  </>
-                )}
-              </SectionCard>
-            </div>
-
+          <div className="xl:col-span-5">
             <SectionCard
-              title="Production Pipeline"
-              description="Live counts derived from the production records, not a sample workflow."
+              title="Performance Snapshot"
+              description="Measured platform data only. Unavailable data stays unavailable."
               action={
-                <Link
-                  href="/dashboard/production"
-                  className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                >
-                  Open production board
-                </Link>
+                <SectionLink href="/dashboard/analytics">
+                  Open analytics
+                </SectionLink>
+              }
+            >
+              {analytics.publishedCount === 0 ? (
+                <EmptyState
+                  icon={BarChart3}
+                  title="No measured performance yet."
+                  description="Nothing has been published and measured through a connected analytics source yet."
+                />
+              ) : (
+                <div>
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <MetricCard
+                      label="Published"
+                      value={analytics.publishedCount}
+                      note="Measured records"
+                      icon={Send}
+                      accent="green"
+                    />
+                    {(
+                      [
+                        "views_or_plays",
+                        "engagements",
+                        "watch_time_seconds",
+                      ] as MetricName[]
+                    )
+                      .slice(0, 3)
+                      .map((metric, index) => {
+                        const value = analytics.totals[metric];
+                        const accents = ["purple", "gold", "blue"] as const;
+                        return (
+                          <MetricCard
+                            key={metric}
+                            label={METRIC_LABELS[metric]}
+                            value={value ? formatReading(value) : "—"}
+                            note={
+                              value && !value.available
+                                ? UNAVAILABLE_LABELS[value.reason]
+                                : "Measured total"
+                            }
+                            icon={BarChart3}
+                            accent={accents[index]}
+                          />
+                        );
+                      })}
+                  </div>
+                  <p className="mt-3 text-xs leading-5 text-ink-muted">
+                    Last fetched{" "}
+                    {describeFreshness(analytics.lastFetchedAt).toLowerCase()}.
+                  </p>
+                </div>
+              )}
+            </SectionCard>
+          </div>
+
+          <div className="xl:col-span-5">
+            <SectionCard
+              title="Post Preview"
+              description="A visual preview of the latest stored content item."
+            >
+              {latestContent ? (
+                <div className="overflow-hidden rounded-2xl border border-edge/80 bg-[#080d18] shadow-[0_20px_55px_rgba(0,0,0,0.24)]">
+                  <div className="relative aspect-[16/10] overflow-hidden border-b border-edge/70 bg-[radial-gradient(circle_at_18%_8%,rgba(113,56,220,0.28),transparent_36%),radial-gradient(circle_at_86%_18%,rgba(201,169,97,0.14),transparent_30%),linear-gradient(145deg,#0b1122,#050912)] p-5 sm:p-6">
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-[linear-gradient(120deg,transparent_42%,rgba(255,255,255,0.025)_43%,transparent_45%)]"
+                    />
+                    <div className="relative flex h-full flex-col justify-between">
+                      <span className="w-fit rounded-full border border-gold-dim/45 bg-black/20 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">
+                        {latestContent.topic ??
+                          CONTENT_TYPE_LABELS[latestContent.content_type]}
+                      </span>
+                      <div>
+                        <p className="max-w-md text-xl font-semibold leading-tight tracking-[-0.02em] text-ink-primary sm:text-2xl">
+                          {latestContent.title}
+                        </p>
+                        {latestContent.scripture_reference ? (
+                          <p className="mt-2 text-xs font-semibold text-[#bda7ff]">
+                            {latestContent.scripture_reference} ·{" "}
+                            {latestContent.scripture_translation}
+                          </p>
+                        ) : null}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-3 p-4">
+                    {latestContent.scripture_reference ? (
+                      <div className="flex items-center justify-between gap-3 text-xs">
+                        <span className="text-ink-muted">Scripture status</span>
+                        <StatusBadge
+                          tone={
+                            latestContent.scripture_verification_status ===
+                            "manually_verified"
+                              ? "configured"
+                              : "inactive"
+                          }
+                        >
+                          {
+                            SCRIPTURE_VERIFICATION_LABELS[
+                              latestContent.scripture_verification_status
+                            ]
+                          }
+                        </StatusBadge>
+                      </div>
+                    ) : null}
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="text-ink-muted">Content status</span>
+                      <span className="font-medium text-ink-secondary">
+                        {CONTENT_STATUS_LABELS[latestContent.status]}
+                      </span>
+                    </div>
+                    <Link
+                      href={`/dashboard/content/${latestContent.id}`}
+                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-edge-strong bg-white/[0.025] px-3.5 py-2.5 text-xs font-semibold text-ink-primary transition hover:bg-white/[0.055]"
+                    >
+                      Open content item
+                      <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <EmptyState
+                  icon={MonitorPlay}
+                  title="Nothing to preview yet."
+                  description="The latest real content item will appear here after one is created."
+                />
+              )}
+            </SectionCard>
+          </div>
+
+          <div className="xl:col-span-7">
+            <SectionCard
+              title="Content Calendar"
+              description="The next approved items that have a real stored schedule time."
+              action={
+                <SectionLink href="/dashboard/calendar">
+                  View calendar
+                </SectionLink>
+              }
+            >
+              {upcoming.length === 0 ? (
+                <EmptyState
+                  icon={CalendarDays}
+                  title="Calendar is clear."
+                  description="Approve a platform variant and assign a time to make it appear here."
+                />
+              ) : (
+                <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                  {upcoming.map((entry) => (
+                    <Link
+                      key={entry.post.id}
+                      href={`/dashboard/calendar?entry=${entry.post.id}`}
+                      className="group rounded-xl border border-edge/70 bg-white/[0.018] p-3.5 transition hover:border-edge-strong hover:bg-white/[0.045]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="text-[9px] font-semibold uppercase tracking-[0.14em] text-gold">
+                          {PLATFORM_LABELS[entry.variant.platform]}
+                        </span>
+                        <ChevronRight
+                          aria-hidden="true"
+                          className="size-3.5 text-ink-muted transition group-hover:translate-x-0.5"
+                        />
+                      </div>
+                      <span className="mt-1.5 block line-clamp-2 text-sm font-medium text-ink-primary">
+                        {entry.item.title}
+                      </span>
+                      <span className="mt-2.5 block text-xs text-ink-muted">
+                        {formatInTimeZone(
+                          new Date(entry.post.scheduled_for),
+                          entry.post.timezone,
+                        )}
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </SectionCard>
+          </div>
+
+          <div className="xl:col-span-12">
+            <SectionCard
+              title="Production Progress"
+              description="Live counts derived from real production records across the content workflow."
+              action={
+                <SectionLink href="/dashboard/production">
+                  Open board
+                </SectionLink>
               }
             >
               <WorkflowPipeline counts={stageCounts} />
             </SectionCard>
+          </div>
 
+          <div className="xl:col-span-8">
             <SectionCard
               title="Quick Actions"
-              description="Jump directly into the working areas of the dashboard."
+              description="Move directly into the next working area without duplicating full studios on the dashboard."
             >
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <QuickActionLink
@@ -623,221 +764,21 @@ export default async function DashboardPage() {
             </SectionCard>
           </div>
 
-          <aside className="flex min-w-0 flex-col gap-6">
-            <SectionCard
-              title="Post Preview"
-              description="A truthful preview of the latest stored content item."
-            >
-              {latestContent ? (
-                <div className="overflow-hidden rounded-2xl border border-edge bg-canvas/70 shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
-                  <div className="aspect-[16/9] border-b border-edge bg-[radial-gradient(circle_at_25%_15%,rgba(77,141,247,0.18),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(201,169,97,0.12),transparent_30%),linear-gradient(145deg,#0c142a,#070b16)] p-5 sm:p-6">
-                    <div className="flex h-full flex-col justify-between">
-                      <span className="w-fit rounded-full border border-gold-dim/50 bg-gold/10 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-gold">
-                        {latestContent.topic ??
-                          CONTENT_TYPE_LABELS[latestContent.content_type]}
-                      </span>
-                      <div>
-                        <p className="text-lg font-semibold leading-snug text-ink-primary sm:text-xl">
-                          {latestContent.title}
-                        </p>
-                        {latestContent.scripture_reference ? (
-                          <p className="mt-2 text-xs font-medium text-highlight-soft">
-                            {latestContent.scripture_reference} ·{" "}
-                            {latestContent.scripture_translation}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="space-y-3 p-4">
-                    {latestContent.scripture_reference ? (
-                      <div className="flex items-center justify-between gap-3 text-xs">
-                        <span className="text-ink-muted">Scripture status</span>
-                        <StatusBadge
-                          tone={
-                            latestContent.scripture_verification_status ===
-                            "manually_verified"
-                              ? "configured"
-                              : "inactive"
-                          }
-                        >
-                          {
-                            SCRIPTURE_VERIFICATION_LABELS[
-                              latestContent.scripture_verification_status
-                            ]
-                          }
-                        </StatusBadge>
-                      </div>
-                    ) : null}
-                    <div className="flex items-center justify-between gap-3 text-xs">
-                      <span className="text-ink-muted">Content status</span>
-                      <span className="font-medium text-ink-secondary">
-                        {CONTENT_STATUS_LABELS[latestContent.status]}
-                      </span>
-                    </div>
-                    <Link
-                      href={`/dashboard/content/${latestContent.id}`}
-                      className="inline-flex w-full items-center justify-center rounded-lg border border-edge-strong bg-panel-raised/60 px-3.5 py-2 text-xs font-medium text-ink-primary transition hover:bg-panel-hover"
-                    >
-                      Open content item
-                    </Link>
-                  </div>
-                </div>
-              ) : (
-                <EmptyState
-                  icon={MonitorPlay}
-                  title="Nothing to preview yet."
-                  description="The latest real content item will appear here after one is created."
-                />
-              )}
-            </SectionCard>
-
-            <SectionCard
-              title="Video Creation Studio"
-              description="Latest real project and timeline summary. Editing remains in the dedicated studio."
-              action={
-                <Link
-                  href="/dashboard/video"
-                  className="text-xs font-medium text-highlight-soft hover:text-ink-primary"
-                >
-                  Open studio
-                </Link>
-              }
-            >
-              {latestVideo ? (
-                <div className="space-y-4">
-                  <div className="rounded-xl border border-edge/70 bg-panel-raised/35 p-4">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-ink-primary">
-                          {latestVideo.name}
-                        </p>
-                        <p className="mt-1 text-xs text-ink-muted">
-                          {latestVideo.aspect_ratio} ·{" "}
-                          {latestVideo.duration_estimate_seconds}s · revision{" "}
-                          {latestVideo.current_revision}
-                        </p>
-                      </div>
-                      <StatusBadge
-                        tone={
-                          latestVideo.status === "ready_for_review"
-                            ? "accent"
-                            : "inactive"
-                        }
-                      >
-                        {VIDEO_PROJECT_STATUS_LABELS[latestVideo.status]}
-                      </StatusBadge>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mb-2 flex items-center justify-between text-xs">
-                      <span className="font-medium text-ink-secondary">
-                        Timeline
-                      </span>
-                      <span className="text-ink-muted">
-                        {latestScenes.length} scene
-                        {latestScenes.length === 1 ? "" : "s"}
-                      </span>
-                    </div>
-                    {latestScenes.length === 0 ? (
-                      <div className="rounded-xl border border-dashed border-edge-strong px-4 py-5 text-center text-xs text-ink-muted">
-                        No scenes have been added to this project yet.
-                      </div>
-                    ) : (
-                      <div className="flex min-h-14 gap-1 overflow-hidden rounded-xl border border-edge bg-canvas/70 p-2">
-                        {latestScenes.slice(0, 8).map((scene) => (
-                          <div
-                            key={scene.id}
-                            className="flex min-w-12 flex-1 items-center justify-center rounded-md border border-highlight/20 bg-highlight/10 px-1 text-center text-[9px] font-medium uppercase tracking-wide text-highlight-soft"
-                            title={`${scene.scene_type} · ${scene.duration_seconds}s`}
-                          >
-                            {scene.scene_order}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <EmptyState
-                  icon={Clapperboard}
-                  title="No video project yet."
-                  description="Create a video project in the studio to see its timeline summary here."
-                />
-              )}
-            </SectionCard>
-
-            <SectionCard
-              title="Creator Tools"
-              description="Premium shortcuts with honest capability states."
-            >
-              <div className="space-y-2.5">
-                <Link
-                  href="/dashboard/captions"
-                  className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
-                >
-                  <span className="flex size-10 items-center justify-center rounded-lg border border-highlight/20 bg-highlight/10 text-highlight-soft">
-                    <Captions aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-ink-primary">
-                      Auto Captions
-                    </span>
-                    <span className="block text-xs leading-5 text-ink-muted">
-                      Caption track workflow exists; automatic transcription is
-                      not built.
-                    </span>
-                  </span>
-                  <StatusBadge tone="inactive">Manual</StatusBadge>
-                </Link>
-                <Link
-                  href="/dashboard/captions"
-                  className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
-                >
-                  <span className="flex size-10 items-center justify-center rounded-lg border border-gold-dim/30 bg-gold/10 text-gold">
-                    <WandSparkles aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-ink-primary">
-                      Caption Templates
-                    </span>
-                    <span className="block text-xs leading-5 text-ink-muted">
-                      Caption Studio is available; reusable template automation
-                      is not yet implemented.
-                    </span>
-                  </span>
-                  <StatusBadge tone="inactive">Not built</StatusBadge>
-                </Link>
-                <Link
-                  href="/dashboard/media"
-                  className="flex items-center gap-3 rounded-xl border border-edge/70 bg-panel-raised/35 p-3.5 transition hover:border-edge-strong hover:bg-panel-hover/55"
-                >
-                  <span className="flex size-10 items-center justify-center rounded-lg border border-edge bg-panel text-ink-secondary">
-                    <Music2 aria-hidden="true" className="size-4" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-ink-primary">
-                      Music & Audio Library
-                    </span>
-                    <span className="block text-xs leading-5 text-ink-muted">
-                      Use stored media assets for background audio and voice
-                      files.
-                    </span>
-                  </span>
-                  <StatusBadge tone="configured">Available</StatusBadge>
-                </Link>
-              </div>
-            </SectionCard>
-
+          <div className="xl:col-span-4">
             <SectionCard
               title="System Status"
-              description="Deployment truth, not decorative green lights. Implemented is not connected; connected is not live-verified."
+              description="Operational truth only. Implemented is not connected; connected is not authorised; authorised is not live-verified."
+              action={
+                <SectionLink href="/dashboard/settings">
+                  Full readiness
+                </SectionLink>
+              }
             >
-              <ul className="space-y-2.5">
+              <ul className="space-y-2">
                 {readiness.map((entry) => (
                   <li
                     key={entry.label}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-edge/70 bg-panel-raised/30 px-3.5 py-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3"
                   >
                     <span className="text-sm text-ink-secondary">
                       {entry.label}
@@ -869,7 +810,7 @@ export default async function DashboardPage() {
                 })}
               </ul>
               {publishFailures > 0 ? (
-                <div className="mt-3 flex items-start gap-2 rounded-lg border border-gold-dim/40 bg-gold/10 px-3 py-2.5 text-xs leading-5 text-gold">
+                <div className="mt-3 flex items-start gap-2 rounded-xl border border-gold-dim/40 bg-gold/10 px-3 py-2.5 text-xs leading-5 text-gold">
                   <AlertTriangle
                     aria-hidden="true"
                     className="mt-0.5 size-4 shrink-0"
@@ -879,28 +820,26 @@ export default async function DashboardPage() {
                   be reviewed.
                 </div>
               ) : null}
-              <Link
-                href="/dashboard/settings"
-                className="mt-3 inline-flex items-center gap-1 text-xs font-medium text-highlight-soft hover:text-ink-primary"
-              >
-                Full operational readiness{" "}
-                <ChevronRight aria-hidden="true" className="size-3.5" />
-              </Link>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-edge/70 bg-white/[0.018] px-3 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                    Approved
+                  </p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums text-ink-primary">
+                    {approved}
+                  </p>
+                </div>
+                <div className="rounded-xl border border-edge/70 bg-white/[0.018] px-3 py-3">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.12em] text-ink-muted">
+                    Video projects
+                  </p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums text-ink-primary">
+                    {videoProjectsCount}
+                  </p>
+                </div>
+              </div>
             </SectionCard>
-
-            <div className="grid grid-cols-2 gap-3">
-              <MiniMetric
-                label="Approved"
-                value={approved}
-                note="Still valid"
-              />
-              <MiniMetric
-                label="Videos"
-                value={videoProjectsCount}
-                note="Active projects"
-              />
-            </div>
-          </aside>
+          </div>
         </div>
       </div>
     </DashboardShell>
