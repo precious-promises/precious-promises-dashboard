@@ -30,7 +30,10 @@ function NavRow({
           <Icon aria-hidden="true" className="size-[17px] shrink-0" />
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
           <span className="sr-only">(coming soon)</span>
-          <span aria-hidden="true" className="text-[9px] font-semibold tracking-wider">
+          <span
+            aria-hidden="true"
+            className="text-[9px] font-semibold tracking-wider"
+          >
             SOON
           </span>
         </span>
@@ -56,7 +59,9 @@ function NavRow({
           aria-hidden="true"
           className={cn(
             "size-[17px] shrink-0 transition-colors",
-            isActive ? "text-white" : "text-ink-muted group-hover:text-ink-secondary",
+            isActive
+              ? "text-white"
+              : "text-ink-muted group-hover:text-ink-secondary",
           )}
           strokeWidth={1.8}
         />
