@@ -18,7 +18,7 @@ describe("MobileSidebar", () => {
       name: "Dashboard navigation",
     });
 
-    expect(drawer).toHaveClass("bg-panel");
+    expect(drawer).toHaveClass("bg-[#060a15]");
     expect(drawer).not.toHaveClass("pp-glass");
     expect(document.body.style.overflow).toBe("hidden");
 
