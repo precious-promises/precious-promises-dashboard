@@ -11,21 +11,23 @@ export interface TopBarProps {
   email: string | null;
 }
 
-/**
- * The application top bar.
- *
- * Search and notifications are shells for features that do not exist. Both are
- * rendered `disabled` with an explicit "unavailable" in their accessible name,
- * so nobody — sighted or not — is invited to use a control that does nothing.
- */
+/** Shared premium top bar for all authenticated dashboard pages. */
 export function TopBar({ title, pathname, email }: TopBarProps) {
   return (
-    <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center gap-3 border-b border-edge bg-canvas/85 px-4 backdrop-blur-md sm:px-6">
+    <header className="sticky top-0 z-30 flex h-[4.25rem] shrink-0 items-center gap-3 border-b border-edge/80 bg-[#080d18]/94 px-4 backdrop-blur-xl sm:px-6 lg:px-7">
       <MobileSidebar pathname={pathname} />
 
-      <h1 className="min-w-0 flex-1 truncate text-base font-semibold tracking-tight text-ink-primary">
-        {title}
-      </h1>
+      <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <h1 className="truncate text-lg font-semibold tracking-tight text-ink-primary">
+            {title}
+          </h1>
+          <span className="hidden text-xs text-ink-muted md:inline">/</span>
+          <span className="hidden truncate text-xs text-ink-muted md:inline">
+            {title}
+          </span>
+        </div>
+      </div>
 
       <div className="flex items-center gap-2 sm:gap-3">
         <div className="relative hidden md:block">
@@ -38,7 +40,7 @@ export function TopBar({ title, pathname, email }: TopBarProps) {
             disabled
             placeholder="Search — coming soon"
             aria-label="Search (unavailable — coming soon)"
-            className="w-52 cursor-not-allowed rounded-lg border border-edge bg-panel-raised/40 py-2 pr-3 pl-9 text-sm text-ink-secondary opacity-70 placeholder:text-ink-muted lg:w-64"
+            className="w-56 cursor-not-allowed rounded-xl border border-edge/80 bg-white/[0.025] py-2 pr-3 pl-9 text-sm text-ink-secondary opacity-75 outline-none placeholder:text-ink-muted xl:w-72"
           />
         </div>
 
@@ -46,12 +48,10 @@ export function TopBar({ title, pathname, email }: TopBarProps) {
           type="button"
           disabled
           aria-label="Notifications (unavailable — coming soon)"
-          className="inline-flex size-9 cursor-not-allowed items-center justify-center rounded-lg border border-edge text-ink-muted opacity-70"
+          className="inline-flex size-9 cursor-not-allowed items-center justify-center rounded-xl border border-edge/80 bg-white/[0.02] text-ink-muted opacity-75"
         >
           <Bell aria-hidden="true" className="size-4" />
         </button>
-
-        <div className="mx-1 hidden h-8 w-px bg-edge sm:block" />
 
         <OwnerBadge email={email} />
         <LogoutButton />
