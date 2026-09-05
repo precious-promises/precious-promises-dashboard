@@ -5,8 +5,10 @@ import {
   Clock3,
   FileEdit,
   ShieldCheck,
+  Sparkles,
   XCircle,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -48,28 +50,45 @@ function Metric({
   value,
   note,
   icon: Icon,
+  accent,
 }: {
   label: string;
   value: number;
   note: string;
-  icon: typeof CheckSquare;
+  icon: LucideIcon;
+  accent: "purple" | "gold" | "blue" | "green" | "red" | "neutral";
 }) {
+  const accentClasses = {
+    purple: "border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]",
+    gold: "border-gold-dim/35 bg-gold/10 text-gold",
+    blue: "border-sky-400/20 bg-sky-400/10 text-sky-300",
+    green: "border-emerald-400/20 bg-emerald-400/10 text-emerald-300",
+    red: "border-red-400/20 bg-red-400/10 text-red-200",
+    neutral: "border-edge bg-white/[0.025] text-ink-secondary",
+  } as const;
+
   return (
-    <div className="rounded-2xl border border-edge bg-panel/70 p-4 shadow-sm">
+    <div className="group relative overflow-hidden rounded-2xl border border-edge/75 bg-[#0a0f1d]/90 p-4 shadow-[0_16px_45px_rgba(0,0,0,0.2)] transition duration-200 hover:-translate-y-0.5 hover:border-edge-strong sm:p-5">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      />
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
             {label}
           </p>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-ink-primary">
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.035em] text-ink-primary">
             {value}
           </p>
         </div>
-        <span className="rounded-xl border border-edge bg-panel-raised/70 p-2 text-highlight">
-          <Icon className="size-4" aria-hidden="true" />
+        <span
+          className={`flex size-9 shrink-0 items-center justify-center rounded-xl border ${accentClasses[accent]}`}
+        >
+          <Icon className="size-4" aria-hidden="true" strokeWidth={1.8} />
         </span>
       </div>
-      <p className="mt-2 text-xs leading-5 text-ink-muted">{note}</p>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">{note}</p>
     </div>
   );
 }
@@ -126,36 +145,59 @@ export default async function ApprovalQueuePage(
       pathname="/dashboard/approvals"
       email={user.email ?? null}
     >
-      <div className="flex w-full flex-col gap-6">
-        <section className="overflow-hidden rounded-3xl border border-edge bg-[radial-gradient(circle_at_top_right,rgba(77,141,247,0.15),transparent_35%),linear-gradient(135deg,rgba(12,20,42,0.96),rgba(7,11,22,0.96))] p-5 shadow-xl sm:p-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+      <div className="mx-auto flex w-full max-w-[1540px] flex-col gap-5 sm:gap-6">
+        <section className="relative overflow-hidden rounded-[24px] border border-edge/80 bg-[#090e1b] shadow-[0_30px_90px_rgba(0,0,0,0.34)]">
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(112,55,221,0.24),transparent_33%),radial-gradient(circle_at_78%_8%,rgba(201,169,97,0.11),transparent_26%),linear-gradient(135deg,rgba(255,255,255,0.018),transparent_44%)]"
+          />
+          <div className="relative grid gap-6 px-5 py-6 sm:px-7 sm:py-7 xl:grid-cols-[1fr_auto] xl:items-end xl:px-8">
             <div className="max-w-3xl">
-              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-highlight/30 bg-highlight/10 px-3 py-1 text-xs font-medium text-highlight-soft">
-                <ShieldCheck className="size-3.5" aria-hidden="true" />
-                Human review command centre
+              <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.19em] text-gold">
+                <Sparkles aria-hidden="true" className="size-3.5" />
+                Human Review Command Centre
               </div>
-              <h2 className="text-3xl font-semibold tracking-tight text-ink-primary sm:text-4xl">
-                Approval Queue
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-ink-primary sm:text-4xl lg:text-[42px]">
+                Decide what is ready to move forward
               </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
                 Review each platform variant independently before it can move
                 downstream. Approval records your decision only — it does not
-                schedule or publish anything.
+                schedule, publish or prove anything is live.
               </p>
+              <div className="mt-5 flex flex-wrap gap-2.5">
+                <Link
+                  href="/dashboard/captions"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#6931d6] to-[#7d39e6] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(103,46,214,0.28)] transition hover:brightness-110"
+                >
+                  Caption Studio
+                </Link>
+                <Link
+                  href="/dashboard/calendar"
+                  className="inline-flex items-center gap-2 rounded-xl border border-edge-strong bg-white/[0.025] px-4 py-2.5 text-sm font-medium text-ink-primary transition hover:bg-white/[0.055]"
+                >
+                  Content Calendar
+                </Link>
+              </div>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/dashboard/captions"
-                className="rounded-lg border border-edge-strong bg-panel-raised/70 px-4 py-2 text-sm font-semibold text-ink-primary transition-colors hover:bg-panel-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-              >
-                Caption Studio
-              </Link>
-              <Link
-                href="/dashboard/calendar"
-                className="rounded-lg bg-highlight px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-highlight-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
-              >
-                Content Calendar
-              </Link>
+
+            <div className="grid min-w-0 grid-cols-2 gap-2 sm:min-w-[330px]">
+              <div className="rounded-2xl border border-edge/75 bg-black/15 px-4 py-3">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Awaiting decision
+                </p>
+                <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-ink-primary">
+                  {groups.readyForReview.length}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-edge/75 bg-black/15 px-4 py-3">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.14em] text-ink-muted">
+                  Stale approvals
+                </p>
+                <p className="mt-1.5 text-2xl font-semibold tabular-nums tracking-[-0.03em] text-ink-primary">
+                  {invalidated}
+                </p>
+              </div>
             </div>
           </div>
         </section>
@@ -163,74 +205,87 @@ export default async function ApprovalQueuePage(
         {notice && NOTICES[notice] ? (
           <p
             role="status"
-            className="rounded-xl border border-edge-strong/70 bg-panel-raised/60 px-4 py-3 text-sm text-ink-secondary"
+            className="rounded-xl border border-[#7138dc]/25 bg-[#7138dc]/[0.07] px-4 py-3 text-sm leading-6 text-ink-secondary shadow-[0_12px_35px_rgba(0,0,0,0.14)]"
           >
             {NOTICES[notice]}
           </p>
         ) : null}
 
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-3 2xl:grid-cols-6">
           <Metric
             label="Ready"
             value={groups.readyForReview.length}
-            note="Platform variants currently awaiting a human decision."
+            note="Platform variants awaiting a human decision."
             icon={Clock3}
+            accent="purple"
           />
           <Metric
             label="Approved"
             value={groups.approved.length}
-            note="Stored approvals that remain in the approved queue."
+            note="Stored approvals still valid for their current content."
             icon={CheckCircle2}
+            accent="green"
           />
           <Metric
             label="Rejected"
             value={groups.rejected.length}
-            note="Variants rejected with their review outcome retained."
+            note="Variants with a retained rejection outcome."
             icon={XCircle}
+            accent="red"
           />
           <Metric
             label="Drafts"
             value={groups.draft.length}
-            note="Variants not yet submitted for review."
+            note="Variants not yet submitted for human review."
             icon={FileEdit}
+            accent="neutral"
           />
           <Metric
-            label="Stale Approval"
+            label="Stale approval"
             value={invalidated}
-            note="Approvals invalidated because the underlying content changed."
+            note="Old approvals invalidated by a content change."
             icon={AlertTriangle}
+            accent="gold"
           />
           <Metric
             label="Scheduled"
             value={scheduled}
-            note="Reviewed variants that also have a real active schedule row."
+            note="Reviewed variants that also have an active schedule row."
             icon={CheckSquare}
+            accent="blue"
           />
         </section>
 
         {invalidated > 0 ? (
-          <div className="rounded-2xl border border-gold-dim/60 bg-gold/10 px-5 py-4">
-            <p className="text-sm font-semibold text-gold">
-              {invalidated} approval{invalidated === 1 ? "" : "s"} need fresh
-              review.
-            </p>
-            <p className="mt-1 text-xs leading-5 text-ink-secondary">
-              The approved fingerprint no longer matches the stored content, so
-              the old decision cannot be treated as current approval.
-            </p>
-          </div>
+          <section className="rounded-2xl border border-gold-dim/50 bg-gold/[0.07] px-4 py-4 shadow-[0_16px_45px_rgba(0,0,0,0.18)] sm:px-5">
+            <div className="flex items-start gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-gold-dim/40 bg-gold/10 text-gold">
+                <AlertTriangle aria-hidden="true" className="size-4" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-gold">
+                  {invalidated} approval{invalidated === 1 ? "" : "s"} need
+                  fresh review.
+                </p>
+                <p className="mt-1 text-xs leading-5 text-ink-secondary">
+                  The approved fingerprint no longer matches the stored content,
+                  so the earlier decision cannot be treated as current approval.
+                </p>
+              </div>
+            </div>
+          </section>
         ) : null}
 
         {rows.length === 0 ? (
-          <div className="pp-glass rounded-2xl border border-edge">
+          <section className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/92 shadow-[0_18px_55px_rgba(0,0,0,0.22)]">
             <EmptyState
               icon={CheckSquare}
               title="Nothing to review yet."
               description="Write a caption for a platform in the Caption Studio and mark it ready for review; it will appear here."
             />
-          </div>
+          </section>
         ) : (
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)]">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)]">
             <div className="flex flex-col gap-4">
               {sections.map((section) => (
                 <SectionCard
@@ -241,9 +296,12 @@ export default async function ApprovalQueuePage(
                       ? "Nothing here."
                       : `${section.rows.length} ${section.rows.length === 1 ? "variant" : "variants"}.`
                   }
+                  className="shadow-[0_18px_55px_rgba(0,0,0,0.2)]"
                 >
                   {section.rows.length === 0 ? (
-                    <p className="text-sm text-ink-muted">Nothing here.</p>
+                    <p className="rounded-xl border border-dashed border-edge/80 bg-black/10 px-4 py-5 text-center text-sm text-ink-muted">
+                      Nothing here.
+                    </p>
                   ) : (
                     <ul className="flex flex-col gap-2">
                       {section.rows.map((row) => (
@@ -262,6 +320,7 @@ export default async function ApprovalQueuePage(
                 <SectionCard
                   title="Drafts"
                   description="Not yet submitted for review."
+                  className="shadow-[0_18px_55px_rgba(0,0,0,0.2)]"
                 >
                   <ul className="flex flex-col gap-2">
                     {groups.draft.map((row) => (
@@ -284,30 +343,38 @@ export default async function ApprovalQueuePage(
                     ? "Scripture is separated from generated or written copy so the source text stays visibly distinct."
                     : "Choose a variant to review."
                 }
+                className="shadow-[0_24px_70px_rgba(0,0,0,0.26)]"
               >
                 {selected ? (
                   <ReviewDetail row={selected} script={script} />
                 ) : (
-                  <p className="text-sm text-ink-muted">
+                  <div className="rounded-xl border border-dashed border-edge/80 bg-black/10 px-4 py-8 text-center text-sm text-ink-muted">
                     Select a variant from the queue.
-                  </p>
+                  </div>
                 )}
               </SectionCard>
             </div>
           </div>
         )}
 
-        <div className="rounded-2xl border border-edge bg-panel/55 px-5 py-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-muted">
-            Approval truth boundary
-          </p>
-          <p className="mt-2 text-sm leading-6 text-ink-secondary">
-            Approval applies to one platform variant and one exact content
-            fingerprint. It is not a schedule, publish attempt or live-platform
-            result. If the underlying content changes, the earlier approval no
-            longer proves that the current version was reviewed.
-          </p>
-        </div>
+        <section className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/75 px-4 py-4 sm:px-5">
+          <div className="flex items-start gap-3">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-emerald-400/20 bg-emerald-400/10 text-emerald-300">
+              <ShieldCheck aria-hidden="true" className="size-4" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-ink-primary">
+                Approval truth boundary
+              </p>
+              <p className="mt-1 text-xs leading-5 text-ink-muted">
+                Approval applies to one platform variant and one exact content
+                fingerprint. It is not a schedule, publish attempt or
+                live-platform result. If underlying content changes, the earlier
+                approval no longer proves that the current version was reviewed.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </DashboardShell>
   );
