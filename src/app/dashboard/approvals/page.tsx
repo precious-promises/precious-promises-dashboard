@@ -264,8 +264,8 @@ export default async function ApprovalQueuePage(
               </span>
               <div>
                 <p className="text-sm font-semibold text-gold">
-                  {invalidated} approval{invalidated === 1 ? "" : "s"} need fresh
-                  review.
+                  {invalidated} approval{invalidated === 1 ? "" : "s"} need
+                  fresh review.
                 </p>
                 <p className="mt-1 text-xs leading-5 text-ink-secondary">
                   The approved fingerprint no longer matches the stored content,
