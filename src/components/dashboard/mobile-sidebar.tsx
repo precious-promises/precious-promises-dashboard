@@ -73,7 +73,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            aria-label="Close navigation menu"
+            aria-label="Dismiss navigation menu"
             onClick={close}
             className="absolute inset-0 size-full cursor-default bg-black/85 backdrop-blur-sm"
           />
