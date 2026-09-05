@@ -467,8 +467,8 @@ export default async function PlannerPage() {
             description="Capture the idea, priority, topic and target intent here. This form does not approve, schedule or publish anything."
           >
             <div className="mb-4 rounded-xl border border-[#7138dc]/20 bg-[#7138dc]/[0.055] px-4 py-3 text-xs leading-5 text-ink-secondary">
-              Use the planner for intent and prioritisation. When the idea becomes
-              real content, it continues through the ordinary Scripture,
+              Use the planner for intent and prioritisation. When the idea
+              becomes real content, it continues through the ordinary Scripture,
               production, review, approval and publishing controls.
             </div>
             <PlannerForm />
