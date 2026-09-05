@@ -19,7 +19,7 @@ export function OwnerBadge({ email }: { email: string | null }) {
         <span className="block truncate text-[11px] text-ink-muted">
           {OWNER_ROLE}
         </span>
-        {email ? <span className="sr-only">Signed in as {email}</span> : null}
+        {email ? <span className="sr-only">{email}</span> : null}
       </span>
       <ChevronDown
         aria-hidden="true"
