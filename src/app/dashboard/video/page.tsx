@@ -472,12 +472,17 @@ export default async function VideoStudioPage() {
               </p>
               <div className="mt-2 grid gap-2 text-xs leading-5 text-ink-muted md:grid-cols-2 xl:grid-cols-4">
                 <p>
-                  <strong className="text-ink-secondary">Preview ≠ render.</strong>{" "}
+                  <strong className="text-ink-secondary">
+                    Preview ≠ render.
+                  </strong>{" "}
                   Browser preview produces no encoded video file.
                 </p>
                 <p>
-                  <strong className="text-ink-secondary">Render ≠ approval.</strong>{" "}
-                  An output file is production evidence, not publishing permission.
+                  <strong className="text-ink-secondary">
+                    Render ≠ approval.
+                  </strong>{" "}
+                  An output file is production evidence, not publishing
+                  permission.
                 </p>
                 <p>
                   <strong className="text-ink-secondary">
