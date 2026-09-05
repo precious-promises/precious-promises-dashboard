@@ -62,11 +62,18 @@ function Metric({
 }) {
   return (
     <div className="group relative overflow-hidden rounded-2xl border border-edge/75 bg-[#0a0f1d]/90 p-4 shadow-[0_16px_45px_rgba(0,0,0,0.2)] transition duration-200 hover:-translate-y-0.5 hover:border-edge-strong sm:p-5">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent"
+      />
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">{label}</p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.035em] text-ink-primary">{value}</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-ink-muted">
+            {label}
+          </p>
+          <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.035em] text-ink-primary">
+            {value}
+          </p>
         </div>
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-gold-dim/35 bg-gold/10 text-gold">
           <Icon className="size-4" aria-hidden="true" strokeWidth={1.8} />
@@ -122,16 +129,23 @@ export default async function ScriptureStudioPage(
     >
       <div className="mx-auto flex w-full max-w-[1500px] flex-col gap-5 sm:gap-6">
         <section className="relative overflow-hidden rounded-[24px] border border-edge/80 bg-[#090e1b] shadow-[0_30px_90px_rgba(0,0,0,0.34)]">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(112,55,221,0.22),transparent_33%),radial-gradient(circle_at_78%_8%,rgba(201,169,97,0.16),transparent_27%),linear-gradient(135deg,rgba(255,255,255,0.018),transparent_44%)]" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_0%,rgba(112,55,221,0.22),transparent_33%),radial-gradient(circle_at_78%_8%,rgba(201,169,97,0.16),transparent_27%),linear-gradient(135deg,rgba(255,255,255,0.018),transparent_44%)]"
+          />
           <div className="relative flex flex-col gap-5 px-5 py-6 sm:px-7 sm:py-7 lg:flex-row lg:items-end lg:justify-between lg:px-8">
             <div className="max-w-3xl">
               <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.19em] text-gold">
                 <Sparkles className="size-3.5" aria-hidden="true" />
                 Scripture Integrity Centre
               </div>
-              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-ink-primary sm:text-4xl lg:text-[42px]">Verify Scripture with a clear human-controlled record</h2>
+              <h2 className="text-3xl font-semibold tracking-[-0.035em] text-ink-primary sm:text-4xl lg:text-[42px]">
+                Verify Scripture with a clear human-controlled record
+              </h2>
               <p className="mt-3 max-w-2xl text-sm leading-6 text-ink-secondary">
-                Review every content item carrying Scripture, see exactly where verification stands, and make the human verification decision. Verse wording remains controlled through Content Library.
+                Review every content item carrying Scripture, see exactly where
+                verification stands, and make the human verification decision.
+                Verse wording remains controlled through Content Library.
               </p>
             </div>
 
@@ -146,18 +160,46 @@ export default async function ScriptureStudioPage(
         </section>
 
         <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <Metric label="Scripture Items" value={allItems.length} note="Content items with a recorded Scripture reference." icon={BookOpen} />
-          <Metric label="Verified" value={manuallyVerified} note="Items carrying an explicit manual verification record." icon={CheckCircle2} />
-          <Metric label="Verification Required" value={verificationRequired} note="Items explicitly marked as needing a new verification decision." icon={AlertTriangle} />
-          <Metric label="Unverified" value={unverified} note="Recorded Scripture without a manual verification decision." icon={ShieldCheck} />
-          <Metric label="Ready to Verify" value={readyToVerify} note="Unverified items with both reference and stored verse text present." icon={CheckCircle2} />
+          <Metric
+            label="Scripture Items"
+            value={allItems.length}
+            note="Content items with a recorded Scripture reference."
+            icon={BookOpen}
+          />
+          <Metric
+            label="Verified"
+            value={manuallyVerified}
+            note="Items carrying an explicit manual verification record."
+            icon={CheckCircle2}
+          />
+          <Metric
+            label="Verification Required"
+            value={verificationRequired}
+            note="Items explicitly marked as needing a new verification decision."
+            icon={AlertTriangle}
+          />
+          <Metric
+            label="Unverified"
+            value={unverified}
+            note="Recorded Scripture without a manual verification decision."
+            icon={ShieldCheck}
+          />
+          <Metric
+            label="Ready to Verify"
+            value={readyToVerify}
+            note="Unverified items with both reference and stored verse text present."
+            icon={CheckCircle2}
+          />
         </section>
 
         <SectionCard
           title="Verification queue"
           description="Filter the review surface by the stored Scripture verification status."
         >
-          <nav aria-label="Verification filter" className="flex flex-wrap gap-2">
+          <nav
+            aria-label="Verification filter"
+            className="flex flex-wrap gap-2"
+          >
             {FILTERS.map((option) => {
               const isActive = (filter ?? "") === option.value;
               const href = option.value
@@ -179,17 +221,26 @@ export default async function ScriptureStudioPage(
               );
             })}
           </nav>
-          <p className="mt-3 text-xs leading-5 text-ink-muted">Showing {items.length} of {allItems.length} Scripture items.</p>
+          <p className="mt-3 text-xs leading-5 text-ink-muted">
+            Showing {items.length} of {allItems.length} Scripture items.
+          </p>
         </SectionCard>
 
         {items.length === 0 ? (
           <div className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/90">
             <EmptyState
               icon={BookOpen}
-              title={filter ? "No Scripture matches this filter." : "No Scripture recorded yet."}
+              title={
+                filter
+                  ? "No Scripture matches this filter."
+                  : "No Scripture recorded yet."
+              }
               description="Scripture is entered on a content item in the Content Library. Once a reference is recorded, it appears here for verification."
               action={
-                <Link href="/dashboard/content" className="rounded-xl border border-edge-strong px-4 py-2 text-sm font-medium text-ink-primary transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight">
+                <Link
+                  href="/dashboard/content"
+                  className="rounded-xl border border-edge-strong px-4 py-2 text-sm font-medium text-ink-primary transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                >
                   Go to Content Library
                 </Link>
               }
@@ -202,7 +253,8 @@ export default async function ScriptureStudioPage(
                 scripture_reference: item.scripture_reference,
                 scripture_text: item.scripture_text,
               });
-              const alreadyVerified = item.scripture_verification_status === "manually_verified";
+              const alreadyVerified =
+                item.scripture_verification_status === "manually_verified";
 
               return (
                 <li key={item.id} className="min-w-0">
@@ -219,12 +271,17 @@ export default async function ScriptureStudioPage(
 
                     {!alreadyVerified && !verifiable ? (
                       <div className="mt-3 rounded-xl border border-edge bg-white/[0.02] px-3 py-2 text-xs leading-5 text-ink-muted">
-                        Manual verification is unavailable until both the Scripture reference and stored verse wording are present.
+                        Manual verification is unavailable until both the
+                        Scripture reference and stored verse wording are
+                        present.
                       </div>
                     ) : null}
 
                     <div className="mt-4 flex flex-wrap items-center gap-3">
-                      <Link href={`/dashboard/content/${item.id}`} className="rounded-xl border border-edge-strong px-4 py-2 text-sm font-medium text-ink-primary transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight">
+                      <Link
+                        href={`/dashboard/content/${item.id}`}
+                        className="rounded-xl border border-edge-strong px-4 py-2 text-sm font-medium text-ink-primary transition hover:bg-white/[0.05] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                      >
                         View content
                       </Link>
 
@@ -259,9 +316,16 @@ export default async function ScriptureStudioPage(
               <ShieldCheck className="size-4" aria-hidden="true" />
             </span>
             <div>
-              <h3 className="text-sm font-semibold text-ink-primary">Scripture truth boundary</h3>
+              <h3 className="text-sm font-semibold text-ink-primary">
+                Scripture truth boundary
+              </h3>
               <p className="mt-1 text-xs leading-5 text-ink-muted">
-                Scripture Studio never generates, completes, corrects or translates a verse. Manual verification records a human review decision; it does not prove that an external Bible source was queried. Changing Scripture wording belongs in Content Library and must reset verification before the content can rely on the previous approval path again.
+                Scripture Studio never generates, completes, corrects or
+                translates a verse. Manual verification records a human review
+                decision; it does not prove that an external Bible source was
+                queried. Changing Scripture wording belongs in Content Library
+                and must reset verification before the content can rely on the
+                previous approval path again.
               </p>
             </div>
           </div>
