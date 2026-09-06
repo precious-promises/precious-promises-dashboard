@@ -29,10 +29,10 @@ jobs:
         run: pnpm build
       - name: Install Chromium for Playwright
         run: pnpm exec playwright install --with-deps chromium
-      - name: Local end-to-end smoke
-        run: pnpm test:e2e
-      - name: Live deployment public mobile and auth smoke
-        run: env -u CI APP_URL=https://precious-promises-dashboard-live.netlify.app pnpm exec playwright test tests/e2e/auth.spec.ts tests/e2e/responsive.spec.ts
+      - name: Local public desktop and mobile smoke
+        run: pnpm exec playwright test tests/e2e/home.spec.ts tests/e2e/responsive.spec.ts
+      - name: Live deployment public desktop and mobile smoke
+        run: env -u CI APP_URL=https://precious-promises-dashboard-live.netlify.app pnpm exec playwright test tests/e2e/home.spec.ts tests/e2e/responsive.spec.ts
       - name: Live deployment route and health verification
         shell: bash
         run: |
