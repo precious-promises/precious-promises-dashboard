@@ -1,7 +1,8 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { type LoginState, signIn } from "./actions";
@@ -27,9 +28,15 @@ function SubmitButton() {
 
 export function LoginForm() {
   const [state, formAction] = useActionState(signIn, INITIAL_STATE);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <form action={formAction} className="flex w-full flex-col gap-4" noValidate>
+    <form
+      action={formAction}
+      className="flex w-full flex-col gap-4"
+      autoComplete="on"
+      noValidate
+    >
       {state.error ? (
         <p
           role="alert"
@@ -50,7 +57,9 @@ export function LoginForm() {
           id="email"
           name="email"
           type="email"
-          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoComplete="username"
           required
           aria-invalid={state.fieldErrors?.email ? true : undefined}
           aria-describedby={
@@ -80,24 +89,45 @@ export function LoginForm() {
             Forgot password?
           </Link>
         </div>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          aria-invalid={state.fieldErrors?.password ? true : undefined}
-          aria-describedby={
-            state.fieldErrors?.password ? "password-error" : undefined
-          }
-          className={FIELD_CLASSES}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            autoComplete="current-password"
+            required
+            aria-invalid={state.fieldErrors?.password ? true : undefined}
+            aria-describedby={
+              state.fieldErrors?.password ? "password-error" : undefined
+            }
+            className={`${FIELD_CLASSES} w-full pr-12`}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((visible) => !visible)}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            aria-pressed={showPassword}
+            className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-ink-muted transition-colors hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-highlight"
+          >
+            {showPassword ? (
+              <EyeOff aria-hidden="true" className="size-4.5" />
+            ) : (
+              <Eye aria-hidden="true" className="size-4.5" />
+            )}
+          </button>
+        </div>
         {state.fieldErrors?.password ? (
           <p id="password-error" className="text-sm text-red-300">
             {state.fieldErrors.password}
           </p>
         ) : null}
       </div>
+
+      <p className="text-xs leading-5 text-ink-muted">
+        Your browser or Google Password Manager can save this sign-in securely
+        and offer it next time. Precious Promises never stores a readable copy
+        of the password in the dashboard.
+      </p>
 
       <SubmitButton />
     </form>

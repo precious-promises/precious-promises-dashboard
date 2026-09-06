@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("password management safety", () => {
+  const loginFormPath = "src/app/login/login-form.tsx";
   const changeActionPath = "src/app/dashboard/settings/password-actions.ts";
   const changeFormPath = "src/components/settings/password-form.tsx";
   const changePagePath = "src/app/dashboard/settings/password/page.tsx";
@@ -25,8 +26,9 @@ describe("password management safety", () => {
     expect(action).not.toContain("console.");
   });
 
-  it("never renders or persists submitted password values", () => {
+  it("never persists submitted password values in application storage", () => {
     const files = [
+      loginFormPath,
       changeActionPath,
       changeFormPath,
       changePagePath,
@@ -47,14 +49,35 @@ describe("password management safety", () => {
     }
   });
 
+  it("supports browser password managers and explicit password visibility", () => {
+    const login = readFileSync(join(process.cwd(), loginFormPath), "utf8");
+    const change = readFileSync(join(process.cwd(), changeFormPath), "utf8");
+    const recovery = readFileSync(
+      join(process.cwd(), recoveryFormPath),
+      "utf8",
+    );
+
+    expect(login).toContain('autoComplete="username"');
+    expect(login).toContain('autoComplete="current-password"');
+    expect(login).toContain('autoComplete="on"');
+    expect(login).toContain("showPassword");
+    expect(login).toContain("Show password");
+
+    expect(change).toContain('autoComplete="on"');
+    expect(change).toContain('"current-password" | "new-password"');
+    expect(change).toContain("setVisible");
+
+    expect(recovery).toContain('autoComplete="new-password"');
+    expect(recovery).toContain('autoComplete="on"');
+    expect(recovery).toContain("setVisible");
+  });
+
   it("requires current, new and confirmed password inputs for signed-in changes", () => {
     const form = readFileSync(join(process.cwd(), changeFormPath), "utf8");
 
     expect(form).toContain('name="currentPassword"');
     expect(form).toContain('name="newPassword"');
     expect(form).toContain('name="confirmPassword"');
-    expect(form).toContain('autoComplete="current-password"');
-    expect(form.match(/autoComplete="new-password"/g)?.length).toBe(2);
   });
 
   it("keeps the change-password page behind authenticated dashboard access", () => {

@@ -1,14 +1,15 @@
 "use client";
 
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useRef } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { type RecoveryPasswordState, updateRecoveredPassword } from "./actions";
 
 const INITIAL_STATE: RecoveryPasswordState = {};
 const FIELD =
-  "w-full rounded-lg border border-edge bg-panel-raised/50 px-3.5 py-2.5 text-sm leading-6 text-ink-primary outline-none transition-colors placeholder:text-ink-muted focus-visible:border-highlight focus-visible:ring-2 focus-visible:ring-highlight/35 aria-[invalid=true]:border-red-500/60";
+  "w-full rounded-lg border border-edge bg-panel-raised/50 px-3.5 py-2.5 pr-12 text-sm leading-6 text-ink-primary outline-none transition-colors placeholder:text-ink-muted focus-visible:border-highlight focus-visible:ring-2 focus-visible:ring-highlight/35 aria-[invalid=true]:border-red-500/60";
 const LABEL = "mb-1.5 block text-sm font-medium text-ink-secondary";
 
 function SubmitButton() {
@@ -22,6 +23,69 @@ function SubmitButton() {
     >
       {pending ? "Updating password…" : "Set new password"}
     </button>
+  );
+}
+
+function RecoveryPasswordField({
+  id,
+  name,
+  label,
+  error,
+  hint,
+}: {
+  id: string;
+  name: "newPassword" | "confirmPassword";
+  label: string;
+  error?: string;
+  hint?: string;
+}) {
+  const [visible, setVisible] = useState(false);
+  const errorId = `${id}-error`;
+
+  return (
+    <div>
+      <label htmlFor={id} className={LABEL}>
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          id={id}
+          name={name}
+          type={visible ? "text" : "password"}
+          autoComplete="new-password"
+          minLength={name === "newPassword" ? 8 : undefined}
+          maxLength={name === "newPassword" ? 128 : undefined}
+          required
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
+          className={FIELD}
+        />
+        <button
+          type="button"
+          onClick={() => setVisible((value) => !value)}
+          aria-label={
+            visible
+              ? `Hide ${label.toLowerCase()}`
+              : `Show ${label.toLowerCase()}`
+          }
+          aria-pressed={visible}
+          className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-lg text-ink-muted transition-colors hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-highlight"
+        >
+          {visible ? (
+            <EyeOff aria-hidden="true" className="size-4.5" />
+          ) : (
+            <Eye aria-hidden="true" className="size-4.5" />
+          )}
+        </button>
+      </div>
+      {error ? (
+        <p id={errorId} className="mt-1.5 text-sm text-red-300">
+          {error}
+        </p>
+      ) : hint ? (
+        <p className="mt-1.5 text-xs leading-5 text-ink-muted">{hint}</p>
+      ) : null}
+    </div>
   );
 }
 
@@ -43,6 +107,7 @@ export function RecoveryPasswordForm() {
       ref={formRef}
       action={formAction}
       className="flex flex-col gap-4"
+      autoComplete="on"
       noValidate
     >
       {state.error ? (
@@ -63,67 +128,25 @@ export function RecoveryPasswordForm() {
         </p>
       ) : null}
 
-      <div>
-        <label htmlFor="recovery-new-password" className={LABEL}>
-          New password
-        </label>
-        <input
-          id="recovery-new-password"
-          name="newPassword"
-          type="password"
-          autoComplete="new-password"
-          minLength={8}
-          maxLength={128}
-          required
-          aria-invalid={state.fieldErrors?.newPassword ? true : undefined}
-          aria-describedby={
-            state.fieldErrors?.newPassword
-              ? "recovery-new-password-error"
-              : undefined
-          }
-          className={FIELD}
-        />
-        {state.fieldErrors?.newPassword ? (
-          <p
-            id="recovery-new-password-error"
-            className="mt-1.5 text-sm text-red-300"
-          >
-            {state.fieldErrors.newPassword}
-          </p>
-        ) : (
-          <p className="mt-1.5 text-xs leading-5 text-ink-muted">
-            Use at least 8 characters. A longer, unique password is better.
-          </p>
-        )}
-      </div>
+      <RecoveryPasswordField
+        id="recovery-new-password"
+        name="newPassword"
+        label="New password"
+        error={state.fieldErrors?.newPassword}
+        hint="Use at least 8 characters. A longer, unique password is better."
+      />
 
-      <div>
-        <label htmlFor="recovery-confirm-password" className={LABEL}>
-          Confirm new password
-        </label>
-        <input
-          id="recovery-confirm-password"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-          aria-invalid={state.fieldErrors?.confirmPassword ? true : undefined}
-          aria-describedby={
-            state.fieldErrors?.confirmPassword
-              ? "recovery-confirm-password-error"
-              : undefined
-          }
-          className={FIELD}
-        />
-        {state.fieldErrors?.confirmPassword ? (
-          <p
-            id="recovery-confirm-password-error"
-            className="mt-1.5 text-sm text-red-300"
-          >
-            {state.fieldErrors.confirmPassword}
-          </p>
-        ) : null}
-      </div>
+      <RecoveryPasswordField
+        id="recovery-confirm-password"
+        name="confirmPassword"
+        label="Confirm new password"
+        error={state.fieldErrors?.confirmPassword}
+      />
+
+      <p className="text-xs leading-5 text-ink-muted">
+        Use the eye buttons to verify what you typed. Your browser or password
+        manager may offer to save the new sign-in after the password changes.
+      </p>
 
       <SubmitButton />
 
