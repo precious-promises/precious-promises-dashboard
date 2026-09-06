@@ -52,7 +52,10 @@ describe("password management safety", () => {
   it("supports browser password managers and explicit password visibility", () => {
     const login = readFileSync(join(process.cwd(), loginFormPath), "utf8");
     const change = readFileSync(join(process.cwd(), changeFormPath), "utf8");
-    const recovery = readFileSync(join(process.cwd(), recoveryFormPath), "utf8");
+    const recovery = readFileSync(
+      join(process.cwd(), recoveryFormPath),
+      "utf8",
+    );
 
     expect(login).toContain('autoComplete="username"');
     expect(login).toContain('autoComplete="current-password"');
