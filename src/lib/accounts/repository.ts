@@ -26,11 +26,13 @@ export async function loadSocialAccounts(): Promise<SocialAccount[]> {
     return [];
   }
 
-  const { data } = await supabase
+  const { data, error: dataReadError } = await supabase
     .from("social_accounts")
     .select("*")
     .eq("owner_id", user.id)
     .order("platform", { ascending: true });
+  if (dataReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   return (data ?? []) as SocialAccount[];
 }

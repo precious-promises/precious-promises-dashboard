@@ -1,11 +1,21 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { DASHBOARD_PATH } from "@/lib/auth/routes";
 
 describe("MobileSidebar", () => {
+  beforeEach(() => {
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({
+        matches: false,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    );
+  });
   it("opens an opaque drawer above the page and restores scrolling when closed", async () => {
     const user = userEvent.setup();
     render(<MobileSidebar pathname={DASHBOARD_PATH} />);

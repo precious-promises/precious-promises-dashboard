@@ -68,11 +68,13 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
     return [];
   }
 
-  const { data: variantRows } = await supabase
+  const { data: variantRows, error: variantRowsReadError } = await supabase
     .from("platform_variants")
     .select("*")
     .eq("owner_id", ownerId)
     .order("updated_at", { ascending: false });
+  if (variantRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const variants = (variantRows ?? []) as PlatformVariant[];
   if (variants.length === 0) {
@@ -118,6 +120,18 @@ export async function loadReviewRows(): Promise<ReviewRow[]> {
         variants.map((v) => v.id),
       ),
   ]);
+
+  for (const result of [
+    itemsResult,
+    videosResult,
+    scenesResult,
+    mediaResult,
+    scriptsResult,
+    schedulesResult,
+  ]) {
+    if (result.error)
+      throw new Error("Approval data is unavailable. Please retry.");
+  }
 
   const itemsById = new Map(
     ((itemsResult.data ?? []) as ContentItem[]).map((item) => [item.id, item]),

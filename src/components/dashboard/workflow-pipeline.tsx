@@ -15,8 +15,7 @@ import {
  * Scripture verification, saved scripts, video compositions, approvals and
  * schedules.
  *
- * `Publish` is not shown. Nothing publishes, so a Publish column would be a
- * count of zero that implied a capability the product does not have.
+ * Publishing outcomes remain in the separate Publish Queue.
  */
 export function WorkflowPipeline({
   counts,
@@ -52,8 +51,8 @@ export function WorkflowPipeline({
         ))}
       </ol>
       <p className="mt-4 text-xs leading-5 text-ink-muted">
-        Live counts, derived from the records. Publish is not a stage here — no
-        publishing integration exists, so nothing can reach it.
+        Counts are derived from the records stored in production. Publishing
+        outcomes remain in the separate Publish Queue.
       </p>
     </div>
   );

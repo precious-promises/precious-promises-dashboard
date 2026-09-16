@@ -14,23 +14,23 @@
   /* Surfaces, darkest to lightest */
   --color-ink: #05070f;
   --color-canvas: #070b16;
-  --color-panel: #0c142a;
-  --color-panel-raised: #111b36;
-  --color-panel-hover: #162243;
+  --color-panel: #101722;
+  --color-panel-raised: #161e2c;
+  --color-panel-hover: #202a3b;
 
   /* Hairline borders */
-  --color-edge: #1e2b4d;
-  --color-edge-strong: #2b3b63;
+  --color-edge: #252e3e;
+  --color-edge-strong: #3d4560;
 
   /* Typography */
   --color-ink-primary: #f4f7fc;
   --color-ink-secondary: #9fb0cd;
-  --color-ink-muted: #6c7f9f;
+  --color-ink-muted: #8e9bb0;
 
-  /* Cool blue — selection, focus, active state */
-  --color-highlight: #4d8df7;
-  --color-highlight-soft: #7aabff;
-  --color-highlight-dim: #2a4a86;
+  /* Purple — selection, focus, active state */
+  --color-highlight: #a575ee;
+  --color-highlight-soft: #bc97ef;
+  --color-highlight-dim: #593a88;
 
   /* Restrained gold */
   --color-gold: #c9a961;
@@ -160,4 +160,21 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Shared workspace sizing: intrinsic content may wrap without widening the page. */
+.pp-workspace {
+  overflow-wrap: anywhere;
+}
+.pp-workspace main > div {
+  min-width: 0;
+}
+.pp-workspace input:not([type="checkbox"]):not([type="radio"]),
+.pp-workspace select,
+.pp-workspace textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+.pp-workspace :focus-visible {
+  outline-color: var(--color-highlight-soft);
 }

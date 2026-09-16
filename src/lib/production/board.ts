@@ -51,12 +51,14 @@ export async function loadBoard(): Promise<BoardCard[]> {
   }
   const owner = user.id;
 
-  const { data: itemRows } = await supabase
+  const { data: itemRows, error: itemRowsReadError } = await supabase
     .from("content_items")
     .select("*")
     .eq("owner_id", owner)
     .neq("status", "archived")
     .order("updated_at", { ascending: false });
+  if (itemRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const items = (itemRows ?? []) as ContentItem[];
   if (items.length === 0) {
@@ -94,16 +96,32 @@ export async function loadBoard(): Promise<BoardCard[]> {
       .in("content_item_id", itemIds),
   ]);
 
+  for (const result of [
+    variantsResult,
+    scriptsResult,
+    videosResult,
+    scenesResult,
+    mediaResult,
+  ]) {
+    if (result.error)
+      throw new Error("Production data is unavailable. Please retry.");
+  }
+
   const variants = (variantsResult.data ?? []) as PlatformVariant[];
 
-  const { data: scheduleRows } = await supabase
-    .from("scheduled_posts")
-    .select("*")
-    .eq("owner_id", owner)
-    .in(
-      "platform_variant_id",
-      variants.length > 0 ? variants.map((v) => v.id) : ["none"],
-    );
+  const { data: scheduleRows, error: scheduleRowsReadError } =
+    variants.length === 0
+      ? { data: [], error: null }
+      : await supabase
+          .from("scheduled_posts")
+          .select("*")
+          .eq("owner_id", owner)
+          .in(
+            "platform_variant_id",
+            variants.map((v) => v.id),
+          );
+  if (scheduleRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const schedules = (scheduleRows ?? []) as ScheduledPost[];
 

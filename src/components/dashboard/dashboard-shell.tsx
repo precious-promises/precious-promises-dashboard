@@ -16,7 +16,7 @@ export function DashboardShell({
   children,
 }: DashboardShellProps) {
   return (
-    <div className="pp-ambient flex min-h-dvh w-full bg-[#070b14]">
+    <div className="pp-workspace flex min-h-dvh w-full bg-[#080d15]">
       <AppSidebar pathname={pathname} />
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -24,7 +24,7 @@ export function DashboardShell({
 
         <main
           id="main-content"
-          className="flex-1 px-4 py-5 sm:px-6 sm:py-6 lg:px-6 lg:py-6 xl:px-7"
+          className="min-w-0 flex-1 px-3 py-3 sm:px-5 sm:py-4 lg:px-5 xl:px-6"
         >
           {children}
         </main>

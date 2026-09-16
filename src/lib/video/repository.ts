@@ -131,7 +131,7 @@ export async function countVideoProjects(): Promise<number> {
     .neq("status", "archived");
 
   if (error) {
-    return 0;
+    throw new Error("Production count is unavailable. Please retry.");
   }
   return count ?? 0;
 }

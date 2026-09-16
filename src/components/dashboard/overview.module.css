@@ -1,0 +1,602 @@
+.overview {
+  width: 100%;
+  max-width: 1800px;
+  margin-inline: auto;
+}
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.toolbar p {
+  color: var(--color-gold);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+.toolbar h2 {
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.035em;
+}
+.toolbarActions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+.toolbarActions > span {
+  font-size: 12px;
+  color: var(--color-ink-secondary);
+}
+.toolbarActions > a {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #703bc7;
+  border: 1px solid #9866e3;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.toolbarActions svg {
+  width: 15px;
+  height: 15px;
+}
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.metric {
+  display: flex;
+  gap: 13px;
+  align-items: flex-start;
+  padding: 17px;
+  border: 1px solid var(--color-edge);
+  border-radius: 10px;
+  background: var(--color-panel);
+}
+.metric > div {
+  min-width: 0;
+}
+.metric p {
+  font-size: 12px;
+  color: var(--color-ink-secondary);
+}
+.metric strong {
+  display: block;
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.metric small {
+  display: block;
+  font-size: 10px;
+  color: var(--color-ink-muted);
+  line-height: 1.4;
+}
+.metricIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 37px;
+  height: 37px;
+  border-radius: 8px;
+  background: #382059;
+  color: #c4a0ff;
+}
+.metricIcon svg {
+  width: 20px;
+  height: 20px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-areas: "calendar approval performance" "calendar recent preview" "schedule recent preview" "actions production system";
+  gap: 14px;
+  align-items: stretch;
+}
+.calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+.calendar > a {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  min-height: 27px;
+  border-radius: 5px;
+  font-size: 11px;
+  color: #bdc6d5;
+}
+.calendar > a:hover {
+  background: #242b3b;
+}
+.calendar > a[aria-current] {
+  background: #7238c9;
+  color: white;
+  font-weight: 600;
+}
+.calendar > a[data-outside] {
+  color: #738096;
+}
+.calendar > a > i {
+  position: absolute;
+  bottom: 1px;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: #c49bff;
+}
+.weekday {
+  font-size: 10px;
+  color: #8d9bb0;
+  padding: 6px 0;
+}
+.calendarHeading {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 5px;
+}
+.calendarHeading > strong {
+  font-weight: 500;
+  font-size: 12px;
+}
+.calendarHeading > div {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.calendarHeading button {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  height: 28px;
+  color: #b99ae6;
+  font-size: 10px;
+  border-radius: 4px;
+}
+.calendarHeading button:hover {
+  background: #242b3b;
+}
+.calendarHeading svg {
+  width: 14px;
+  height: 14px;
+}
+.grid > div {
+  min-width: 0;
+}
+.grid > .calendar {
+  display: block;
+  grid-area: calendar;
+}
+.approval {
+  grid-area: approval;
+}
+.performance {
+  grid-area: performance;
+}
+.schedule {
+  grid-area: schedule;
+}
+.recent {
+  grid-area: recent;
+}
+.preview {
+  grid-area: preview;
+}
+.actions {
+  grid-area: actions;
+}
+.production {
+  grid-area: production;
+}
+.system {
+  grid-area: system;
+}
+.panel {
+  height: 100%;
+  min-width: 0;
+  border-radius: 10px;
+  background: var(--color-panel);
+  backdrop-filter: none;
+  box-shadow: 0 3px 14px #00000012;
+}
+.panel > div:first-child {
+  padding: 12px 14px;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+.panel > div:first-child > div {
+  flex: 1;
+  min-width: 0;
+}
+.panel > div:first-child h2 {
+  font-size: 13px;
+  letter-spacing: -0.015em;
+}
+.panel > div:first-child > a {
+  font-size: 10px;
+  flex-shrink: 0;
+}
+.panel > div:last-child {
+  padding: 12px 14px;
+}
+.empty {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  text-align: left;
+  gap: 5px 9px;
+  padding: 8px 0;
+}
+.empty > span {
+  width: 25px;
+  height: 25px;
+  border: 0;
+  background: #1b2030;
+}
+.empty > span svg {
+  width: 14px;
+  height: 14px;
+}
+.empty > p:first-of-type {
+  font-size: 12px;
+}
+.empty > p:last-of-type {
+  width: 100%;
+  font-size: 11px;
+  line-height: 1.6;
+  color: #909db2;
+}
+.recent .panel a span,
+.schedule .panel a span,
+.approval .panel a span {
+  overflow-wrap: anywhere;
+}
+.recent .panel ul > li > a {
+  padding: 12px 8px;
+}
+.recent .panel ul {
+  border: 0;
+}
+.recent .panel > div:last-child > div {
+  border: 0;
+  border-radius: 0;
+}
+.preview .panel > div:last-child {
+  padding-top: 0;
+}
+.preview .panel > div:last-child > div {
+  border: 0;
+  border-radius: 5px;
+  box-shadow: none;
+}
+.preview .panel > div:last-child > div > div:first-child {
+  min-height: 90px;
+  padding: 12px;
+  background: #141a29;
+}
+.preview .panel > div:last-child > div > div:first-child p {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+.preview .panel > div:last-child > div > div:first-child p + p {
+  font-size: 11px;
+}
+.preview .panel > div:last-child > div > div:last-child {
+  padding: 10px 0 0;
+}
+.preview .panel > div:last-child > div > div:last-child > a {
+  padding: 7px;
+  font-size: 11px;
+  border-radius: 5px;
+}
+.performance dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 15px;
+}
+.performance dl > div {
+  min-width: 0;
+}
+.performance dt {
+  font-size: 11px;
+  color: #a8b3c6;
+}
+.performance dd {
+  font-size: 21px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+.performance dl span {
+  display: block;
+  font-size: 10px;
+  color: #8795aa;
+}
+.footnote {
+  font-size: 10px;
+  line-height: 1.7;
+  color: #8997ad;
+  margin-top: 10px;
+}
+.footnote a {
+  color: #b997e8;
+}
+.scheduleDot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: #b084ed;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+.zone {
+  float: right;
+}
+.actions .actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.actions .actions a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 8px;
+  padding: 13px 4px;
+  border: 1px solid #252a3b;
+  border-radius: 6px;
+  background: #141928;
+  text-align: center;
+  font-size: 10px;
+}
+.actions .actions a:hover {
+  background: #282039;
+  border-color: #70469c;
+}
+.actions .actions svg {
+  width: 21px;
+  height: 21px;
+  color: #bca0ee;
+}
+.productionSummary {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.donut {
+  width: 106px;
+  height: 106px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+}
+.donut > span {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: var(--color-panel);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.donut strong {
+  font-size: 25px;
+  font-weight: 600;
+}
+.donut small {
+  font-size: 9px;
+  color: #97a6bc;
+}
+.productionSummary ol {
+  flex: 1;
+  min-width: 0;
+}
+.productionSummary li a {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-block: 3px;
+  font-size: 10px;
+  color: #abb8ca;
+}
+.productionSummary li i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.productionSummary li span {
+  flex: 1;
+}
+.productionSummary li strong {
+  color: #e1e7f0;
+}
+.system .panel ul {
+  display: grid;
+  gap: 0;
+}
+.system .panel li {
+  border: 0;
+  border-bottom: 1px solid #202735;
+  background: transparent;
+  border-radius: 0;
+  padding: 7px 0;
+  gap: 5px;
+  min-width: 0;
+}
+.system .panel li span {
+  font-size: 10px;
+}
+.system .panel li > span > svg {
+  width: 13px;
+  height: 13px;
+}
+.system .panel li > span {
+  gap: 6px;
+}
+.system .panel li a {
+  font-size: 9px;
+  padding: 3px 6px;
+}
+.systemTotals {
+  display: flex;
+  gap: 10px;
+  margin-top: 7px;
+}
+.systemTotals > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+}
+.systemTotals > div p {
+  font-size: 9px;
+  margin: 0;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.legend {
+  color: #7f8da2;
+  font-size: 10px;
+  line-height: 1.6;
+  margin-top: 12px;
+}
+.overview a:focus-visible,
+.overview button:focus-visible {
+  outline: 2px solid #c5a3f6;
+  outline-offset: 3px;
+}
+@media (min-width: 1500px) {
+  .grid {
+    grid-template-columns: 1.1fr 1fr 1fr 1fr;
+    grid-template-areas: "calendar recent performance preview" "schedule approval performance preview" "actions production system system";
+  }
+  .system .panel ul {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 20px;
+  }
+  .calendar > a {
+    min-height: 30px;
+  }
+}
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "calendar schedule" "calendar approval" "recent performance" "actions preview" "production system";
+  }
+  .metric {
+    padding: 12px;
+    gap: 8px;
+  }
+  .metricIcon {
+    width: 30px;
+    height: 30px;
+  }
+  .metric p {
+    font-size: 11px;
+  }
+  .toolbarActions > span {
+    display: none;
+  }
+}
+@media (max-width: 600px) {
+  .toolbar {
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .toolbar p {
+    font-size: 8px;
+    letter-spacing: 0.09em;
+  }
+  .toolbar h2 {
+    font-size: 17px;
+  }
+  .toolbarActions > a {
+    font-size: 10px;
+    padding: 10px;
+  }
+  .toolbarActions svg {
+    display: none;
+  }
+  .metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .metric {
+    padding: 12px 10px;
+  }
+  .metric strong {
+    font-size: 24px;
+  }
+  .metric small {
+    font-size: 9px;
+  }
+  .metricIcon {
+    width: 27px;
+    height: 27px;
+  }
+  .metricIcon svg {
+    width: 16px;
+    height: 16px;
+  }
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "schedule" "approval" "calendar" "recent" "actions" "preview" "production" "performance" "system";
+    gap: 10px;
+  }
+  .calendar > a {
+    min-height: 34px;
+  }
+  .calendarHeading button {
+    min-width: 36px;
+    height: 36px;
+  }
+  .panel > div:first-child {
+    padding: 12px;
+  }
+  .panel > div:last-child {
+    padding: 10px 12px;
+  }
+  .productionSummary {
+    gap: 25px;
+  }
+  .productionSummary li a {
+    padding-block: 5px;
+    font-size: 12px;
+  }
+  .actions .actions a {
+    min-height: 74px;
+    font-size: 11px;
+  }
+  .preview .panel > div:last-child > div > div:first-child {
+    aspect-ratio: 16/6;
+  }
+  .system .panel li {
+    padding: 10px 0;
+  }
+  .system .panel li span {
+    font-size: 11px;
+  }
+  .legend {
+    margin-bottom: 10px;
+  }
+}

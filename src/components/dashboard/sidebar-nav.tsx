@@ -25,7 +25,7 @@ function NavRow({
       <li>
         <span
           aria-disabled="true"
-          className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] text-ink-muted/65"
+          className="flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[12px] text-ink-muted/65"
         >
           <Icon aria-hidden="true" className="size-[17px] shrink-0" />
           <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -48,10 +48,10 @@ function NavRow({
         onClick={onNavigate}
         aria-current={isActive ? "page" : undefined}
         className={cn(
-          "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-all duration-150",
+          "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-[12px] font-medium transition-all duration-150",
           "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight",
           isActive
-            ? "bg-gradient-to-r from-[#6928d9] to-[#7b2ce8] text-white shadow-[0_10px_26px_rgba(92,35,197,0.28)]"
+            ? "bg-gradient-to-r from-[#6928d9] to-[#7b2ce8] text-white shadow-sm"
             : "text-ink-secondary hover:bg-white/[0.045] hover:text-ink-primary",
         )}
       >
@@ -80,11 +80,11 @@ function isActiveFor(href: string, pathname: string): boolean {
 
 export function SidebarNav({ pathname, onNavigate }: SidebarNavProps) {
   return (
-    <nav aria-label="Dashboard sections" className="flex flex-col gap-4">
+    <nav aria-label="Dashboard sections" className="flex flex-col gap-2.5">
       {NAVIGATION.map((group, index) => (
         <div key={group.label ?? `group-${index}`}>
           {group.label ? (
-            <h3 className="px-3 pb-1.5 text-[9px] font-semibold tracking-[0.16em] text-ink-muted/55 uppercase">
+            <h3 className="px-2.5 pb-1 text-[9px] font-semibold tracking-[0.16em] text-ink-muted uppercase">
               {group.label}
             </h3>
           ) : null}

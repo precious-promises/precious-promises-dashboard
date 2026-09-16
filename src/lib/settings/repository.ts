@@ -17,11 +17,13 @@ export async function loadAppSettings(): Promise<AppSettings | null> {
     return null;
   }
 
-  const { data } = await supabase
+  const { data, error: dataReadError } = await supabase
     .from("app_settings")
     .select("*")
     .eq("owner_id", user.id)
     .maybeSingle();
+  if (dataReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   return (data as AppSettings | null) ?? null;
 }
