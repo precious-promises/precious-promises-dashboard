@@ -130,7 +130,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-3 py-4">
+                <div className="flex-1 overflow-y-auto px-3 py-4 [&_nav_a]:min-h-10 [&_nav_a]:text-[13px]">
                   <SidebarNav pathname={pathname} onNavigate={close} />
                 </div>
 

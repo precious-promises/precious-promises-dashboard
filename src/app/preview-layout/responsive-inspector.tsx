@@ -55,6 +55,7 @@ export function ResponsiveInspector() {
         src="/dashboard"
         style={{
           display: "block",
+          boxSizing: "content-box",
           width,
           height,
           border: "1px solid #344056",

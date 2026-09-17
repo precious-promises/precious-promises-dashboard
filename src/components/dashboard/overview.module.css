@@ -56,7 +56,7 @@
   display: flex;
   gap: 13px;
   align-items: flex-start;
-  padding: 17px;
+  padding: 15px;
   border: 1px solid var(--color-edge);
   border-radius: 10px;
   background: var(--color-panel);
@@ -113,7 +113,7 @@
   min-width: 0;
   display: grid;
   place-items: center;
-  min-height: 58px;
+  min-height: 52px;
   align-content: center;
   gap: 4px;
   background: #141b28;
@@ -265,7 +265,7 @@
   flex-shrink: 0;
 }
 .panel > div:last-child {
-  padding: 12px 14px;
+  padding: 10px 14px;
 }
 .empty {
   flex-direction: row;
@@ -273,7 +273,7 @@
   justify-content: flex-start;
   text-align: left;
   gap: 5px 9px;
-  padding: 8px 0;
+  padding: 2px 0;
 }
 .empty > span {
   width: 25px;
@@ -471,7 +471,8 @@
   border-bottom: 1px solid #202735;
   background: transparent;
   border-radius: 0;
-  padding: 7px 0;
+  padding: 5px 0;
+  margin: 0;
   gap: 5px;
   min-width: 0;
 }
@@ -656,19 +657,64 @@
   }
 }
 
-@media (min-width: 1200px) and (max-width: 1399px) {
+@media (min-width: 1200px) {
+  .performance .panel {
+    display: flex;
+    flex-direction: column;
+  }
+  .performance .panel > div:last-child {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+  }
+  .performance dl {
+    flex: 1;
+    align-content: space-around;
+  }
+  .performance dl > div {
+    border-bottom: 1px solid #242c3a;
+    padding-bottom: 8px;
+  }
   .productionSummary {
     flex-direction: column;
     align-items: stretch;
-    gap: 10px;
+    gap: 8px;
   }
   .donut {
     align-self: center;
+    width: 72px;
+    height: 72px;
+  }
+  .donut > span {
+    width: 56px;
+    height: 56px;
+  }
+  .donut strong {
+    font-size: 22px;
+  }
+  .productionSummary li a {
+    padding-block: 2px;
   }
   .productionSummary ol {
     width: 100%;
   }
-  .actions .actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .production .footnote {
+    font-size: 10px;
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+}
+@media (min-width: 1400px) {
+  .productionSummary {
+    flex-direction: row;
+    align-items: center;
+  }
+  .donut {
+    width: 88px;
+    height: 88px;
+  }
+  .donut > span {
+    width: 68px;
+    height: 68px;
   }
 }
