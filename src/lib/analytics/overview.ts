@@ -165,7 +165,7 @@ export async function loadAnalyticsOverview(): Promise<AnalyticsOverview> {
 
   // Published posts, whether or not anything has measured them. This is the
   // denominator that makes "0 of 12 posts measured" sayable.
-  const { data: postRows } = await supabase
+  const { data: postRows, error: postRowsReadError } = await supabase
     .from("scheduled_posts")
     .select(
       "id, platform_variant_id, external_post_id, posted_at, external_availability",
@@ -173,6 +173,8 @@ export async function loadAnalyticsOverview(): Promise<AnalyticsOverview> {
     .eq("owner_id", user.id)
     .eq("status", "posted")
     .not("external_post_id", "is", null);
+  if (postRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const publishedPosts = (postRows ?? []) as {
     id: string;
@@ -191,7 +193,10 @@ export async function loadAnalyticsOverview(): Promise<AnalyticsOverview> {
     };
   }
 
-  const [{ data: variantRows }, { data: assetRows }] = await Promise.all([
+  const [
+    { data: variantRows, error: variantError },
+    { data: assetRows, error: assetError },
+  ] = await Promise.all([
     supabase
       .from("platform_variants")
       .select("*")
@@ -206,24 +211,30 @@ export async function loadAnalyticsOverview(): Promise<AnalyticsOverview> {
       .eq("owner_id", user.id),
   ]);
 
+  if (variantError || assetError)
+    throw new Error("Analytics data is unavailable. Please retry.");
   const variants = (variantRows ?? []) as PlatformVariant[];
   const variantById = new Map(variants.map((variant) => [variant.id, variant]));
 
-  const { data: itemRows } = await supabase
+  const { data: itemRows, error: itemRowsReadError } = await supabase
     .from("content_items")
     .select("*")
     .eq("owner_id", user.id)
     .in("id", [...new Set(variants.map((variant) => variant.content_item_id))]);
+  if (itemRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const itemById = new Map(
     ((itemRows ?? []) as ContentItem[]).map((item) => [item.id, item]),
   );
 
   // Duration comes from the primary media asset for the item.
-  const { data: linkRows } = await supabase
+  const { data: linkRows, error: linkRowsReadError } = await supabase
     .from("content_media")
     .select("content_item_id, media_asset_id, purpose")
     .eq("purpose", "primary");
+  if (linkRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const durationByItem = new Map<string, number | null>();
   const assetDurations = new Map(

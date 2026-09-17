@@ -39,18 +39,20 @@ export async function listScheduleEntries(): Promise<ScheduleEntry[]> {
     return [];
   }
 
-  const { data: postRows } = await supabase
+  const { data: postRows, error: postRowsReadError } = await supabase
     .from("scheduled_posts")
     .select("*")
     .eq("owner_id", owner)
     .order("scheduled_for", { ascending: true });
+  if (postRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const posts = (postRows ?? []) as ScheduledPost[];
   if (posts.length === 0) {
     return [];
   }
 
-  const { data: variantRows } = await supabase
+  const { data: variantRows, error: variantRowsReadError } = await supabase
     .from("platform_variants")
     .select("*")
     .eq("owner_id", owner)
@@ -58,16 +60,20 @@ export async function listScheduleEntries(): Promise<ScheduleEntry[]> {
       "id",
       posts.map((post) => post.platform_variant_id),
     );
+  if (variantRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const variants = (variantRows ?? []) as PlatformVariant[];
   const variantsById = new Map(variants.map((v) => [v.id, v]));
 
   const itemIds = [...new Set(variants.map((v) => v.content_item_id))];
-  const { data: itemRows } = await supabase
+  const { data: itemRows, error: itemRowsReadError } = await supabase
     .from("content_items")
     .select("*")
     .eq("owner_id", owner)
     .in("id", itemIds);
+  if (itemRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const itemsById = new Map(
     ((itemRows ?? []) as ContentItem[]).map((item) => [item.id, item]),

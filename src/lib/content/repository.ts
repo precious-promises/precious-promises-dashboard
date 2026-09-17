@@ -170,7 +170,8 @@ export async function countScriptureNeedingAttention(): Promise<number> {
       "verification_required",
     ]);
 
-  return error ? 0 : (count ?? 0);
+  if (error) throw new Error("Content count is unavailable. Please retry.");
+  return count ?? 0;
 }
 
 export interface ContentCounts {
@@ -200,7 +201,8 @@ export async function getContentCounts(): Promise<ContentCounts> {
       query = query.eq("status", status);
     }
     const { count, error } = await query;
-    return error ? 0 : (count ?? 0);
+    if (error) throw new Error("Content count is unavailable. Please retry.");
+    return count ?? 0;
   };
 
   const [total, draft, readyForReview, archived] = await Promise.all([
@@ -223,5 +225,6 @@ export async function getMediaCount(): Promise<number> {
     .select("id", { count: "exact", head: true })
     .eq("owner_id", ownerId);
 
-  return error ? 0 : (count ?? 0);
+  if (error) throw new Error("Content count is unavailable. Please retry.");
+  return count ?? 0;
 }

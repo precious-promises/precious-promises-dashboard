@@ -75,14 +75,16 @@ export async function loadSnapshots(options?: {
     query = query.limit(options.limit);
   }
 
-  const { data } = await query;
+  const { data, error: dataReadError } = await query;
+  if (dataReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
   const snapshots = (data ?? []) as AnalyticsSnapshot[];
 
   if (snapshots.length === 0) {
     return [];
   }
 
-  const { data: metricRows } = await supabase
+  const { data: metricRows, error: metricRowsReadError } = await supabase
     .from("analytics_metrics")
     .select("*")
     .eq("owner_id", user.id)
@@ -90,6 +92,8 @@ export async function loadSnapshots(options?: {
       "snapshot_id",
       snapshots.map((snapshot) => snapshot.id),
     );
+  if (metricRowsReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   const bySnapshot = new Map<string, AnalyticsMetricRow[]>();
   for (const row of (metricRows ?? []) as AnalyticsMetricRow[]) {
@@ -142,12 +146,14 @@ export async function loadSyncRuns(limit = 40): Promise<AnalyticsSyncRun[]> {
     return [];
   }
 
-  const { data } = await supabase
+  const { data, error: dataReadError } = await supabase
     .from("analytics_sync_runs")
     .select("*")
     .eq("owner_id", user.id)
     .order("started_at", { ascending: false })
     .limit(limit);
+  if (dataReadError)
+    throw new Error("Workspace data is unavailable. Please retry.");
 
   return (data ?? []) as AnalyticsSyncRun[];
 }

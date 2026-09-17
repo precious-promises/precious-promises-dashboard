@@ -48,7 +48,7 @@ describe("no page claims publishing does not exist", () => {
 
   it("counts Published This Week from genuinely posted records", () => {
     const dashboard = readFileSync(
-      join(SRC_ROOT, "app/dashboard/page.tsx"),
+      join(SRC_ROOT, "lib/dashboard/overview.ts"),
       "utf8",
     );
     expect(dashboard).toMatch(/status === ["']posted["']/);
@@ -71,10 +71,10 @@ describe("implemented, configured, connected, authorised and live-verified stay 
 
   it("keeps the foundation board honest about what it describes", () => {
     const dashboard = readFileSync(
-      join(SRC_ROOT, "app/dashboard/page.tsx"),
+      join(SRC_ROOT, "components/dashboard/overview.tsx"),
       "utf8",
     );
-    expect(dashboard).toMatch(/Implemented is not connected/i);
+    expect(dashboard).toMatch(/Implemented ≠ configured/);
   });
 });
 

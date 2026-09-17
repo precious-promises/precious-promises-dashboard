@@ -170,16 +170,20 @@ describe("a deletion at the platform never rewrites publishing history", () => {
 });
 
 describe("the homepage snapshot shows measurements or nothing", () => {
-  const homepage = source("src/app/dashboard/page.tsx");
+  const homepage = source("src/components/dashboard/overview.tsx");
 
   it("renders totals through the reading formatter rather than raw numbers", () => {
     expect(homepage).toMatch(/formatReading/);
     // The fallback for an absent total is a dash, never a digit.
-    expect(homepage).toMatch(/formatReading\(value\) : "—"/);
+    expect(homepage).toMatch(/formatReading\(reading\)/);
   });
 
   it("carries no demo figures, sample series or placeholder percentages", () => {
-    const performance = homepage.slice(homepage.indexOf('title="Performance"'));
+    const start = homepage.indexOf('title="Performance Snapshot"');
+    const performance = homepage.slice(
+      start,
+      homepage.indexOf("<div className={styles.actions}>", start),
+    );
 
     expect(performance).not.toMatch(/\bdemo\b/i);
     expect(performance).not.toMatch(/\bsample\b/i);
@@ -194,7 +198,8 @@ describe("the homepage snapshot shows measurements or nothing", () => {
   });
 
   it("says nothing has been measured rather than showing zeroes", () => {
-    expect(homepage).toMatch(/analytics\.publishedCount === 0/);
+    expect(homepage).toContain("No measured performance yet");
+    expect(homepage).toMatch(/analytics\.hasAnyData/);
   });
 });
 

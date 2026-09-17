@@ -122,7 +122,7 @@ export async function countItemsWithScripts(): Promise<number> {
     .limit(1000);
 
   if (error) {
-    return 0;
+    throw new Error("Production count is unavailable. Please retry.");
   }
 
   const items = new Set(

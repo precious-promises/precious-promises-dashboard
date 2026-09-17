@@ -90,7 +90,7 @@ open PRs against this handoff before making changes.**
 ## Platform implementation status
 
 | Platform  | Publishing                                                      | Analytics                                                            |
-| --------- | ----------------------------------------------------------------- | ------------------------------------------------------------------- |
+| --------- | --------------------------------------------------------------- | -------------------------------------------------------------------- |
 | YouTube   | Provider built (`private`/`unlisted` only until Google's audit) | Adapter built; needs the separate `yt-analytics.readonly` grant      |
 | Instagram | Provider built (Reels via container flow)                       | Adapter built; no watch time (Meta exposes none)                     |
 | TikTok    | Provider built (draft / manual / direct distinctions)           | **Refused** — Research API closed to this product; manual entry only |

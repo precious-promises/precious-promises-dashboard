@@ -1,5 +1,6 @@
 "use client";
 
+import { createPortal } from "react-dom";
 import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -11,6 +12,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const wasOpen = useRef(false);
 
   const close = useCallback(() => {
     setIsOpen(false);
@@ -26,9 +28,29 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
         event.preventDefault();
         close();
       }
+      if (event.key === "Tab") {
+        const elements = panelRef.current?.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input:not([disabled]),[tabindex="0"]',
+        );
+        if (!elements?.length) return;
+        const first = elements[0];
+        const last = elements[elements.length - 1];
+        if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === panelRef.current)
+        ) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
     }
 
     document.addEventListener("keydown", onKeyDown);
+
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
@@ -47,12 +69,21 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
 
   useEffect(() => {
     if (isOpen) {
-      panelRef.current?.focus();
-    } else {
+      wasOpen.current = true;
+      panelRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+    } else if (wasOpen.current) {
       triggerRef.current?.focus({ preventScroll: true });
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    const query = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => {
+      if (query.matches) close();
+    };
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+  }, [close]);
   return (
     <>
       <button
@@ -69,45 +100,48 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
         <Menu aria-hidden="true" className="size-5" />
       </button>
 
-      {isOpen ? (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            type="button"
-            aria-label="Dismiss navigation menu"
-            onClick={close}
-            className="absolute inset-0 size-full cursor-default bg-black/85 backdrop-blur-sm"
-          />
-
-          <div
-            ref={panelRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Dashboard navigation"
-            tabIndex={-1}
-            className="absolute inset-y-0 left-0 flex w-[18rem] max-w-[88vw] flex-col border-r border-edge/80 bg-[#060a15] shadow-[30px_0_90px_rgba(0,0,0,0.62)] focus:outline-none"
-          >
-            <div className="flex items-center justify-between gap-3 border-b border-edge/70 px-4 py-4">
-              <BrandMark />
+      {isOpen
+        ? createPortal(
+            <div className="fixed inset-0 z-[100] lg:hidden">
               <button
                 type="button"
+                aria-label="Dismiss navigation menu"
                 onClick={close}
-                aria-label="Close navigation menu"
-                className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-edge/80 bg-white/[0.025] text-ink-secondary transition-colors hover:bg-white/[0.06] hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                className="absolute inset-0 size-full cursor-default bg-black/85 backdrop-blur-sm"
+              />
+
+              <div
+                ref={panelRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Dashboard navigation"
+                tabIndex={-1}
+                className="absolute inset-y-0 left-0 flex w-[18rem] max-w-[88vw] flex-col border-r border-edge/80 bg-[#060a15] shadow-[30px_0_90px_rgba(0,0,0,0.62)] focus:outline-none"
               >
-                <X aria-hidden="true" className="size-4" />
-              </button>
-            </div>
+                <div className="flex items-center justify-between gap-3 border-b border-edge/70 px-4 py-4">
+                  <BrandMark />
+                  <button
+                    type="button"
+                    onClick={close}
+                    aria-label="Close navigation menu"
+                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl border border-edge/80 bg-white/[0.025] text-ink-secondary transition-colors hover:bg-white/[0.06] hover:text-ink-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-highlight"
+                  >
+                    <X aria-hidden="true" className="size-4" />
+                  </button>
+                </div>
 
-            <div className="flex-1 overflow-y-auto px-3 py-4">
-              <SidebarNav pathname={pathname} onNavigate={close} />
-            </div>
+                <div className="flex-1 overflow-y-auto px-3 py-4 [&_nav_a]:min-h-10 [&_nav_a]:text-[13px]">
+                  <SidebarNav pathname={pathname} onNavigate={close} />
+                </div>
 
-            <div className="px-3 pb-4">
-              <ScripturePanel />
-            </div>
-          </div>
-        </div>
-      ) : null}
+                <div className="px-3 pb-4">
+                  <ScripturePanel />
+                </div>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
