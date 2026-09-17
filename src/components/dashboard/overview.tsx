@@ -48,8 +48,9 @@ const PLATFORMS = [
   { name: "TikTok", platform: "tiktok", icon: Music2 },
 ] as const;
 
-function formatUpdated(value: string) {
+function formatUpdated(value: string, timezone: string) {
   return new Intl.DateTimeFormat("en-GB", {
+    timeZone: timezone,
     day: "numeric",
     month: "short",
     hour: "2-digit",
@@ -178,69 +179,178 @@ export function DashboardOverview({
           />
         </section>
         <div className={styles.grid}>
-          <div className={styles.calendar}>
-            <OverviewPanel
-              title="Content Calendar"
-              action={
-                <SectionLink href="/dashboard/calendar">View all</SectionLink>
-              }
-            >
-              <OverviewCalendar
-                now={now.toISOString()}
-                timezone={timezone}
-                entries={scheduleEntries.filter(
-                  (entry) => entry.post.status === "scheduled",
-                )}
-              />
-            </OverviewPanel>
-          </div>
-          <div className={styles.approval}>
-            <OverviewPanel
-              title="Approval Queue"
-              action={
-                <SectionLink href="/dashboard/approvals">
-                  Review queue
-                </SectionLink>
-              }
-            >
-              {approvalQueue.length === 0 ? (
-                <OverviewEmpty
-                  icon={CheckCircle2}
-                  title="Approval queue is clear."
-                  description="Items marked ready for review will appear here."
+          <div className={styles.planningStack}>
+            <div className={styles.calendar}>
+              <OverviewPanel
+                title="Content Calendar"
+                action={
+                  <SectionLink href="/dashboard/calendar">View all</SectionLink>
+                }
+              >
+                <OverviewCalendar
+                  now={now.toISOString()}
+                  timezone={timezone}
+                  entries={scheduleEntries.filter(
+                    (entry) => entry.post.status === "scheduled",
+                  )}
                 />
-              ) : (
-                <ul className="space-y-2">
-                  {approvalQueue.slice(0, 3).map((row) => (
-                    <li key={row.variant.id}>
-                      <Link
-                        href={`/dashboard/approvals?variant=${row.variant.id}`}
-                        className="flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
-                      >
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-ink-primary">
-                            {row.item.title}
-                          </span>
-                          <span className="mt-0.5 block text-xs text-ink-muted">
-                            {PLATFORM_LABELS[row.variant.platform]} ·{" "}
-                            {row.blockers.length === 0
-                              ? "Ready for your decision"
-                              : `${row.blockers.length} blocker${row.blockers.length === 1 ? "" : "s"}`}
-                          </span>
-                        </span>
-                        <StatusBadge
-                          tone={
-                            row.blockers.length === 0 ? "accent" : "inactive"
-                          }
+              </OverviewPanel>
+            </div>
+            <div className={styles.schedule}>
+              <OverviewPanel
+                title="Today’s Schedule"
+                action={
+                  <SectionLink href="/dashboard/calendar">
+                    Open calendar
+                  </SectionLink>
+                }
+              >
+                {todayEntries.length === 0 ? (
+                  <OverviewEmpty
+                    icon={CalendarClock}
+                    title="Nothing scheduled today."
+                    description="There are no stored scheduled posts for today."
+                  />
+                ) : (
+                  <ul className="space-y-2">
+                    {todayEntries.slice(0, 3).map((entry) => (
+                      <li key={entry.post.id}>
+                        <Link
+                          href={`/dashboard/calendar?entry=${entry.post.id}`}
+                          className="group flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
                         >
-                          {row.blockers.length === 0 ? "Review" : "Blocked"}
-                        </StatusBadge>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </OverviewPanel>
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]">
+                            <CalendarClock
+                              aria-hidden="true"
+                              className="size-4"
+                            />
+                          </span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-ink-primary">
+                              {entry.item.title}
+                            </span>
+                            <span className="mt-0.5 block truncate text-xs text-ink-muted">
+                              {PLATFORM_LABELS[entry.variant.platform]} ·{" "}
+                              {formatInTimeZone(
+                                new Date(entry.post.scheduled_for),
+                                entry.post.timezone,
+                              )}
+                            </span>
+                          </span>
+                          <ChevronRight
+                            aria-hidden="true"
+                            className="size-4 text-ink-muted transition group-hover:translate-x-0.5 group-hover:text-ink-primary"
+                          />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </OverviewPanel>
+            </div>
+          </div>
+          <div className={styles.workStack}>
+            <div className={styles.approval}>
+              <OverviewPanel
+                title="Approval Queue"
+                action={
+                  <SectionLink href="/dashboard/approvals">
+                    Review queue
+                  </SectionLink>
+                }
+              >
+                {approvalQueue.length === 0 ? (
+                  <OverviewEmpty
+                    icon={CheckCircle2}
+                    title="Approval queue is clear."
+                    description="Items marked ready for review will appear here."
+                  />
+                ) : (
+                  <ul className="space-y-2">
+                    {approvalQueue.slice(0, 3).map((row) => (
+                      <li key={row.variant.id}>
+                        <Link
+                          href={`/dashboard/approvals?variant=${row.variant.id}`}
+                          className="flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
+                        >
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium text-ink-primary">
+                              {row.item.title}
+                            </span>
+                            <span className="mt-0.5 block text-xs text-ink-muted">
+                              {PLATFORM_LABELS[row.variant.platform]} ·{" "}
+                              {row.blockers.length === 0
+                                ? "Ready for your decision"
+                                : `${row.blockers.length} blocker${row.blockers.length === 1 ? "" : "s"}`}
+                            </span>
+                          </span>
+                          <StatusBadge
+                            tone={
+                              row.blockers.length === 0 ? "accent" : "inactive"
+                            }
+                          >
+                            {row.blockers.length === 0 ? "Review" : "Blocked"}
+                          </StatusBadge>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </OverviewPanel>
+            </div>
+            <div className={styles.recent}>
+              <OverviewPanel
+                title="Recent Content"
+                action={
+                  <SectionLink href="/dashboard/content">
+                    Open library
+                  </SectionLink>
+                }
+              >
+                {recentItems.length === 0 ? (
+                  <OverviewEmpty
+                    icon={Library}
+                    title="No content yet."
+                    description="Create the first content item to start the workflow."
+                  />
+                ) : (
+                  <div className="overflow-hidden rounded-xl border border-edge/70">
+                    <ul className="divide-y divide-edge/65">
+                      {recentItems.slice(0, 4).map((item) => (
+                        <li key={item.id}>
+                          <Link
+                            href={`/dashboard/content/${item.id}`}
+                            className="flex items-center gap-3 bg-white/[0.012] px-3.5 py-3 transition hover:bg-white/[0.04] sm:px-4"
+                          >
+                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-edge bg-[#080d19] text-ink-muted">
+                              <FileText aria-hidden="true" className="size-4" />
+                            </span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-sm font-medium text-ink-primary">
+                                {item.title}
+                              </span>
+                              <span className="mt-0.5 block truncate text-xs text-ink-muted">
+                                {CONTENT_TYPE_LABELS[item.content_type]} ·{" "}
+                                {formatUpdated(item.updated_at, timezone)}
+                              </span>
+                            </span>
+                            <StatusBadge
+                              tone={
+                                item.status === "ready_for_review"
+                                  ? "accent"
+                                  : "inactive"
+                              }
+                            >
+                              {CONTENT_STATUS_LABELS[item.status]}
+                            </StatusBadge>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </OverviewPanel>
+            </div>
           </div>
           <div className={styles.performance}>
             <OverviewPanel
@@ -280,109 +390,47 @@ export function DashboardOverview({
               </p>
             </OverviewPanel>
           </div>
-          <div className={styles.schedule}>
-            <OverviewPanel
-              title="Today’s Schedule"
-              action={
-                <SectionLink href="/dashboard/calendar">
-                  Open calendar
-                </SectionLink>
-              }
-            >
-              {todayEntries.length === 0 ? (
-                <OverviewEmpty
-                  icon={CalendarClock}
-                  title="Nothing scheduled today."
-                  description="There are no stored scheduled posts for today."
-                />
-              ) : (
-                <ul className="space-y-2">
-                  {todayEntries.slice(0, 3).map((entry) => (
-                    <li key={entry.post.id}>
-                      <Link
-                        href={`/dashboard/calendar?entry=${entry.post.id}`}
-                        className="group flex items-center gap-3 rounded-xl border border-edge/70 bg-white/[0.018] px-3.5 py-3 transition hover:border-edge-strong hover:bg-white/[0.045]"
-                      >
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-[#7138dc]/25 bg-[#7138dc]/10 text-[#bda7ff]">
-                          <CalendarClock
-                            aria-hidden="true"
-                            className="size-4"
-                          />
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="block truncate text-sm font-medium text-ink-primary">
-                            {entry.item.title}
-                          </span>
-                          <span className="mt-0.5 block truncate text-xs text-ink-muted">
-                            {PLATFORM_LABELS[entry.variant.platform]} ·{" "}
-                            {formatInTimeZone(
-                              new Date(entry.post.scheduled_for),
-                              entry.post.timezone,
-                            )}
-                          </span>
-                        </span>
-                        <ChevronRight
-                          aria-hidden="true"
-                          className="size-4 text-ink-muted transition group-hover:translate-x-0.5 group-hover:text-ink-primary"
-                        />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </OverviewPanel>
-          </div>
-          <div className={styles.recent}>
-            <OverviewPanel
-              title="Recent Content"
-              action={
-                <SectionLink href="/dashboard/content">
-                  Open library
-                </SectionLink>
-              }
-            >
-              {recentItems.length === 0 ? (
-                <OverviewEmpty
-                  icon={Library}
-                  title="No content yet."
-                  description="Create the first content item to start the workflow."
-                />
-              ) : (
-                <div className="overflow-hidden rounded-xl border border-edge/70">
-                  <ul className="divide-y divide-edge/65">
-                    {recentItems.slice(0, 4).map((item) => (
-                      <li key={item.id}>
-                        <Link
-                          href={`/dashboard/content/${item.id}`}
-                          className="flex items-center gap-3 bg-white/[0.012] px-3.5 py-3 transition hover:bg-white/[0.04] sm:px-4"
-                        >
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-xl border border-edge bg-[#080d19] text-ink-muted">
-                            <FileText aria-hidden="true" className="size-4" />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-sm font-medium text-ink-primary">
-                              {item.title}
-                            </span>
-                            <span className="mt-0.5 block truncate text-xs text-ink-muted">
-                              {CONTENT_TYPE_LABELS[item.content_type]} ·{" "}
-                              {formatUpdated(item.updated_at)}
-                            </span>
-                          </span>
-                          <StatusBadge
-                            tone={
-                              item.status === "ready_for_review"
-                                ? "accent"
-                                : "inactive"
-                            }
-                          >
-                            {CONTENT_STATUS_LABELS[item.status]}
-                          </StatusBadge>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+          <div className={styles.actions}>
+            <OverviewPanel title="Quick Actions">
+              <div className={styles.actions}>
+                {[
+                  {
+                    href: "/dashboard/content/new",
+                    label: "New content",
+                    icon: FileText,
+                  },
+                  {
+                    href: "/dashboard/video",
+                    label: "Video Studio",
+                    icon: MonitorPlay,
+                  },
+                  {
+                    href: "/dashboard/scripture",
+                    label: "Scripture",
+                    icon: ScrollText,
+                  },
+                  {
+                    href: "/dashboard/scripts",
+                    label: "Script Studio",
+                    icon: Clapperboard,
+                  },
+                  {
+                    href: "/dashboard/captions",
+                    label: "Captions",
+                    icon: MessageSquareText,
+                  },
+                  {
+                    href: "/dashboard/media",
+                    label: "Media assets",
+                    icon: Images,
+                  },
+                ].map(({ href, label, icon: Icon }) => (
+                  <Link key={href} href={href}>
+                    <Icon aria-hidden="true" />
+                    <span>{label}</span>
+                  </Link>
+                ))}
+              </div>
             </OverviewPanel>
           </div>
           <div className={styles.preview}>
@@ -454,49 +502,6 @@ export function DashboardOverview({
                   description="The latest real content item will appear here after one is created."
                 />
               )}
-            </OverviewPanel>
-          </div>
-          <div className={styles.actions}>
-            <OverviewPanel title="Quick Actions">
-              <div className={styles.actions}>
-                {[
-                  {
-                    href: "/dashboard/content/new",
-                    label: "New content",
-                    icon: FileText,
-                  },
-                  {
-                    href: "/dashboard/video",
-                    label: "Video Studio",
-                    icon: MonitorPlay,
-                  },
-                  {
-                    href: "/dashboard/scripture",
-                    label: "Scripture",
-                    icon: ScrollText,
-                  },
-                  {
-                    href: "/dashboard/scripts",
-                    label: "Script Studio",
-                    icon: Clapperboard,
-                  },
-                  {
-                    href: "/dashboard/captions",
-                    label: "Captions",
-                    icon: MessageSquareText,
-                  },
-                  {
-                    href: "/dashboard/media",
-                    label: "Media assets",
-                    icon: Images,
-                  },
-                ].map(({ href, label, icon: Icon }) => (
-                  <Link key={href} href={href}>
-                    <Icon aria-hidden="true" />
-                    <span>{label}</span>
-                  </Link>
-                ))}
-              </div>
             </OverviewPanel>
           </div>
           <div className={styles.production}>

@@ -3,11 +3,6 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import {
-  buildMonthGrid,
-  parseMonthParam,
-  shiftMonth,
-} from "@/lib/schedule/calendar";
 import type { ScheduleEntry } from "@/lib/schedule/repository";
 import { isoDateInTimeZone } from "@/lib/schedule/timezone";
 import styles from "./overview.module.css";
@@ -22,35 +17,58 @@ export function OverviewCalendar({
   timezone: string;
   entries: ScheduleEntry[];
 }) {
-  const [month, setMonth] = useState<string | null>(null);
-  const current = parseMonthParam(month, new Date(now), timezone);
-  const grid = buildMonthGrid(current.year, current.month, timezone, entries);
+  const [weekOffset, setWeekOffset] = useState(0);
   const today = isoDateInTimeZone(new Date(now), timezone);
+  // Calendar dates use UTC arithmetic after converting the actual instant to
+  // the workspace's local date. This avoids DST moving a day backwards.
+  const start = new Date(`${today}T12:00:00Z`);
+  start.setUTCDate(
+    start.getUTCDate() - ((start.getUTCDay() + 6) % 7) + weekOffset * 7,
+  );
+  const days = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setUTCDate(date.getUTCDate() + index);
+    const isoDate = date.toISOString().slice(0, 10);
+    return {
+      isoDate,
+      date,
+      entries: entries.filter(
+        (entry) =>
+          isoDateInTimeZone(new Date(entry.post.scheduled_for), timezone) ===
+          isoDate,
+      ),
+    };
+  });
+  const dateLabel = (date: Date) =>
+    new Intl.DateTimeFormat("en-GB", {
+      day: "numeric",
+      month: "short",
+      timeZone: "UTC",
+    }).format(date);
+  const label = `${dateLabel(days[0].date)} – ${dateLabel(days[6].date)}`;
   return (
     <div>
       <div className={styles.calendarHeading}>
-        <strong>{grid.label}</strong>
+        <strong>{label}</strong>
         <div>
           <button
             type="button"
-            aria-label="Previous month"
-            onClick={() =>
-              setMonth(shiftMonth(current.year, current.month, -1))
-            }
+            aria-label="Previous week"
+            onClick={() => setWeekOffset((value) => value - 1)}
           >
             <ChevronLeft />
           </button>
           <button
             type="button"
-            aria-label="Show current month"
-            onClick={() => setMonth(null)}
+            aria-label="Show current week"
+            onClick={() => setWeekOffset(0)}
           >
             Today
           </button>
           <button
             type="button"
-            aria-label="Next month"
-            onClick={() => setMonth(shiftMonth(current.year, current.month, 1))}
+            aria-label="Next week"
+            onClick={() => setWeekOffset((value) => value + 1)}
           >
             <ChevronRight />
           </button>
@@ -58,22 +76,22 @@ export function OverviewCalendar({
       </div>
       <div
         className={styles.calendar}
-        aria-label={`${grid.label} scheduled content`}
+        aria-label={`${label} scheduled content`}
       >
-        {["M", "T", "W", "T", "F", "S", "S"].map((day, i) => (
-          <span key={i} className={styles.weekday}>
-            {day}
-          </span>
-        ))}
-        {grid.days.map((day) => (
+        {days.map((day) => (
           <Link
             key={day.isoDate}
             href={`/dashboard/calendar?month=${day.isoDate.slice(0, 7)}`}
             aria-label={`${day.isoDate}: ${day.entries.length} scheduled`}
             aria-current={day.isoDate === today ? "date" : undefined}
-            data-outside={!day.inMonth || undefined}
           >
-            <span>{day.dayOfMonth}</span>
+            <span className={styles.weekday}>
+              {new Intl.DateTimeFormat("en-GB", {
+                weekday: "short",
+                timeZone: "UTC",
+              }).format(day.date)}
+            </span>
+            <strong>{day.date.getUTCDate()}</strong>
             {day.entries.length > 0 ? <i aria-hidden="true" /> : null}
           </Link>
         ))}

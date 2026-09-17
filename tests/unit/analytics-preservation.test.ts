@@ -182,7 +182,7 @@ describe("the homepage snapshot shows measurements or nothing", () => {
     const start = homepage.indexOf('title="Performance Snapshot"');
     const performance = homepage.slice(
       start,
-      homepage.indexOf("<div className={styles.schedule}>", start),
+      homepage.indexOf("<div className={styles.actions}>", start),
     );
 
     expect(performance).not.toMatch(/\bdemo\b/i);

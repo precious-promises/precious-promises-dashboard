@@ -97,8 +97,8 @@
 }
 .grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  grid-template-areas: "calendar approval performance" "calendar recent preview" "schedule recent preview" "actions production system";
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  grid-template-areas: "planning planning planning planning work work work work performance performance performance performance" "actions actions actions preview preview preview production production production system system system";
   gap: 14px;
   align-items: stretch;
 }
@@ -113,7 +113,11 @@
   min-width: 0;
   display: grid;
   place-items: center;
-  min-height: 27px;
+  min-height: 58px;
+  align-content: center;
+  gap: 4px;
+  background: #141b28;
+  border: 1px solid #232c3b;
   border-radius: 5px;
   font-size: 11px;
   color: #bdc6d5;
@@ -140,7 +144,7 @@
 .weekday {
   font-size: 10px;
   color: #8d9bb0;
-  padding: 6px 0;
+  padding: 0;
 }
 .calendarHeading {
   display: flex;
@@ -177,10 +181,39 @@
 .grid > div {
   min-width: 0;
 }
-.grid > .calendar {
-  display: block;
-  grid-area: calendar;
+.planningStack {
+  grid-area: planning;
 }
+.workStack {
+  grid-area: work;
+}
+.planningStack,
+.workStack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.planningStack > div,
+.workStack > div {
+  min-width: 0;
+}
+.planningStack > div:last-child,
+.workStack > div:last-child {
+  flex: 1;
+}
+.planningStack > .calendar {
+  display: block;
+  text-align: left;
+}
+.calendar > a[aria-current] .weekday {
+  color: #e5d9ff;
+}
+.calendar > a > strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
 .approval {
   grid-area: approval;
 }
@@ -224,11 +257,11 @@
   min-width: 0;
 }
 .panel > div:first-child h2 {
-  font-size: 13px;
+  font-size: 14px;
   letter-spacing: -0.015em;
 }
 .panel > div:first-child > a {
-  font-size: 10px;
+  font-size: 11px;
   flex-shrink: 0;
 }
 .panel > div:last-child {
@@ -257,8 +290,8 @@
 }
 .empty > p:last-of-type {
   width: 100%;
-  font-size: 11px;
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.5;
   color: #909db2;
 }
 .recent .panel a span,
@@ -285,7 +318,8 @@
   box-shadow: none;
 }
 .preview .panel > div:last-child > div > div:first-child {
-  min-height: 90px;
+  min-height: 110px;
+  aspect-ratio: auto;
   padding: 12px;
   background: #141a29;
 }
@@ -323,12 +357,12 @@
 }
 .performance dl span {
   display: block;
-  font-size: 10px;
-  color: #8795aa;
+  font-size: 11px;
+  color: #97a5ba;
 }
 .footnote {
-  font-size: 10px;
-  line-height: 1.7;
+  font-size: 11px;
+  line-height: 1.6;
   color: #8997ad;
   margin-top: 10px;
 }
@@ -376,19 +410,19 @@
 .productionSummary {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 .donut {
-  width: 106px;
-  height: 106px;
+  width: 88px;
+  height: 88px;
   border-radius: 50%;
   flex-shrink: 0;
   display: grid;
   place-items: center;
 }
 .donut > span {
-  width: 82px;
-  height: 82px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   background: var(--color-panel);
   display: flex;
@@ -413,7 +447,7 @@
   align-items: center;
   gap: 6px;
   padding-block: 3px;
-  font-size: 10px;
+  font-size: 11px;
   color: #abb8ca;
 }
 .productionSummary li i {
@@ -442,7 +476,7 @@
   min-width: 0;
 }
 .system .panel li span {
-  font-size: 10px;
+  font-size: 11px;
 }
 .system .panel li > span > svg {
   width: 13px;
@@ -485,23 +519,14 @@
   outline: 2px solid #c5a3f6;
   outline-offset: 3px;
 }
-@media (min-width: 1500px) {
+@media (max-width: 1199px) {
   .grid {
-    grid-template-columns: 1.1fr 1fr 1fr 1fr;
-    grid-template-areas: "calendar recent performance preview" "schedule approval performance preview" "actions production system system";
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-areas: "planning work" "performance actions" "preview production" "system system";
   }
   .system .panel ul {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 20px;
-  }
-  .calendar > a {
-    min-height: 30px;
-  }
-}
-@media (max-width: 1100px) {
-  .grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas: "calendar schedule" "calendar approval" "recent performance" "actions preview" "production system";
   }
   .metric {
     padding: 12px;
@@ -563,9 +588,38 @@
     grid-template-areas: "schedule" "approval" "calendar" "recent" "actions" "preview" "production" "performance" "system";
     gap: 10px;
   }
-  .calendar > a {
-    min-height: 34px;
+  .planningStack,
+  .workStack {
+    display: contents;
   }
+  .planningStack > .calendar {
+    grid-area: calendar;
+  }
+  .system .panel ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .calendar > a {
+    min-height: 58px;
+  }
+  .panel > div:first-child h2 {
+    font-size: 14px;
+  }
+  .metric p {
+    font-size: 12px;
+  }
+  .metric small {
+    font-size: 10px;
+  }
+  .toolbar > div {
+    min-width: 0;
+  }
+  .toolbarActions {
+    flex-shrink: 0;
+  }
+  .toolbar h2 {
+    overflow-wrap: anywhere;
+  }
+
   .calendarHeading button {
     min-width: 36px;
     height: 36px;
@@ -588,7 +642,8 @@
     font-size: 11px;
   }
   .preview .panel > div:last-child > div > div:first-child {
-    aspect-ratio: 16/6;
+    aspect-ratio: auto;
+    min-height: 125px;
   }
   .system .panel li {
     padding: 10px 0;
@@ -598,5 +653,22 @@
   }
   .legend {
     margin-bottom: 10px;
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .productionSummary {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .donut {
+    align-self: center;
+  }
+  .productionSummary ol {
+    width: 100%;
+  }
+  .actions .actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
