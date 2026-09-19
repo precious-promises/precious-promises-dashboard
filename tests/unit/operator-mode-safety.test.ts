@@ -44,6 +44,11 @@ describe("Operator Mode safety boundaries", () => {
     expect(operator).toMatch(/\.update\(\{ status: "ready_for_review" \}\)/);
     expect(operator).toMatch(/\.eq\("status", "draft"\)/);
     expect(operator).toMatch(/automation_claims/);
+    expect(operator).toMatch(/\.eq\("variant_type", variantType\)/);
+    expect(operator).toMatch(/defaultCta/);
+    expect(operator).toMatch(/type: "title"/);
+    expect(operator).toMatch(/type: "description"/);
+    expect(operator).toMatch(/type: "hashtags"/);
   });
 
   it("references Scripture from video scenes rather than copying verse text", () => {
