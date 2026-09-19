@@ -731,6 +731,7 @@ export async function runOperatorPass(
             item,
             platform,
             settings.automation_submit_for_review,
+            settings.default_cta,
           );
           if (result.prepared) {
             summary.variantsPrepared += 1;
