@@ -124,7 +124,12 @@ export async function loadGeneration(
   return (data as AiGenerationRecord | null) ?? null;
 }
 
-/** Mark a draft's human decision. Never changes the draft's content. */
+/**
+ * Mark a draft's human decision. Never changes the draft's content.
+ *
+ * Operator Mode uses "prepared" instead, so automated preparation can never
+ * masquerade as a human acceptance.
+ */
 export async function markGenerationDecision(
   client: SupabaseClient,
   ownerId: string,
@@ -192,4 +197,42 @@ export async function listDraftedGenerations(
 
   const { data } = await query;
   return (data ?? []) as AiGenerationRecord[];
+}
+
+
+/** Record that Operator Mode copied a generated draft into a working artifact. */
+export async function markGenerationPrepared(
+  client: SupabaseClient,
+  ownerId: string,
+  generationId: string,
+  target:
+    | { kind: "script_revision"; id: string }
+    | { kind: "platform_variant"; id: string }
+    | { kind: "planner_item"; id: string },
+): Promise<boolean> {
+  const { data } = await client
+    .from("ai_generations")
+    .update({
+      status: "prepared",
+      accepted_target_kind: target.kind,
+      accepted_target_id: target.id,
+      decided_at: new Date().toISOString(),
+    })
+    .eq("id", generationId)
+    .eq("owner_id", ownerId)
+    .eq("status", "drafted")
+    .select("id");
+
+  const changed = (data ?? []).length > 0;
+  if (changed) {
+    await recordAuditAsWorker(
+      client,
+      ownerId,
+      "ai_generation_prepared",
+      "ai_generation",
+      generationId,
+      { target: target.kind },
+    );
+  }
+  return changed;
 }
