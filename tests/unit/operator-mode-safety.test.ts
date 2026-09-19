@@ -17,6 +17,7 @@ describe("Operator Mode safety boundaries", () => {
     expect(migration).toMatch(
       /automation_submit_for_review boolean not null default true/,
     );
+    expect(migration).not.toMatch(/automation_internal_keys/);
   });
 
   it("blocks automation over unverified Scripture", () => {
@@ -40,6 +41,8 @@ describe("Operator Mode safety boundaries", () => {
     expect(operator).not.toMatch(/\.from\(["']scheduled_posts["']\)/);
     expect(operator).not.toMatch(/runPublishDispatcher|publishClaimedPost/);
     expect(operator).toMatch(/review_state:\s*"ready_for_review"/);
+    expect(operator).toMatch(/\.eq\("status", "draft"\)/);
+    expect(operator).toMatch(/automation_claims/);
   });
 
   it("references Scripture from video scenes rather than copying verse text", () => {
