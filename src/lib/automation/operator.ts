@@ -626,3 +626,38 @@ export async function listOperatorRuns(
     .limit(limit);
   return data ?? [];
 }
+
+
+/** Compatibility entrypoint used by the dashboard action. */
+export async function runOperatorForOwner(
+  client: SupabaseClient,
+  ownerId: string,
+): Promise<OperatorRunResult> {
+  return runOperatorPass(client, ownerId);
+}
+
+/** Run one pass for every owner who has explicitly enabled Operator Mode. */
+export async function runOperatorForEnabledOwners(
+  client: SupabaseClient,
+): Promise<{ owners: number; completed: number; failed: number }> {
+  const { data, error } = await client
+    .from("app_settings")
+    .select("owner_id")
+    .eq("automation_enabled", true);
+
+  if (error) {
+    return { owners: 0, completed: 0, failed: 1 };
+  }
+
+  const owners = (data ?? []) as { owner_id: string }[];
+  let completed = 0;
+  let failed = 0;
+
+  for (const row of owners) {
+    const result = await runOperatorPass(client, row.owner_id);
+    if (result.status === "completed") completed += 1;
+    if (result.status === "failed") failed += 1;
+  }
+
+  return { owners: owners.length, completed, failed };
+}
