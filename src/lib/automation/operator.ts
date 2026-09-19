@@ -1,10 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ContentItem } from "@/lib/content/types";
-import {
-  markGenerationPrepared,
-  runAiGeneration,
-} from "@/lib/ai/generations";
+import { markGenerationPrepared, runAiGeneration } from "@/lib/ai/generations";
 import { recordAuditAsWorker } from "@/lib/audit/repository";
 import type { PlannerItem } from "@/lib/planner/types";
 import type { ScriptRevision } from "@/lib/scripts/types";
@@ -209,17 +206,18 @@ async function prepareVariant(
     .eq("variant_type", variantType)
     .maybeSingle();
 
-  const existing = (existingRow as {
-    id: string;
-    title: string | null;
-    caption: string | null;
-    description: string | null;
-    hashtags: string[];
-    first_comment: string | null;
-    cta: string | null;
-    thumbnail_text: string | null;
-    review_state: string;
-  } | null) ?? null;
+  const existing =
+    (existingRow as {
+      id: string;
+      title: string | null;
+      caption: string | null;
+      description: string | null;
+      hashtags: string[];
+      first_comment: string | null;
+      cta: string | null;
+      thumbnail_text: string | null;
+      review_state: string;
+    } | null) ?? null;
 
   if (
     existing &&
@@ -311,9 +309,7 @@ async function prepareVariant(
     }
   }
 
-  const cta = existing?.cta?.trim()
-    ? existing.cta
-    : defaultCta?.trim() || null;
+  const cta = existing?.cta?.trim() ? existing.cta : defaultCta?.trim() || null;
 
   const hasReviewableCopy = [title, caption, description].some(
     (value) => (value ?? "").trim() !== "",
