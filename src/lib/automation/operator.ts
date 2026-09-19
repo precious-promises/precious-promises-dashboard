@@ -1,24 +1,28 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import type { ContentItem } from "@/lib/content/types";
 import { runAiGeneration } from "@/lib/ai/generations";
-import type { AiGenerationType, ScriptureContext } from "@/lib/ai/types";
-import type { ContentItem, ContentType } from "@/lib/content/types";
+import { recordAuditAsWorker } from "@/lib/audit/repository";
+import type { PlannerItem } from "@/lib/planner/types";
 import type { ScriptRevision } from "@/lib/scripts/types";
 import type { VariantPlatform, VariantType } from "@/lib/variants/types";
 
-export interface OperatorRunSummary {
-  scanned: number;
-  aiDraftsCreated: number;
-  variantsCreated: number;
-  videoProjectsCreated: number;
-  scenesCreated: number;
+const MAX_ITEMS_PER_PASS = 4;
+
+export interface OperatorSummary {
+  itemsInspected: number;
+  scriptsPrepared: number;
+  variantsPrepared: number;
+  videosPrepared: number;
   submittedForReview: number;
-  blockers: Record<string, number>;
+  blockedUnverifiedScripture: number;
+  skippedAlreadyComplete: number;
+  aiFailures: number;
 }
 
 export interface OperatorRunResult {
   status: "completed" | "disabled" | "failed";
-  summary: OperatorRunSummary;
+  summary: OperatorSummary;
   error: string | null;
 }
 
@@ -29,331 +33,73 @@ interface OperatorSettings {
   automation_submit_for_review: boolean;
 }
 
-function emptySummary(): OperatorRunSummary {
+function emptySummary(): OperatorSummary {
   return {
-    scanned: 0,
-    aiDraftsCreated: 0,
-    variantsCreated: 0,
-    videoProjectsCreated: 0,
-    scenesCreated: 0,
+    itemsInspected: 0,
+    scriptsPrepared: 0,
+    variantsPrepared: 0,
+    videosPrepared: 0,
     submittedForReview: 0,
-    blockers: {},
+    blockedUnverifiedScripture: 0,
+    skippedAlreadyComplete: 0,
+    aiFailures: 0,
   };
 }
 
-function addBlocker(summary: OperatorRunSummary, name: string): void {
-  summary.blockers[name] = (summary.blockers[name] ?? 0) + 1;
+function sourcePlatform(item: ContentItem): VariantPlatform {
+  if (item.content_type.startsWith("instagram_")) return "instagram";
+  if (item.content_type.startsWith("tiktok_")) return "tiktok";
+  return "youtube";
 }
 
-function scriptureContext(item: ContentItem): ScriptureContext | null {
-  if (
-    item.scripture_verification_status !== "manually_verified" ||
-    !item.scripture_reference ||
-    !item.scripture_text
-  ) {
-    return null;
+function variantTypeFor(
+  platform: VariantPlatform,
+  item: ContentItem,
+): VariantType {
+  if (platform === "youtube") {
+    return item.content_type === "youtube_short" ||
+      item.content_type === "instagram_reel" ||
+      item.content_type === "tiktok_video"
+      ? "youtube_short"
+      : "youtube_video";
   }
-  return {
-    reference: item.scripture_reference,
-    text: item.scripture_text,
-    translation: item.scripture_translation,
-  };
-}
-
-function platformPlan(contentType: ContentType): {
-  platform: VariantPlatform;
-  variantType: VariantType;
-}[] {
-  switch (contentType) {
-    case "youtube_short":
-      return [
-        { platform: "youtube", variantType: "youtube_short" },
-        { platform: "instagram", variantType: "instagram_reel" },
-        { platform: "tiktok", variantType: "tiktok_video" },
-      ];
-    case "instagram_reel":
-    case "tiktok_video":
-      return [
-        { platform: "youtube", variantType: "youtube_short" },
-        { platform: "instagram", variantType: "instagram_reel" },
-        { platform: "tiktok", variantType: "tiktok_video" },
-      ];
-    case "instagram_image":
-      return [{ platform: "instagram", variantType: "instagram_image" }];
-    case "instagram_carousel":
-      return [{ platform: "instagram", variantType: "instagram_carousel" }];
-    default:
-      return [{ platform: "youtube", variantType: "youtube_video" }];
+  if (platform === "instagram") {
+    if (item.content_type === "instagram_image") return "instagram_image";
+    if (item.content_type === "instagram_carousel") return "instagram_carousel";
+    return "instagram_reel";
   }
+  return "tiktok_video";
 }
 
-function defaultAspectRatio(contentType: ContentType): "9:16" | "16:9" | "1:1" {
-  if (
-    contentType === "youtube_short" ||
-    contentType === "instagram_reel" ||
-    contentType === "tiktok_video"
-  ) {
-    return "9:16";
+function requiresVideo(item: ContentItem): boolean {
+  return (
+    item.content_type !== "instagram_image" &&
+    item.content_type !== "instagram_carousel"
+  );
+}
+
+function targetPlatforms(
+  item: ContentItem,
+  plannerItems: readonly PlannerItem[],
+): VariantPlatform[] {
+  const linked = plannerItems.find(
+    (candidate) =>
+      candidate.content_item_id === item.id &&
+      candidate.status !== "done" &&
+      candidate.status !== "dropped",
+  );
+  if (linked && linked.target_platforms.length > 0) {
+    return [...new Set(linked.target_platforms)];
   }
-  if (contentType === "instagram_image" || contentType === "instagram_carousel") {
-    return "1:1";
-  }
-  return "16:9";
+  return [sourcePlatform(item)];
 }
 
-function workingMaterial(item: ContentItem, script: ScriptRevision | null): string | null {
-  if (script) {
-    return ["hook", "explanation", "declaration", "prayer", "outro"]
-      .map((key) => {
-        const value = script[key as keyof ScriptRevision];
-        return typeof value === "string" && value.trim() !== ""
-          ? `${key.toUpperCase()}:\n${value}`
-          : null;
-      })
-      .filter((value): value is string => value !== null)
-      .join("\n\n");
-  }
-
-  return item.topic ? `TOPIC: ${item.topic}` : null;
-}
-
-async function hasOpenDraft(
-  client: SupabaseClient,
-  ownerId: string,
-  contentItemId: string,
-  type: AiGenerationType,
-  platformVariantId: string | null,
-): Promise<boolean> {
-  let query = client
-    .from("ai_generations")
-    .select("id")
-    .eq("owner_id", ownerId)
-    .eq("content_item_id", contentItemId)
-    .eq("generation_type", type)
-    .eq("status", "drafted")
-    .limit(1);
-
-  query =
-    platformVariantId === null
-      ? query.is("platform_variant_id", null)
-      : query.eq("platform_variant_id", platformVariantId);
-
-  const { data } = await query;
-  return (data ?? []).length > 0;
-}
-
-async function createDraftIfMissing(
+async function prepareScript(
   client: SupabaseClient,
   ownerId: string,
   item: ContentItem,
-  script: ScriptRevision | null,
-  type: AiGenerationType,
-  platform: VariantPlatform | null,
-  platformVariantId: string | null,
-  instruction: string,
-): Promise<boolean> {
-  if (
-    await hasOpenDraft(client, ownerId, item.id, type, platformVariantId)
-  ) {
-    return false;
-  }
-
-  const outcome = await runAiGeneration(client, {
-    ownerId,
-    contentItemId: item.id,
-    platformVariantId,
-    request: {
-      type,
-      instruction,
-      scripture: scriptureContext(item),
-      workingMaterial: workingMaterial(item, script),
-      platform,
-    },
-  });
-
-  return outcome.ok;
-}
-
-async function ensureVariants(
-  client: SupabaseClient,
-  ownerId: string,
-  item: ContentItem,
-  summary: OperatorRunSummary,
-): Promise<
-  {
-    id: string;
-    platform: VariantPlatform;
-    variant_type: VariantType;
-    review_state: string;
-    title: string | null;
-    caption: string | null;
-    description: string | null;
-  }[]
-> {
-  const plan = platformPlan(item.content_type);
-  const { data: existingRows } = await client
-    .from("platform_variants")
-    .select("id, platform, variant_type, review_state, title, caption, description")
-    .eq("owner_id", ownerId)
-    .eq("content_item_id", item.id);
-
-  const existing = (existingRows ?? []) as {
-    id: string;
-    platform: VariantPlatform;
-    variant_type: VariantType;
-    review_state: string;
-    title: string | null;
-    caption: string | null;
-    description: string | null;
-  }[];
-
-  for (const target of plan) {
-    if (existing.some((row) => row.platform === target.platform)) {
-      continue;
-    }
-
-    const { data } = await client
-      .from("platform_variants")
-      .insert({
-        owner_id: ownerId,
-        content_item_id: item.id,
-        platform: target.platform,
-        variant_type: target.variantType,
-        hashtags: [],
-        review_state: "draft",
-      })
-      .select("id, platform, variant_type, review_state, title, caption, description")
-      .single();
-
-    if (data) {
-      existing.push(data as (typeof existing)[number]);
-      summary.variantsCreated += 1;
-    }
-  }
-
-  return existing;
-}
-
-async function ensureVideoDraft(
-  client: SupabaseClient,
-  ownerId: string,
-  item: ContentItem,
-  script: ScriptRevision | null,
-  summary: OperatorRunSummary,
-): Promise<void> {
-  if (
-    item.content_type === "instagram_image" ||
-    item.content_type === "instagram_carousel"
-  ) {
-    return;
-  }
-
-  const { data: existingProject } = await client
-    .from("video_projects")
-    .select("id")
-    .eq("owner_id", ownerId)
-    .eq("content_item_id", item.id)
-    .neq("status", "archived")
-    .limit(1)
-    .maybeSingle();
-
-  if (existingProject) {
-    return;
-  }
-
-  if (!script) {
-    addBlocker(summary, "script_decision_required");
-    return;
-  }
-
-  const { data: project } = await client
-    .from("video_projects")
-    .insert({
-      owner_id: ownerId,
-      content_item_id: item.id,
-      name: item.title,
-      aspect_ratio: defaultAspectRatio(item.content_type),
-      status: "draft",
-    })
-    .select("id")
-    .single();
-
-  if (!project) {
-    addBlocker(summary, "video_project_create_failed");
-    return;
-  }
-
-  summary.videoProjectsCreated += 1;
-  let order = 1;
-
-  if (scriptureContext(item)) {
-    const { data } = await client
-      .from("video_scenes")
-      .insert({
-        owner_id: ownerId,
-        project_id: project.id as string,
-        scene_order: order++,
-        scene_type: "scripture",
-        text_source: "content_scripture",
-        duration_seconds: 7,
-        transition: "fade",
-        text_position: "centre",
-        text_align: "centre",
-        text_animation: "fade_in",
-      })
-      .select("id")
-      .single();
-    if (data) summary.scenesCreated += 1;
-  }
-
-  const scenePlan: {
-    scene_type: "explanation" | "declaration" | "prayer" | "outro";
-    key: keyof Pick<
-      ScriptRevision,
-      "explanation" | "declaration" | "prayer" | "outro"
-    >;
-  }[] = [
-    { scene_type: "explanation", key: "explanation" },
-    { scene_type: "declaration", key: "declaration" },
-    { scene_type: "prayer", key: "prayer" },
-    { scene_type: "outro", key: "outro" },
-  ];
-
-  for (const scene of scenePlan) {
-    const value = script[scene.key];
-    if (typeof value !== "string" || value.trim() === "") continue;
-
-    const { data } = await client
-      .from("video_scenes")
-      .insert({
-        owner_id: ownerId,
-        project_id: project.id as string,
-        scene_order: order++,
-        scene_type: scene.scene_type,
-        text_source: "script_revision",
-        duration_seconds: scene.scene_type === "explanation" ? 12 : 7,
-        transition: "fade",
-        text_position: "centre",
-        text_align: "centre",
-        text_animation: "fade_in",
-      })
-      .select("id")
-      .single();
-
-    if (data) summary.scenesCreated += 1;
-  }
-}
-
-async function runItem(
-  client: SupabaseClient,
-  ownerId: string,
-  item: ContentItem,
-  settings: OperatorSettings,
-  summary: OperatorRunSummary,
-): Promise<void> {
-  summary.scanned += 1;
-
-  const { data: scriptRow } = await client
+): Promise<ScriptRevision | null> {
+  const { data: existing } = await client
     .from("script_revisions")
     .select("*")
     .eq("owner_id", ownerId)
@@ -362,105 +108,354 @@ async function runItem(
     .limit(1)
     .maybeSingle();
 
-  const script = (scriptRow as ScriptRevision | null) ?? null;
+  if (existing) return existing as ScriptRevision;
+
+  const outcome = await runAiGeneration(client, {
+    ownerId,
+    contentItemId: item.id,
+    platformVariantId: null,
+    request: {
+      type: "script_draft",
+      instruction:
+        "Prepare a concise Precious Promises working script from the verified Scripture and topic. Keep Scripture separate from authored prose. Include a clear hook, explanation, optional declaration or prayer, and a short outro.",
+      scripture:
+        item.scripture_reference && item.scripture_text
+          ? {
+              reference: item.scripture_reference,
+              text: item.scripture_text,
+              translation: item.scripture_translation,
+            }
+          : null,
+      workingMaterial: item.topic
+        ? `TOPIC: ${item.topic}\nDESCRIPTION: ${item.description ?? ""}`
+        : item.description,
+      platform: sourcePlatform(item),
+    },
+  });
+
+  if (!outcome.ok || !outcome.generationId || !outcome.result?.ok) {
+    return null;
+  }
+
+  const output = outcome.result.output as Partial<
+    Pick<
+      ScriptRevision,
+      "hook" | "explanation" | "declaration" | "prayer" | "outro"
+    >
+  >;
+
+  const { data: inserted, error } = await client
+    .from("script_revisions")
+    .insert({
+      owner_id: ownerId,
+      content_item_id: item.id,
+      revision_number: 1,
+      hook: output.hook ?? null,
+      explanation: output.explanation ?? null,
+      declaration: output.declaration ?? null,
+      prayer: output.prayer ?? null,
+      outro: output.outro ?? null,
+      notes:
+        "Prepared by Operator Mode as a working draft. Human approval is still required before scheduling or publishing.",
+    })
+    .select("*")
+    .single();
+
+  if (error || !inserted) return null;
+
+  await client
+    .from("ai_generations")
+    .update({
+      status: "prepared",
+      accepted_target_kind: "script_revision",
+      accepted_target_id: (inserted as { id: string }).id,
+      decided_at: new Date().toISOString(),
+    })
+    .eq("id", outcome.generationId)
+    .eq("owner_id", ownerId)
+    .eq("status", "drafted");
+
+  await recordAuditAsWorker(
+    client,
+    ownerId,
+    "ai_generation_prepared",
+    "ai_generation",
+    outcome.generationId,
+    { target: "script_revision" },
+  );
+
+  return inserted as ScriptRevision;
+}
+
+async function prepareVariant(
+  client: SupabaseClient,
+  ownerId: string,
+  item: ContentItem,
+  platform: VariantPlatform,
+  submitForReview: boolean,
+): Promise<{ prepared: boolean; submitted: boolean; aiFailed: boolean }> {
+  const { data: existing } = await client
+    .from("platform_variants")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .eq("content_item_id", item.id)
+    .eq("platform", platform)
+    .limit(1)
+    .maybeSingle();
+
+  if (
+    existing &&
+    ["ready_for_review", "approved"].includes(
+      (existing as { review_state: string }).review_state,
+    )
+  ) {
+    return { prepared: false, submitted: false, aiFailed: false };
+  }
+
+  const outcome = await runAiGeneration(client, {
+    ownerId,
+    contentItemId: item.id,
+    platformVariantId: existing ? (existing as { id: string }).id : null,
+    request: {
+      type: "caption",
+      instruction:
+        platform === "youtube"
+          ? "Prepare polished YouTube description or caption copy for this content item. Keep it concise, faithful to the source, and do not alter Scripture."
+          : `Prepare polished ${platform} caption copy for this content item. Keep it concise, natural and faithful to the verified source.`,
+      scripture:
+        item.scripture_reference && item.scripture_text
+          ? {
+              reference: item.scripture_reference,
+              text: item.scripture_text,
+              translation: item.scripture_translation,
+            }
+          : null,
+      workingMaterial: [item.title, item.topic, item.description]
+        .filter(Boolean)
+        .join("\n"),
+      platform,
+    },
+  });
+
+  if (!outcome.ok || !outcome.generationId || !outcome.result?.ok) {
+    return { prepared: false, submitted: false, aiFailed: true };
+  }
+
+  const caption =
+    typeof outcome.result.output.caption === "string"
+      ? outcome.result.output.caption
+      : "";
+  if (!caption.trim()) {
+    return { prepared: false, submitted: false, aiFailed: true };
+  }
+
+  const reviewState = submitForReview ? "ready_for_review" : "draft";
+  const variantType = variantTypeFor(platform, item);
+
+  const { data: saved, error } = await client
+    .from("platform_variants")
+    .upsert(
+      {
+        owner_id: ownerId,
+        content_item_id: item.id,
+        platform,
+        variant_type: variantType,
+        title: existing ? (existing as { title?: string | null }).title : item.title,
+        caption,
+        description:
+          platform === "youtube"
+            ? caption
+            : existing
+              ? (existing as { description?: string | null }).description ?? null
+              : null,
+        hashtags: existing
+          ? (existing as { hashtags?: string[] }).hashtags ?? []
+          : [],
+        first_comment: existing
+          ? (existing as { first_comment?: string | null }).first_comment ?? null
+          : null,
+        cta: existing
+          ? (existing as { cta?: string | null }).cta ?? null
+          : null,
+        thumbnail_text: existing
+          ? (existing as { thumbnail_text?: string | null }).thumbnail_text ?? null
+          : null,
+        review_state: reviewState,
+        approved_at: null,
+        approved_by: null,
+        approval_hash: null,
+        rejected_at: null,
+        rejected_by: null,
+        rejection_reason: null,
+      },
+      { onConflict: "content_item_id,platform,variant_type" },
+    )
+    .select("id")
+    .single();
+
+  if (error || !saved) {
+    return { prepared: false, submitted: false, aiFailed: true };
+  }
+
+  await client
+    .from("ai_generations")
+    .update({
+      status: "prepared",
+      accepted_target_kind: "platform_variant",
+      accepted_target_id: (saved as { id: string }).id,
+      decided_at: new Date().toISOString(),
+    })
+    .eq("id", outcome.generationId)
+    .eq("owner_id", ownerId)
+    .eq("status", "drafted");
+
+  await recordAuditAsWorker(
+    client,
+    ownerId,
+    "ai_generation_prepared",
+    "ai_generation",
+    outcome.generationId,
+    { target: "platform_variant" },
+  );
+
+  return {
+    prepared: true,
+    submitted: submitForReview,
+    aiFailed: false,
+  };
+}
+
+async function prepareVideoDraft(
+  client: SupabaseClient,
+  ownerId: string,
+  item: ContentItem,
+  script: ScriptRevision | null,
+): Promise<boolean> {
+  if (!requiresVideo(item)) return false;
+
+  const { data: existing } = await client
+    .from("video_projects")
+    .select("id")
+    .eq("owner_id", ownerId)
+    .eq("content_item_id", item.id)
+    .neq("status", "archived")
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return false;
+
+  const { data: project, error } = await client
+    .from("video_projects")
+    .insert({
+      owner_id: ownerId,
+      content_item_id: item.id,
+      name: item.title,
+      aspect_ratio:
+        item.content_type === "youtube_standard_video" ||
+        item.content_type === "youtube_long_video" ||
+        item.content_type === "youtube_sleep_video" ||
+        item.content_type === "youtube_compilation"
+          ? "16:9"
+          : "9:16",
+      status: "draft",
+    })
+    .select("id")
+    .single();
+
+  if (error || !project) return false;
+  const projectId = (project as { id: string }).id;
+
+  const scenes: Record<string, unknown>[] = [];
+  let order = 1;
 
   if (
     item.scripture_reference &&
     item.scripture_text &&
-    item.scripture_verification_status !== "manually_verified"
+    item.scripture_verification_status === "manually_verified"
   ) {
-    addBlocker(summary, "scripture_verification_required");
+    scenes.push({
+      owner_id: ownerId,
+      project_id: projectId,
+      scene_order: order++,
+      scene_type: "scripture",
+      text_source: "content_scripture",
+      text_content: null,
+      duration_seconds: 8,
+      transition: "fade",
+      text_position: "centre",
+      text_align: "centre",
+      text_animation: "fade_in",
+    });
   }
 
-  if (settings.automation_create_working_drafts) {
-    if (!script) {
-      const created = await createDraftIfMissing(
-        client,
-        ownerId,
-        item,
-        null,
-        "script_draft",
-        null,
-        null,
-        "Prepare a clear Precious Promises spoken script draft. Keep Scripture as read-only source material. Do not invent or rewrite Scripture.",
-      );
-      if (created) summary.aiDraftsCreated += 1;
-    }
+  const sceneSpecs = [
+    ["explanation", script?.explanation, 10, "dissolve", "centre", "centre", "rise"],
+    ["declaration", script?.declaration, 8, "dissolve", "centre", "centre", "fade_in"],
+    ["prayer", script?.prayer, 10, "dissolve", "centre", "centre", "fade_in"],
+    ["outro", script?.outro, 6, "fade", "bottom", "centre", "fade_in"],
+  ] as const;
 
-    const variants = await ensureVariants(client, ownerId, item, summary);
-
-    for (const variant of variants) {
-      const draftRequests: {
-        type: AiGenerationType;
-        instruction: string;
-      }[] = [
-        {
-          type: "title",
-          instruction: "Draft a concise platform-appropriate title.",
-        },
-        {
-          type: "caption",
-          instruction:
-            "Draft a platform-appropriate caption using the saved content and verified Scripture context where available.",
-        },
-        {
-          type: "description",
-          instruction:
-            "Draft a clear platform description. Do not present generated prose as Scripture.",
-        },
-        {
-          type: "hashtags",
-          instruction: "Suggest relevant, restrained hashtags for this content.",
-        },
-        {
-          type: "cta",
-          instruction:
-            "Draft a short call to action appropriate for Precious Promises.",
-        },
-      ];
-
-      for (const request of draftRequests) {
-        const created = await createDraftIfMissing(
-          client,
-          ownerId,
-          item,
-          script,
-          request.type,
-          variant.platform,
-          variant.id,
-          request.instruction,
-        );
-        if (created) summary.aiDraftsCreated += 1;
-      }
-
-      if (
-        settings.automation_submit_for_review &&
-        variant.review_state === "draft" &&
-        [variant.title, variant.caption, variant.description].some(
-          (value) => (value ?? "").trim() !== "",
-        )
-      ) {
-        const { data } = await client
-          .from("platform_variants")
-          .update({ review_state: "ready_for_review" })
-          .eq("id", variant.id)
-          .eq("owner_id", ownerId)
-          .eq("review_state", "draft")
-          .select("id");
-
-        if ((data ?? []).length > 0) {
-          summary.submittedForReview += 1;
-        }
-      }
-    }
+  for (const [sceneType, text, duration, transition, position, align, animation] of sceneSpecs) {
+    if (!text) continue;
+    scenes.push({
+      owner_id: ownerId,
+      project_id: projectId,
+      scene_order: order++,
+      scene_type: sceneType,
+      text_source: "script_revision",
+      text_content: null,
+      duration_seconds: duration,
+      transition,
+      text_position: position,
+      text_align: align,
+      text_animation: animation,
+    });
   }
 
-  if (settings.automation_prepare_video_drafts) {
-    await ensureVideoDraft(client, ownerId, item, script, summary);
+  if (scenes.length === 0) {
+    await client.from("video_projects").delete().eq("id", projectId).eq("owner_id", ownerId);
+    return false;
   }
+
+  const { error: sceneError } = await client.from("video_scenes").insert(scenes);
+  if (sceneError) {
+    await client.from("video_projects").delete().eq("id", projectId).eq("owner_id", ownerId);
+    return false;
+  }
+
+  return true;
 }
 
-export async function runOperatorForOwner(
+async function finishRun(
+  client: SupabaseClient,
+  ownerId: string,
+  runId: string,
+  result: OperatorRunResult,
+): Promise<OperatorRunResult> {
+  const now = new Date().toISOString();
+  await client
+    .from("automation_runs")
+    .update({
+      status: result.status,
+      completed_at: now,
+      summary: result.summary,
+      error_detail: result.error,
+    })
+    .eq("id", runId)
+    .eq("owner_id", ownerId);
+
+  await client
+    .from("app_settings")
+    .update({
+      automation_last_run_at: now,
+      automation_last_error: result.error,
+    })
+    .eq("owner_id", ownerId);
+
+  return result;
+}
+
+export async function runOperatorPass(
   client: SupabaseClient,
   ownerId: string,
 ): Promise<OperatorRunResult> {
@@ -474,116 +469,160 @@ export async function runOperatorForOwner(
     .eq("owner_id", ownerId)
     .maybeSingle();
 
-  const settings = (settingsRow as OperatorSettings | null) ?? null;
-
-  if (!settings?.automation_enabled) {
-    return { status: "disabled", summary, error: null };
-  }
+  const settings = (settingsRow ?? {
+    automation_enabled: false,
+    automation_create_working_drafts: true,
+    automation_prepare_video_drafts: true,
+    automation_submit_for_review: true,
+  }) as OperatorSettings;
 
   const { data: runRow } = await client
     .from("automation_runs")
     .insert({
       owner_id: ownerId,
-      status: "running",
+      status: settings.automation_enabled ? "running" : "disabled",
       summary,
     })
     .select("id")
     .single();
 
-  const runId = (runRow as { id: string } | null)?.id ?? null;
+  if (!runRow) {
+    return {
+      status: "failed",
+      summary,
+      error: "Operator Mode could not create a run record.",
+    };
+  }
+
+  const runId = (runRow as { id: string }).id;
+
+  if (!settings.automation_enabled) {
+    return finishRun(client, ownerId, runId, {
+      status: "disabled",
+      summary,
+      error: null,
+    });
+  }
 
   try {
-    const { data: itemRows, error } = await client
-      .from("content_items")
-      .select("*")
-      .eq("owner_id", ownerId)
-      .neq("status", "archived")
-      .order("updated_at", { ascending: false })
-      .limit(50);
+    const [{ data: itemRows }, { data: plannerRows }] = await Promise.all([
+      client
+        .from("content_items")
+        .select("*")
+        .eq("owner_id", ownerId)
+        .neq("status", "archived")
+        .order("updated_at", { ascending: true })
+        .limit(MAX_ITEMS_PER_PASS),
+      client
+        .from("planner_items")
+        .select("*")
+        .eq("owner_id", ownerId)
+        .in("status", ["idea", "planned", "in_production"]),
+    ]);
 
-    if (error) throw error;
+    const items = (itemRows ?? []) as ContentItem[];
+    const plannerItems = (plannerRows ?? []) as PlannerItem[];
 
-    for (const item of (itemRows ?? []) as ContentItem[]) {
-      await runItem(client, ownerId, item, settings, summary);
+    for (const item of items) {
+      summary.itemsInspected += 1;
+
+      const hasScripture = Boolean(
+        item.scripture_reference?.trim() || item.scripture_text?.trim(),
+      );
+      if (
+        hasScripture &&
+        item.scripture_verification_status !== "manually_verified"
+      ) {
+        summary.blockedUnverifiedScripture += 1;
+        continue;
+      }
+
+      let script: ScriptRevision | null = null;
+      if (settings.automation_create_working_drafts) {
+        const { data: before } = await client
+          .from("script_revisions")
+          .select("*")
+          .eq("owner_id", ownerId)
+          .eq("content_item_id", item.id)
+          .order("revision_number", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        script = before ? (before as ScriptRevision) : null;
+
+        if (!script) {
+          script = await prepareScript(client, ownerId, item);
+          if (script) summary.scriptsPrepared += 1;
+          else summary.aiFailures += 1;
+        }
+      }
+
+      let changed = false;
+      for (const platform of targetPlatforms(item, plannerItems)) {
+        if (!settings.automation_create_working_drafts) break;
+        const result = await prepareVariant(
+          client,
+          ownerId,
+          item,
+          platform,
+          settings.automation_submit_for_review,
+        );
+        if (result.prepared) {
+          summary.variantsPrepared += 1;
+          changed = true;
+        }
+        if (result.submitted) summary.submittedForReview += 1;
+        if (result.aiFailed) summary.aiFailures += 1;
+      }
+
+      if (
+        settings.automation_prepare_video_drafts &&
+        (await prepareVideoDraft(client, ownerId, item, script))
+      ) {
+        summary.videosPrepared += 1;
+        changed = true;
+      }
+
+      const linkedPlanner = plannerItems.find(
+        (candidate) => candidate.content_item_id === item.id,
+      );
+      if (linkedPlanner && changed && linkedPlanner.status !== "in_production") {
+        await client
+          .from("planner_items")
+          .update({ status: "in_production" })
+          .eq("id", linkedPlanner.id)
+          .eq("owner_id", ownerId);
+      }
+
+      if (!changed) summary.skippedAlreadyComplete += 1;
     }
 
-    const completedAt = new Date().toISOString();
-
-    if (runId) {
-      await client
-        .from("automation_runs")
-        .update({
-          status: "completed",
-          completed_at: completedAt,
-          summary,
-          error_detail: null,
-        })
-        .eq("id", runId)
-        .eq("owner_id", ownerId);
-    }
-
-    await client
-      .from("app_settings")
-      .update({
-        automation_last_run_at: completedAt,
-        automation_last_error: null,
-      })
-      .eq("owner_id", ownerId);
-
-    return { status: "completed", summary, error: null };
+    return finishRun(client, ownerId, runId, {
+      status: "completed",
+      summary,
+      error: null,
+    });
   } catch (error) {
     const detail =
       error instanceof Error ? error.message.slice(0, 1000) : "Unknown error";
-
-    if (runId) {
-      await client
-        .from("automation_runs")
-        .update({
-          status: "failed",
-          completed_at: new Date().toISOString(),
-          summary,
-          error_detail: detail,
-        })
-        .eq("id", runId)
-        .eq("owner_id", ownerId);
-    }
-
-    await client
-      .from("app_settings")
-      .update({
-        automation_last_run_at: new Date().toISOString(),
-        automation_last_error: detail,
-      })
-      .eq("owner_id", ownerId);
-
-    return { status: "failed", summary, error: detail };
+    return finishRun(client, ownerId, runId, {
+      status: "failed",
+      summary,
+      error: detail,
+    });
   }
 }
 
-export async function runOperatorForEnabledOwners(
+export async function listOperatorRuns(
   client: SupabaseClient,
-): Promise<{
-  owners: number;
-  completed: number;
-  failed: number;
-}> {
+  ownerId: string,
+  limit = 12,
+) {
   const { data } = await client
-    .from("app_settings")
-    .select("owner_id")
-    .eq("automation_enabled", true);
-
-  let completed = 0;
-  let failed = 0;
-
-  for (const row of (data ?? []) as { owner_id: string }[]) {
-    const result = await runOperatorForOwner(client, row.owner_id);
-    if (result.status === "completed") completed += 1;
-    if (result.status === "failed") failed += 1;
-  }
-
-  return {
-    owners: (data ?? []).length,
-    completed,
-    failed,
-  };
+    .from("automation_runs")
+    .select("*")
+    .eq("owner_id", ownerId)
+    .order("started_at", { ascending: false })
+    .limit(limit);
+  return data ?? [];
 }
