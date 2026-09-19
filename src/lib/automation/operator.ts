@@ -1,7 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ContentItem } from "@/lib/content/types";
-import { runAiGeneration } from "@/lib/ai/generations";
+import {
+  markGenerationPrepared,
+  runAiGeneration,
+} from "@/lib/ai/generations";
 import { recordAuditAsWorker } from "@/lib/audit/repository";
 import type { PlannerItem } from "@/lib/planner/types";
 import type { ScriptRevision } from "@/lib/scripts/types";
@@ -31,6 +34,7 @@ interface OperatorSettings {
   automation_create_working_drafts: boolean;
   automation_prepare_video_drafts: boolean;
   automation_submit_for_review: boolean;
+  default_cta: string | null;
 }
 
 function emptySummary(): OperatorSummary {
@@ -193,64 +197,134 @@ async function prepareVariant(
   item: ContentItem,
   platform: VariantPlatform,
   submitForReview: boolean,
+  defaultCta: string | null,
 ): Promise<{ prepared: boolean; submitted: boolean; aiFailed: boolean }> {
-  const { data: existing } = await client
+  const variantType = variantTypeFor(platform, item);
+  const { data: existingRow } = await client
     .from("platform_variants")
     .select("*")
     .eq("owner_id", ownerId)
     .eq("content_item_id", item.id)
     .eq("platform", platform)
-    .limit(1)
+    .eq("variant_type", variantType)
     .maybeSingle();
+
+  const existing = (existingRow as {
+    id: string;
+    title: string | null;
+    caption: string | null;
+    description: string | null;
+    hashtags: string[];
+    first_comment: string | null;
+    cta: string | null;
+    thumbnail_text: string | null;
+    review_state: string;
+  } | null) ?? null;
 
   if (
     existing &&
-    ["ready_for_review", "approved"].includes(
-      (existing as { review_state: string }).review_state,
-    )
+    ["ready_for_review", "approved"].includes(existing.review_state)
   ) {
     return { prepared: false, submitted: false, aiFailed: false };
   }
 
-  const outcome = await runAiGeneration(client, {
-    ownerId,
-    contentItemId: item.id,
-    platformVariantId: existing ? (existing as { id: string }).id : null,
-    request: {
-      type: "caption",
-      instruction:
-        platform === "youtube"
-          ? "Prepare polished YouTube description or caption copy for this content item. Keep it concise, faithful to the source, and do not alter Scripture."
-          : `Prepare polished ${platform} caption copy for this content item. Keep it concise, natural and faithful to the verified source.`,
-      scripture:
-        item.scripture_reference && item.scripture_text
-          ? {
-              reference: item.scripture_reference,
-              text: item.scripture_text,
-              translation: item.scripture_translation,
-            }
-          : null,
-      workingMaterial: [item.title, item.topic, item.description]
-        .filter(Boolean)
-        .join("\n"),
-      platform,
-    },
-  });
+  const workingMaterial = [item.title, item.topic, item.description]
+    .filter(Boolean)
+    .join("\n");
+  const scripture =
+    item.scripture_reference && item.scripture_text
+      ? {
+          reference: item.scripture_reference,
+          text: item.scripture_text,
+          translation: item.scripture_translation,
+        }
+      : null;
 
-  if (!outcome.ok || !outcome.generationId || !outcome.result?.ok) {
+  let title = existing?.title ?? (platform === "youtube" ? item.title : null);
+  let caption = existing?.caption ?? null;
+  let description = existing?.description ?? null;
+  let hashtags = existing?.hashtags ?? [];
+  const generationIds: string[] = [];
+  let aiFailed = false;
+
+  const generate = async (
+    type: "title" | "description" | "caption" | "hashtags",
+    instruction: string,
+  ): Promise<Record<string, unknown> | null> => {
+    const outcome = await runAiGeneration(client, {
+      ownerId,
+      contentItemId: item.id,
+      platformVariantId: existing?.id ?? null,
+      request: {
+        type,
+        instruction,
+        scripture,
+        workingMaterial,
+        platform,
+      },
+    });
+
+    if (!outcome.ok || !outcome.generationId || !outcome.result?.ok) {
+      aiFailed = true;
+      return null;
+    }
+
+    generationIds.push(outcome.generationId);
+    return outcome.result.output;
+  };
+
+  if (platform === "youtube") {
+    if (!title?.trim()) {
+      const output = await generate(
+        "title",
+        "Prepare a clear YouTube title for this content item. Do not invent claims or alter Scripture.",
+      );
+      title = typeof output?.title === "string" ? output.title : title;
+    }
+    if (!description?.trim()) {
+      const output = await generate(
+        "description",
+        "Prepare a polished YouTube description for this content item. Keep it faithful to the source and do not alter Scripture.",
+      );
+      description =
+        typeof output?.description === "string"
+          ? output.description
+          : description;
+    }
+  } else if (!caption?.trim()) {
+    const output = await generate(
+      "caption",
+      `Prepare polished ${platform} caption copy for this content item. Keep it concise, natural and faithful to the verified source.`,
+    );
+    caption = typeof output?.caption === "string" ? output.caption : caption;
+  }
+
+  if (hashtags.length === 0) {
+    const output = await generate(
+      "hashtags",
+      `Suggest relevant ${platform} hashtags for this content item. Do not make performance claims.`,
+    );
+    if (Array.isArray(output?.hashtags)) {
+      hashtags = output.hashtags.filter(
+        (value): value is string => typeof value === "string",
+      );
+    }
+  }
+
+  const cta = existing?.cta?.trim()
+    ? existing.cta
+    : defaultCta?.trim() || null;
+
+  const hasReviewableCopy = [title, caption, description].some(
+    (value) => (value ?? "").trim() !== "",
+  );
+
+  if (!hasReviewableCopy) {
     return { prepared: false, submitted: false, aiFailed: true };
   }
 
-  const caption =
-    typeof outcome.result.output.caption === "string"
-      ? outcome.result.output.caption
-      : "";
-  if (!caption.trim()) {
-    return { prepared: false, submitted: false, aiFailed: true };
-  }
-
-  const reviewState = submitForReview ? "ready_for_review" : "draft";
-  const variantType = variantTypeFor(platform, item);
+  const reviewState =
+    submitForReview && hasReviewableCopy ? "ready_for_review" : "draft";
 
   const { data: saved, error } = await client
     .from("platform_variants")
@@ -260,31 +334,13 @@ async function prepareVariant(
         content_item_id: item.id,
         platform,
         variant_type: variantType,
-        title: existing
-          ? (existing as { title?: string | null }).title
-          : item.title,
+        title,
         caption,
-        description:
-          platform === "youtube"
-            ? caption
-            : existing
-              ? ((existing as { description?: string | null }).description ??
-                null)
-              : null,
-        hashtags: existing
-          ? ((existing as { hashtags?: string[] }).hashtags ?? [])
-          : [],
-        first_comment: existing
-          ? ((existing as { first_comment?: string | null }).first_comment ??
-            null)
-          : null,
-        cta: existing
-          ? ((existing as { cta?: string | null }).cta ?? null)
-          : null,
-        thumbnail_text: existing
-          ? ((existing as { thumbnail_text?: string | null }).thumbnail_text ??
-            null)
-          : null,
+        description,
+        hashtags,
+        first_comment: existing?.first_comment ?? null,
+        cta,
+        thumbnail_text: existing?.thumbnail_text ?? null,
         review_state: reviewState,
         approved_at: null,
         approved_by: null,
@@ -302,31 +358,23 @@ async function prepareVariant(
     return { prepared: false, submitted: false, aiFailed: true };
   }
 
-  await client
-    .from("ai_generations")
-    .update({
-      status: "prepared",
-      accepted_target_kind: "platform_variant",
-      accepted_target_id: (saved as { id: string }).id,
-      decided_at: new Date().toISOString(),
-    })
-    .eq("id", outcome.generationId)
-    .eq("owner_id", ownerId)
-    .eq("status", "drafted");
-
-  await recordAuditAsWorker(
-    client,
-    ownerId,
-    "ai_generation_prepared",
-    "ai_generation",
-    outcome.generationId,
-    { target: "platform_variant" },
-  );
+  const variantId = (saved as { id: string }).id;
+  for (const generationId of generationIds) {
+    await markGenerationPrepared(client, ownerId, generationId, {
+      kind: "platform_variant",
+      id: variantId,
+    });
+  }
 
   return {
-    prepared: true,
-    submitted: submitForReview,
-    aiFailed: false,
+    prepared:
+      generationIds.length > 0 ||
+      cta !== (existing?.cta ?? null) ||
+      reviewState !== (existing?.review_state ?? "draft"),
+    submitted:
+      reviewState === "ready_for_review" &&
+      existing?.review_state !== "ready_for_review",
+    aiFailed,
   };
 }
 
@@ -572,7 +620,7 @@ export async function runOperatorPass(
   const { data: settingsRow } = await client
     .from("app_settings")
     .select(
-      "automation_enabled, automation_create_working_drafts, automation_prepare_video_drafts, automation_submit_for_review",
+      "automation_enabled, automation_create_working_drafts, automation_prepare_video_drafts, automation_submit_for_review, default_cta",
     )
     .eq("owner_id", ownerId)
     .maybeSingle();
@@ -582,6 +630,7 @@ export async function runOperatorPass(
     automation_create_working_drafts: true,
     automation_prepare_video_drafts: true,
     automation_submit_for_review: true,
+    default_cta: null,
   }) as OperatorSettings;
 
   const { data: runRow } = await client
