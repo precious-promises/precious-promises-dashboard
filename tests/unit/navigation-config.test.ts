@@ -8,12 +8,13 @@ import {
 } from "@/config/navigation";
 import { DASHBOARD_PATH } from "@/lib/auth/routes";
 
-/** The 19 areas approved for Stage 1, in order. */
+/** The built dashboard areas, in order. */
 const EXPECTED_LABELS = [
   "Dashboard",
   "Production Board",
   "Content Library",
   "Content Planner",
+  "Operator Mode",
   "Scripture Studio",
   "Script Studio",
   "Caption Studio",
@@ -32,7 +33,7 @@ const EXPECTED_LABELS = [
 ];
 
 describe("navigation configuration", () => {
-  it("represents all 19 planned areas, in order", () => {
+  it("represents every built area, in order", () => {
     expect(allNavItems().map((item) => item.label)).toEqual(EXPECTED_LABELS);
   });
 
@@ -53,7 +54,7 @@ describe("navigation configuration", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("marks exactly the built areas as available — now all 19", () => {
+  it("marks exactly the built areas as available", () => {
     // Stage 1 had only Dashboard; Stage 2 added Content Library and Media
     // Assets; Stage 3 added the three writing studios; Stage 4 added the Video
     // Creation Studio; Stage 5 added the Production Board, Calendar and
@@ -62,7 +63,7 @@ describe("navigation configuration", () => {
     // Growth Centre and Analytics; Stage 11 added the Content Planner, the
     // YouTube & Playlists workspace, Rights & Licences and Settings. This list
     // grew only as each route genuinely came to exist — never to satisfy a
-    // target count — and it happens to have reached the full 19.
+    // target count. Operator Mode is a later, genuinely built automation module.
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -81,11 +82,10 @@ describe("navigation configuration", () => {
     expect(comingSoon).toHaveLength(0);
   });
 
-  it("adds no 20th area for AI assistance", () => {
-    // AI drafting lives inside the studios that use it, behind explicit
-    // request buttons. A top-level AI area would present generation as a
-    // destination of its own, which is exactly what this product avoids.
-    expect(allNavItems()).toHaveLength(19);
+  it("does not expose a generic AI-assistant destination", () => {
+    // AI drafting still lives inside the studios that use it. Operator Mode is
+    // an automation control centre, not a generic AI-chat destination.
+    expect(allNavItems()).toHaveLength(20);
     for (const item of allNavItems()) {
       expect(item.label.toLowerCase()).not.toContain("ai");
       expect(item.label.toLowerCase()).not.toContain("assistant");
@@ -126,9 +126,10 @@ describe("navigation configuration", () => {
     expect(playlists?.href).toBe("/dashboard/youtube");
   });
 
-  it("offers the four Stage 11 areas at their routes", () => {
+  it("offers the Stage 11 areas and Operator Mode at their routes", () => {
     const expectations: Record<string, string> = {
       "content-planner": "/dashboard/planner",
+      "operator-mode": "/dashboard/operator",
       "youtube-playlists": "/dashboard/youtube",
       "rights-licences": "/dashboard/rights",
       settings: "/dashboard/settings",
