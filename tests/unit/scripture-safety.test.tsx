@@ -116,8 +116,8 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 11", () => {
-  it("activates all nineteen areas, each genuinely built", () => {
+describe("navigation after Operator Mode", () => {
+  it("activates every genuinely built area", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -127,6 +127,7 @@ describe("navigation after Stage 11", () => {
       "Production Board",
       "Content Library",
       "Content Planner",
+      "Operator Mode",
       "Scripture Studio",
       "Script Studio",
       "Caption Studio",
@@ -179,6 +180,7 @@ describe("navigation after Stage 11", () => {
     const expectations: Record<string, string> = {
       "YouTube & Playlists": "/dashboard/youtube",
       "Content Planner": "/dashboard/planner",
+      "Operator Mode": "/dashboard/operator",
       "Rights & Licences": "/dashboard/rights",
       Settings: "/dashboard/settings",
     };
