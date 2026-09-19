@@ -40,7 +40,7 @@ create index if not exists automation_runs_owner_started_idx
   on public.automation_runs (owner_id, started_at desc);
 
 alter table public.automation_runs enable row level security;
-revoke all on public.automation_runs from anon;
+revoke all on public.automation_runs from anon, authenticated;
 
 drop policy if exists "Owners can read their automation runs" on public.automation_runs;
 create policy "Owners can read their automation runs"
@@ -185,3 +185,7 @@ grant select, insert, update, delete on table public.automation_claims to servic
 
 create index if not exists automation_claims_expiry_idx
   on public.automation_claims (claimed_until);
+create index if not exists automation_claims_owner_idx
+  on public.automation_claims (owner_id);
+create index if not exists automation_claims_run_idx
+  on public.automation_claims (run_id);
