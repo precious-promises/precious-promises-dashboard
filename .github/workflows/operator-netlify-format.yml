@@ -1,6 +1,7 @@
 name: Format Operator Mode Netlify functions
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - automation/operator-mode
