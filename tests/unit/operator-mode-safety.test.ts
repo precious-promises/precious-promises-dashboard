@@ -46,9 +46,9 @@ describe("Operator Mode safety boundaries", () => {
     expect(operator).toMatch(/automation_claims/);
     expect(operator).toMatch(/\.eq\("variant_type", variantType\)/);
     expect(operator).toMatch(/defaultCta/);
-    expect(operator).toMatch(/type: "title"/);
-    expect(operator).toMatch(/type: "description"/);
-    expect(operator).toMatch(/type: "hashtags"/);
+    expect(operator).toMatch(/generate\(\s*"title"/);
+    expect(operator).toMatch(/generate\(\s*"description"/);
+    expect(operator).toMatch(/generate\(\s*"hashtags"/);
   });
 
   it("references Scripture from video scenes rather than copying verse text", () => {
