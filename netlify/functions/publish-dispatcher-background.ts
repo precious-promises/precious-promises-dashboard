@@ -17,7 +17,8 @@ function expectedKey(): string | null {
 function authorised(request: Request): boolean {
   const expected = expectedKey();
   const supplied = request.headers.get("x-pp-internal-key");
-  if (!expected || !supplied || expected.length !== supplied.length) return false;
+  if (!expected || !supplied || expected.length !== supplied.length)
+    return false;
   return timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
 }
 

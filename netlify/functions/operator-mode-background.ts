@@ -10,15 +10,14 @@ declare const Netlify: {
 function expectedKey(): string | null {
   const secret = Netlify.env.get("SUPABASE_SECRET_KEY");
   if (!secret) return null;
-  return createHash("sha256")
-    .update(`${secret}:operator-mode`)
-    .digest("hex");
+  return createHash("sha256").update(`${secret}:operator-mode`).digest("hex");
 }
 
 function authorised(request: Request): boolean {
   const expected = expectedKey();
   const supplied = request.headers.get("x-pp-internal-key");
-  if (!expected || !supplied || expected.length !== supplied.length) return false;
+  if (!expected || !supplied || expected.length !== supplied.length)
+    return false;
   return timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
 }
 
@@ -31,7 +30,9 @@ export default async (request: Request) => {
   const url = Netlify.env.get("NEXT_PUBLIC_SUPABASE_URL");
   const secret = Netlify.env.get("SUPABASE_SECRET_KEY");
   if (!url || !secret) {
-    console.log("Operator Mode skipped: trusted worker configuration is incomplete.");
+    console.log(
+      "Operator Mode skipped: trusted worker configuration is incomplete.",
+    );
     return;
   }
 

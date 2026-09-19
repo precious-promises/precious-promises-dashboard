@@ -51,9 +51,7 @@ describe("Operator Mode safety boundaries", () => {
 
   it("exposes Operator Mode as a real dashboard route", () => {
     const navigation = read("src/config/navigation.ts");
-    expect(navigation).toMatch(
-      /OPERATOR_MODE_PATH = "\/dashboard\/operator"/,
-    );
+    expect(navigation).toMatch(/OPERATOR_MODE_PATH = "\/dashboard\/operator"/);
     expect(navigation).toMatch(/label:\s*"Operator Mode"/);
   });
 

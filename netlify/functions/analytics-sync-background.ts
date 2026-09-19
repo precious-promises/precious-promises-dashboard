@@ -16,7 +16,8 @@ function expectedKey(): string | null {
 function authorised(request: Request): boolean {
   const expected = expectedKey();
   const supplied = request.headers.get("x-pp-internal-key");
-  if (!expected || !supplied || expected.length !== supplied.length) return false;
+  if (!expected || !supplied || expected.length !== supplied.length)
+    return false;
   return timingSafeEqual(Buffer.from(expected), Buffer.from(supplied));
 }
 
@@ -29,7 +30,9 @@ export default async (request: Request) => {
   const url = Netlify.env.get("NEXT_PUBLIC_SUPABASE_URL");
   const secret = Netlify.env.get("SUPABASE_SECRET_KEY");
   if (!url || !secret) {
-    console.log("Analytics sync skipped: trusted worker configuration is incomplete.");
+    console.log(
+      "Analytics sync skipped: trusted worker configuration is incomplete.",
+    );
     return;
   }
 
@@ -44,7 +47,9 @@ export default async (request: Request) => {
     .in("platform", ["youtube", "instagram"]);
 
   const owners = [
-    ...new Set(((data ?? []) as { owner_id: string }[]).map((row) => row.owner_id)),
+    ...new Set(
+      ((data ?? []) as { owner_id: string }[]).map((row) => row.owner_id),
+    ),
   ];
 
   const results = [];

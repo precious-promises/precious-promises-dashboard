@@ -13,7 +13,9 @@ function internalKey(label: string): string | null {
 export default async (request: Request) => {
   const key = internalKey("operator-mode");
   if (!key) {
-    console.log("Operator Mode skipped: trusted worker configuration is incomplete.");
+    console.log(
+      "Operator Mode skipped: trusted worker configuration is incomplete.",
+    );
     return;
   }
 
@@ -26,7 +28,9 @@ export default async (request: Request) => {
     headers: { "x-pp-internal-key": key },
   });
 
-  console.log("Operator Mode background handoff", { accepted: response.status === 202 });
+  console.log("Operator Mode background handoff", {
+    accepted: response.status === 202,
+  });
 };
 
 export const config = {
