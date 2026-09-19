@@ -30,7 +30,6 @@ jobs:
           src/lib/ai/generations.ts
           src/trigger/operator.ts
           src/config/navigation.ts
-          supabase/migrations/20260919170000_create_operator_mode.sql
       - name: Commit formatting
         run: |
           if git diff --quiet; then
@@ -39,6 +38,6 @@ jobs:
           fi
           git config user.name "precious-promises-content-dashboard"
           git config user.email "precious.promises888@gmail.com"
-          git add src/app/dashboard/operator/actions.ts src/app/dashboard/operator/page.tsx src/lib/automation/operator.ts src/lib/ai/generations.ts src/trigger/operator.ts src/config/navigation.ts supabase/migrations/20260919170000_create_operator_mode.sql
+          git add src/app/dashboard/operator/actions.ts src/app/dashboard/operator/page.tsx src/lib/automation/operator.ts src/lib/ai/generations.ts src/trigger/operator.ts src/config/navigation.ts
           git commit -m "Format Operator Mode implementation"
           git push origin HEAD:automation/operator-mode
