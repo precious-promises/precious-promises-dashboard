@@ -6,6 +6,7 @@ import {
   FileText,
   FolderOpen,
   Gauge,
+  Bot,
   Images,
   LayoutDashboard,
   Library,
@@ -55,6 +56,7 @@ export const GROWTH_CENTRE_PATH = "/dashboard/growth";
 
 /** Routes activated in Stage 11. All 19 modules are now genuinely built. */
 export const CONTENT_PLANNER_PATH = "/dashboard/planner";
+export const OPERATOR_MODE_PATH = "/dashboard/operator";
 export const YOUTUBE_WORKSPACE_PATH = "/dashboard/youtube";
 export const RIGHTS_LICENCES_PATH = "/dashboard/rights";
 export const SETTINGS_PATH = "/dashboard/settings";
@@ -123,6 +125,13 @@ export const NAVIGATION: NavGroup[] = [
         icon: CalendarClock,
         status: "available",
         href: CONTENT_PLANNER_PATH,
+      },
+      {
+        id: "operator-mode",
+        label: "Operator Mode",
+        icon: Bot,
+        status: "available",
+        href: OPERATOR_MODE_PATH,
       },
     ],
   },
