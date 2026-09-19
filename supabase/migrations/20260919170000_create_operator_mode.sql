@@ -52,3 +52,113 @@ grant select, insert, update, delete on table public.automation_runs to service_
 
 -- Browser writes are deliberately absent. Scheduled/manual automation uses
 -- trusted server credentials, while the owner only reads run evidence.
+
+
+-- AI drafts that Operator Mode applies to a working artifact are still not
+-- human-approved. "prepared" records that distinction explicitly.
+alter table public.ai_generations drop constraint if exists ai_generations_status_check;
+alter table public.ai_generations
+  add constraint ai_generations_status_check check (
+    status in ('drafted', 'prepared', 'accepted', 'rejected')
+  );
+
+alter table public.ai_generations drop constraint if exists ai_generations_accepted_requires_target;
+alter table public.ai_generations
+  add constraint ai_generations_decided_requires_target check (
+    status not in ('prepared', 'accepted')
+    or (accepted_target_kind is not null and accepted_target_id is not null)
+  );
+
+comment on column public.ai_generations.status is
+  'drafted = generated only; prepared = Operator Mode copied it into a working draft; accepted/rejected = explicit human decision.';
+
+-- Keep the audit vocabulary truthful about automated preparation.
+alter table public.audit_log drop constraint if exists audit_log_action_check;
+alter table public.audit_log
+  add constraint audit_log_action_check check (
+    action in (
+      'variant_submitted_for_review',
+      'variant_approved',
+      'variant_rejected',
+      'variant_returned_to_draft',
+      'approval_invalidated',
+      'post_scheduled',
+      'schedule_paused',
+      'schedule_cancelled',
+      'recurring_rule_created',
+      'recurring_rule_updated',
+      'publish_queued',
+      'publish_claimed',
+      'publish_attempt_started',
+      'publish_attempt_failed',
+      'publish_attempt_succeeded',
+      'publish_blocked',
+      'publish_retried',
+      'publish_reconciled',
+      'youtube_connected',
+      'youtube_reconnected',
+      'youtube_disconnected',
+      'youtube_upload_started',
+      'youtube_upload_completed',
+      'youtube_upload_failed',
+      'youtube_thumbnail_set',
+      'youtube_playlist_added',
+      'youtube_processing_updated',
+      'drive_connected',
+      'drive_disconnected',
+      'drive_asset_imported',
+      'drive_asset_rejected',
+      'instagram_connected',
+      'instagram_reconnected',
+      'instagram_disconnected',
+      'instagram_container_created',
+      'instagram_container_finished',
+      'instagram_published',
+      'instagram_publish_failed',
+      'tiktok_connected',
+      'tiktok_reconnected',
+      'tiktok_disconnected',
+      'tiktok_upload_started',
+      'tiktok_upload_completed',
+      'tiktok_processing_updated',
+      'tiktok_post_completed',
+      'tiktok_post_failed',
+      'tiktok_uploaded_to_draft',
+      'tiktok_manual_post_prepared',
+      'analytics_sync_started',
+      'analytics_sync_completed',
+      'analytics_sync_failed',
+      'analytics_permission_required',
+      'analytics_manual_entry_recorded',
+      'growth_goal_created',
+      'growth_goal_updated',
+      'growth_experiment_created',
+      'growth_experiment_completed',
+      'ai_generation_requested',
+      'ai_generation_completed',
+      'ai_generation_failed',
+      'ai_generation_prepared',
+      'ai_generation_accepted',
+      'ai_generation_rejected',
+      'voice_generation_requested',
+      'voice_generation_completed',
+      'voice_generation_failed',
+      'render_requested',
+      'render_started',
+      'render_completed',
+      'render_failed',
+      'render_cancelled',
+      'production_job_created',
+      'production_job_advanced',
+      'production_job_cancelled',
+      'production_job_failed',
+      'planner_item_created',
+      'planner_item_updated',
+      'planner_item_deleted',
+      'licence_record_created',
+      'licence_record_updated',
+      'licence_record_deleted',
+      'settings_updated',
+      'generated_media_deleted'
+    )
+  );
