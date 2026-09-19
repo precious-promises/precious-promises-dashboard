@@ -1,0 +1,47 @@
+name: Format Operator Mode Netlify functions
+
+on:
+  push:
+    branches:
+      - automation/operator-mode
+    paths:
+      - "netlify/functions/**"
+      - "tests/unit/operator-mode-safety.test.ts"
+      - ".github/workflows/operator-netlify-format.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: automation/operator-mode
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Format changed files
+        run: >
+          pnpm exec prettier --write
+          netlify/functions/operator-mode.ts
+          netlify/functions/operator-mode-background.ts
+          netlify/functions/publish-dispatcher.ts
+          netlify/functions/publish-dispatcher-background.ts
+          netlify/functions/analytics-sync.ts
+          netlify/functions/analytics-sync-background.ts
+          tests/unit/operator-mode-safety.test.ts
+      - name: Commit formatting
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add netlify/functions tests/unit/operator-mode-safety.test.ts
+          git commit -m "Format Operator Mode Netlify functions"
+          git push
