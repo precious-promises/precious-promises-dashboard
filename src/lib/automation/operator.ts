@@ -494,6 +494,73 @@ async function finishRun(
   return result;
 }
 
+async function claimContentItem(
+  client: SupabaseClient,
+  ownerId: string,
+  runId: string,
+  contentItemId: string,
+): Promise<string | null> {
+  const now = new Date();
+  const claimedUntil = new Date(now.getTime() + 20 * 60 * 1000).toISOString();
+
+  await client
+    .from("automation_claims")
+    .delete()
+    .eq("content_item_id", contentItemId)
+    .eq("owner_id", ownerId)
+    .lt("claimed_until", now.toISOString());
+
+  const { data, error } = await client
+    .from("automation_claims")
+    .insert({
+      content_item_id: contentItemId,
+      owner_id: ownerId,
+      run_id: runId,
+      claimed_until: claimedUntil,
+    })
+    .select("claim_token")
+    .single();
+
+  if (error || !data) return null;
+  return (data as { claim_token: string }).claim_token;
+}
+
+async function releaseContentItemClaim(
+  client: SupabaseClient,
+  ownerId: string,
+  contentItemId: string,
+  claimToken: string,
+): Promise<void> {
+  await client
+    .from("automation_claims")
+    .delete()
+    .eq("content_item_id", contentItemId)
+    .eq("owner_id", ownerId)
+    .eq("claim_token", claimToken);
+}
+
+async function copyIsReviewReady(
+  client: SupabaseClient,
+  ownerId: string,
+  item: ContentItem,
+  platforms: readonly VariantPlatform[],
+): Promise<boolean> {
+  const { data } = await client
+    .from("platform_variants")
+    .select("platform, review_state")
+    .eq("owner_id", ownerId)
+    .eq("content_item_id", item.id)
+    .in("platform", [...platforms]);
+
+  const ready = new Set(
+    ((data ?? []) as { platform: VariantPlatform; review_state: string }[])
+      .filter((row) => ["ready_for_review", "approved"].includes(row.review_state))
+      .map((row) => row.platform),
+  );
+
+  return platforms.every((platform) => ready.has(platform));
+}
+
 export async function runOperatorPass(
   client: SupabaseClient,
   ownerId: string,
@@ -549,7 +616,7 @@ export async function runOperatorPass(
         .from("content_items")
         .select("*")
         .eq("owner_id", ownerId)
-        .neq("status", "archived")
+        .eq("status", "draft")
         .order("updated_at", { ascending: true })
         .limit(MAX_ITEMS_PER_PASS),
       client
@@ -565,6 +632,13 @@ export async function runOperatorPass(
     for (const item of items) {
       summary.itemsInspected += 1;
 
+      const claimToken = await claimContentItem(client, ownerId, runId, item.id);
+      if (!claimToken) {
+        summary.skippedAlreadyComplete += 1;
+        continue;
+      }
+
+      try {
       const hasScripture = Boolean(
         item.scripture_reference?.trim() || item.scripture_text?.trim(),
       );
@@ -637,7 +711,28 @@ export async function runOperatorPass(
           .eq("owner_id", ownerId);
       }
 
+      const platforms = targetPlatforms(item, plannerItems);
+      if (
+        settings.automation_submit_for_review &&
+        (await copyIsReviewReady(client, ownerId, item, platforms))
+      ) {
+        await client
+          .from("content_items")
+          .update({ status: "ready_for_review" })
+          .eq("id", item.id)
+          .eq("owner_id", ownerId)
+          .eq("status", "draft");
+      }
+
       if (!changed) summary.skippedAlreadyComplete += 1;
+      } finally {
+        await releaseContentItemClaim(
+          client,
+          ownerId,
+          item.id,
+          claimToken,
+        );
+      }
     }
 
     return finishRun(client, ownerId, runId, {
