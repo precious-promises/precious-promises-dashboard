@@ -162,3 +162,29 @@ alter table public.audit_log
       'generated_media_deleted'
     )
   );
+
+
+-- ---------------------------------------------------------------------------
+-- Operator Mode internal invocation key
+-- ---------------------------------------------------------------------------
+-- Only the SHA-256 digest is stored in Postgres. The plaintext key is kept in
+-- the deployment environment and is never committed or exposed to the browser.
+
+create table if not exists public.automation_internal_keys (
+  id text primary key,
+  key_sha256 text not null
+    check (key_sha256 ~ '^[0-9a-f]{64}$'),
+  created_at timestamptz not null default now()
+);
+
+alter table public.automation_internal_keys enable row level security;
+revoke all on public.automation_internal_keys from anon, authenticated;
+grant select on table public.automation_internal_keys to service_role;
+
+insert into public.automation_internal_keys (id, key_sha256)
+values (
+  'operator-default',
+  '323a181162629c5ce5fa7c7034ccd766616d931999da500d3362eea77d3e6777'
+)
+on conflict (id) do update
+set key_sha256 = excluded.key_sha256;
