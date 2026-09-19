@@ -554,7 +554,9 @@ async function copyIsReviewReady(
 
   const ready = new Set(
     ((data ?? []) as { platform: VariantPlatform; review_state: string }[])
-      .filter((row) => ["ready_for_review", "approved"].includes(row.review_state))
+      .filter((row) =>
+        ["ready_for_review", "approved"].includes(row.review_state),
+      )
       .map((row) => row.platform),
   );
 
@@ -632,106 +634,106 @@ export async function runOperatorPass(
     for (const item of items) {
       summary.itemsInspected += 1;
 
-      const claimToken = await claimContentItem(client, ownerId, runId, item.id);
+      const claimToken = await claimContentItem(
+        client,
+        ownerId,
+        runId,
+        item.id,
+      );
       if (!claimToken) {
         summary.skippedAlreadyComplete += 1;
         continue;
       }
 
       try {
-      const hasScripture = Boolean(
-        item.scripture_reference?.trim() || item.scripture_text?.trim(),
-      );
-      if (
-        hasScripture &&
-        item.scripture_verification_status !== "manually_verified"
-      ) {
-        summary.blockedUnverifiedScripture += 1;
-        continue;
-      }
-
-      let script: ScriptRevision | null = null;
-      if (settings.automation_create_working_drafts) {
-        const { data: before } = await client
-          .from("script_revisions")
-          .select("*")
-          .eq("owner_id", ownerId)
-          .eq("content_item_id", item.id)
-          .order("revision_number", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        script = before ? (before as ScriptRevision) : null;
-
-        if (!script) {
-          script = await prepareScript(client, ownerId, item);
-          if (script) summary.scriptsPrepared += 1;
-          else summary.aiFailures += 1;
-        }
-      }
-
-      let changed = false;
-      for (const platform of targetPlatforms(item, plannerItems)) {
-        if (!settings.automation_create_working_drafts) break;
-        const result = await prepareVariant(
-          client,
-          ownerId,
-          item,
-          platform,
-          settings.automation_submit_for_review,
+        const hasScripture = Boolean(
+          item.scripture_reference?.trim() || item.scripture_text?.trim(),
         );
-        if (result.prepared) {
-          summary.variantsPrepared += 1;
+        if (
+          hasScripture &&
+          item.scripture_verification_status !== "manually_verified"
+        ) {
+          summary.blockedUnverifiedScripture += 1;
+          continue;
+        }
+
+        let script: ScriptRevision | null = null;
+        if (settings.automation_create_working_drafts) {
+          const { data: before } = await client
+            .from("script_revisions")
+            .select("*")
+            .eq("owner_id", ownerId)
+            .eq("content_item_id", item.id)
+            .order("revision_number", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+          script = before ? (before as ScriptRevision) : null;
+
+          if (!script) {
+            script = await prepareScript(client, ownerId, item);
+            if (script) summary.scriptsPrepared += 1;
+            else summary.aiFailures += 1;
+          }
+        }
+
+        let changed = false;
+        for (const platform of targetPlatforms(item, plannerItems)) {
+          if (!settings.automation_create_working_drafts) break;
+          const result = await prepareVariant(
+            client,
+            ownerId,
+            item,
+            platform,
+            settings.automation_submit_for_review,
+          );
+          if (result.prepared) {
+            summary.variantsPrepared += 1;
+            changed = true;
+          }
+          if (result.submitted) summary.submittedForReview += 1;
+          if (result.aiFailed) summary.aiFailures += 1;
+        }
+
+        if (
+          settings.automation_prepare_video_drafts &&
+          (await prepareVideoDraft(client, ownerId, item, script))
+        ) {
+          summary.videosPrepared += 1;
           changed = true;
         }
-        if (result.submitted) summary.submittedForReview += 1;
-        if (result.aiFailed) summary.aiFailures += 1;
-      }
 
-      if (
-        settings.automation_prepare_video_drafts &&
-        (await prepareVideoDraft(client, ownerId, item, script))
-      ) {
-        summary.videosPrepared += 1;
-        changed = true;
-      }
-
-      const linkedPlanner = plannerItems.find(
-        (candidate) => candidate.content_item_id === item.id,
-      );
-      if (
-        linkedPlanner &&
-        changed &&
-        linkedPlanner.status !== "in_production"
-      ) {
-        await client
-          .from("planner_items")
-          .update({ status: "in_production" })
-          .eq("id", linkedPlanner.id)
-          .eq("owner_id", ownerId);
-      }
-
-      const platforms = targetPlatforms(item, plannerItems);
-      if (
-        settings.automation_submit_for_review &&
-        (await copyIsReviewReady(client, ownerId, item, platforms))
-      ) {
-        await client
-          .from("content_items")
-          .update({ status: "ready_for_review" })
-          .eq("id", item.id)
-          .eq("owner_id", ownerId)
-          .eq("status", "draft");
-      }
-
-      if (!changed) summary.skippedAlreadyComplete += 1;
-      } finally {
-        await releaseContentItemClaim(
-          client,
-          ownerId,
-          item.id,
-          claimToken,
+        const linkedPlanner = plannerItems.find(
+          (candidate) => candidate.content_item_id === item.id,
         );
+        if (
+          linkedPlanner &&
+          changed &&
+          linkedPlanner.status !== "in_production"
+        ) {
+          await client
+            .from("planner_items")
+            .update({ status: "in_production" })
+            .eq("id", linkedPlanner.id)
+            .eq("owner_id", ownerId);
+        }
+
+        const platforms = targetPlatforms(item, plannerItems);
+        if (
+          settings.automation_submit_for_review &&
+          (await copyIsReviewReady(client, ownerId, item, platforms))
+        ) {
+          await client
+            .from("content_items")
+            .update({ status: "ready_for_review" })
+            .eq("id", item.id)
+            .eq("owner_id", ownerId)
+            .eq("status", "draft");
+        }
+
+        if (!changed) summary.skippedAlreadyComplete += 1;
+      } finally {
+        await releaseContentItemClaim(client, ownerId, item.id, claimToken);
       }
     }
 
