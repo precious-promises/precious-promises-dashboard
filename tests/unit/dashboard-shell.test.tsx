@@ -34,7 +34,7 @@ describe("SidebarNav", () => {
     }
   });
 
-  it("links to every area, because all 19 now exist", () => {
+  it("links to every built area", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
     // One link per built route, and no others — the count is the guard.
@@ -44,6 +44,7 @@ describe("SidebarNav", () => {
       "/dashboard/production",
       "/dashboard/content",
       "/dashboard/planner",
+      "/dashboard/operator",
       "/dashboard/scripture",
       "/dashboard/scripts",
       "/dashboard/captions",
@@ -67,6 +68,7 @@ describe("SidebarNav", () => {
 
     for (const label of [
       "Content Planner",
+      "Operator Mode",
       "YouTube & Playlists",
       "Rights & Licences",
       "Settings",
