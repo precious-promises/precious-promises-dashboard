@@ -18,6 +18,7 @@ import {
 } from "@/app/dashboard/operator/actions";
 import { DashboardShell } from "@/components/dashboard/dashboard-shell";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { isAiConfigured } from "@/lib/ai/server-config";
 import { LOGIN_PATH } from "@/lib/auth/routes";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { isWorkerConfigured } from "@/lib/supabase/worker";
@@ -134,6 +135,7 @@ export default async function OperatorPage(
 
   const enabled = settings?.automation_enabled ?? false;
   const workerReady = isWorkerConfigured();
+  const aiReady = isAiConfigured();
   const runs = (runsResult.data ?? []) as {
     id: string;
     status: string;
@@ -176,6 +178,9 @@ export default async function OperatorPage(
               </StatusBadge>
               <StatusBadge tone={workerReady ? "configured" : "inactive"}>
                 {workerReady ? "WORKER READY" : "WORKER NOT READY"}
+              </StatusBadge>
+              <StatusBadge tone={aiReady ? "configured" : "inactive"}>
+                {aiReady ? "AI DRAFTING READY" : "AI DRAFTING NOT CONFIGURED"}
               </StatusBadge>
             </div>
           </div>
@@ -325,6 +330,14 @@ export default async function OperatorPage(
                 </p>
               </div>
             </div>
+
+            {!aiReady ? (
+              <p className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 px-3 py-2.5 text-xs leading-5 text-amber-100">
+                AI drafting is unavailable because the AI provider credential
+                is not configured. Operator Mode will not claim that AI copy
+                was generated.
+              </p>
+            ) : null}
 
             {settings?.automation_last_error ? (
               <p className="mt-4 rounded-xl border border-red-900/45 bg-red-950/30 px-3 py-2.5 text-xs leading-5 text-red-200">
