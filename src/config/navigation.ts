@@ -54,7 +54,7 @@ export const DRIVE_BROWSER_PATH = "/dashboard/drive";
 export const ANALYTICS_PATH = "/dashboard/analytics";
 export const GROWTH_CENTRE_PATH = "/dashboard/growth";
 
-/** Routes activated in Stage 11. All 19 modules are now genuinely built. */
+/** Routes activated in Stage 11, plus the Operator Mode automation control centre. */
 export const CONTENT_PLANNER_PATH = "/dashboard/planner";
 export const OPERATOR_MODE_PATH = "/dashboard/operator";
 export const YOUTUBE_WORKSPACE_PATH = "/dashboard/youtube";
