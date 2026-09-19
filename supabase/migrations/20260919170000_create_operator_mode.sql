@@ -47,5 +47,8 @@ create policy "Owners can read their automation runs"
 on public.automation_runs for select to authenticated
 using ((select auth.uid()) = owner_id);
 
+grant select on table public.automation_runs to authenticated;
+grant select, insert, update, delete on table public.automation_runs to service_role;
+
 -- Browser writes are deliberately absent. Scheduled/manual automation uses
 -- trusted server credentials, while the owner only reads run evidence.
