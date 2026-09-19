@@ -40,7 +40,9 @@ describe("Operator Mode safety boundaries", () => {
     expect(operator).not.toMatch(/review_state:\s*"approved"/);
     expect(operator).not.toMatch(/\.from\(["']scheduled_posts["']\)/);
     expect(operator).not.toMatch(/runPublishDispatcher|publishClaimedPost/);
-    expect(operator).toMatch(/submitForReview \? "ready_for_review" : "draft"/);
+    expect(operator).toMatch(
+      /submitForReview && hasReviewableCopy \? "ready_for_review" : "draft"/,
+    );
     expect(operator).toMatch(/\.update\(\{ status: "ready_for_review" \}\)/);
     expect(operator).toMatch(/\.eq\("status", "draft"\)/);
     expect(operator).toMatch(/automation_claims/);
