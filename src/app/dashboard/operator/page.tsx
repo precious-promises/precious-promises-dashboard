@@ -333,9 +333,9 @@ export default async function OperatorPage(
 
             {!aiReady ? (
               <p className="mt-4 rounded-xl border border-amber-900/45 bg-amber-950/20 px-3 py-2.5 text-xs leading-5 text-amber-100">
-                AI drafting is unavailable because the AI provider credential
-                is not configured. Operator Mode will not claim that AI copy
-                was generated.
+                AI drafting is unavailable because the AI provider credential is
+                not configured. Operator Mode will not claim that AI copy was
+                generated.
               </p>
             ) : null}
 
