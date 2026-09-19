@@ -188,3 +188,26 @@ values (
 )
 on conflict (id) do update
 set key_sha256 = excluded.key_sha256;
+
+
+-- ---------------------------------------------------------------------------
+-- Short-lived work claims
+-- ---------------------------------------------------------------------------
+-- A unique claim prevents a scheduled pass and a manual pass from preparing
+-- the same content item at the same time.
+
+create table if not exists public.automation_claims (
+  content_item_id uuid primary key references public.content_items (id) on delete cascade,
+  owner_id uuid not null references auth.users (id) on delete cascade,
+  run_id uuid references public.automation_runs (id) on delete cascade,
+  claim_token uuid not null unique default gen_random_uuid(),
+  claimed_until timestamptz not null default (now() + interval '20 minutes'),
+  created_at timestamptz not null default now()
+);
+
+alter table public.automation_claims enable row level security;
+revoke all on public.automation_claims from anon, authenticated;
+grant select, insert, update, delete on table public.automation_claims to service_role;
+
+create index if not exists automation_claims_expiry_idx
+  on public.automation_claims (claimed_until);
