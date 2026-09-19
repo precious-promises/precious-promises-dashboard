@@ -199,7 +199,6 @@ export async function listDraftedGenerations(
   return (data ?? []) as AiGenerationRecord[];
 }
 
-
 /** Record that Operator Mode copied a generated draft into a working artifact. */
 export async function markGenerationPrepared(
   client: SupabaseClient,

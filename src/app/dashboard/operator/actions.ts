@@ -20,7 +20,9 @@ async function requireUser() {
   return { supabase, user };
 }
 
-export async function saveOperatorPreferences(formData: FormData): Promise<void> {
+export async function saveOperatorPreferences(
+  formData: FormData,
+): Promise<void> {
   const { supabase, user } = await requireUser();
 
   const automation_enabled = formData.get("automation_enabled") === "on";

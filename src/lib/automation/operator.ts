@@ -260,25 +260,30 @@ async function prepareVariant(
         content_item_id: item.id,
         platform,
         variant_type: variantType,
-        title: existing ? (existing as { title?: string | null }).title : item.title,
+        title: existing
+          ? (existing as { title?: string | null }).title
+          : item.title,
         caption,
         description:
           platform === "youtube"
             ? caption
             : existing
-              ? (existing as { description?: string | null }).description ?? null
+              ? ((existing as { description?: string | null }).description ??
+                null)
               : null,
         hashtags: existing
-          ? (existing as { hashtags?: string[] }).hashtags ?? []
+          ? ((existing as { hashtags?: string[] }).hashtags ?? [])
           : [],
         first_comment: existing
-          ? (existing as { first_comment?: string | null }).first_comment ?? null
+          ? ((existing as { first_comment?: string | null }).first_comment ??
+            null)
           : null,
         cta: existing
-          ? (existing as { cta?: string | null }).cta ?? null
+          ? ((existing as { cta?: string | null }).cta ?? null)
           : null,
         thumbnail_text: existing
-          ? (existing as { thumbnail_text?: string | null }).thumbnail_text ?? null
+          ? ((existing as { thumbnail_text?: string | null }).thumbnail_text ??
+            null)
           : null,
         review_state: reviewState,
         approved_at: null,
@@ -389,13 +394,37 @@ async function prepareVideoDraft(
   }
 
   const sceneSpecs = [
-    ["explanation", script?.explanation, 10, "dissolve", "centre", "centre", "rise"],
-    ["declaration", script?.declaration, 8, "dissolve", "centre", "centre", "fade_in"],
+    [
+      "explanation",
+      script?.explanation,
+      10,
+      "dissolve",
+      "centre",
+      "centre",
+      "rise",
+    ],
+    [
+      "declaration",
+      script?.declaration,
+      8,
+      "dissolve",
+      "centre",
+      "centre",
+      "fade_in",
+    ],
     ["prayer", script?.prayer, 10, "dissolve", "centre", "centre", "fade_in"],
     ["outro", script?.outro, 6, "fade", "bottom", "centre", "fade_in"],
   ] as const;
 
-  for (const [sceneType, text, duration, transition, position, align, animation] of sceneSpecs) {
+  for (const [
+    sceneType,
+    text,
+    duration,
+    transition,
+    position,
+    align,
+    animation,
+  ] of sceneSpecs) {
     if (!text) continue;
     scenes.push({
       owner_id: ownerId,
@@ -413,13 +442,23 @@ async function prepareVideoDraft(
   }
 
   if (scenes.length === 0) {
-    await client.from("video_projects").delete().eq("id", projectId).eq("owner_id", ownerId);
+    await client
+      .from("video_projects")
+      .delete()
+      .eq("id", projectId)
+      .eq("owner_id", ownerId);
     return false;
   }
 
-  const { error: sceneError } = await client.from("video_scenes").insert(scenes);
+  const { error: sceneError } = await client
+    .from("video_scenes")
+    .insert(scenes);
   if (sceneError) {
-    await client.from("video_projects").delete().eq("id", projectId).eq("owner_id", ownerId);
+    await client
+      .from("video_projects")
+      .delete()
+      .eq("id", projectId)
+      .eq("owner_id", ownerId);
     return false;
   }
 
@@ -586,7 +625,11 @@ export async function runOperatorPass(
       const linkedPlanner = plannerItems.find(
         (candidate) => candidate.content_item_id === item.id,
       );
-      if (linkedPlanner && changed && linkedPlanner.status !== "in_production") {
+      if (
+        linkedPlanner &&
+        changed &&
+        linkedPlanner.status !== "in_production"
+      ) {
         await client
           .from("planner_items")
           .update({ status: "in_production" })
@@ -626,7 +669,6 @@ export async function listOperatorRuns(
     .limit(limit);
   return data ?? [];
 }
-
 
 /** Compatibility entrypoint used by the dashboard action. */
 export async function runOperatorForOwner(

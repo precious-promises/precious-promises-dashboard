@@ -238,7 +238,10 @@ export default async function OperatorPage(
         <section className="grid gap-5 xl:grid-cols-[minmax(0,1.2fr)_minmax(360px,0.8fr)]">
           <div className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/90 p-5">
             <div className="flex items-start gap-3">
-              <Settings2 aria-hidden="true" className="mt-0.5 size-5 text-[#bda7ff]" />
+              <Settings2
+                aria-hidden="true"
+                className="mt-0.5 size-5 text-[#bda7ff]"
+              />
               <div>
                 <h3 className="text-base font-semibold text-ink-primary">
                   Automation controls
@@ -263,16 +266,14 @@ export default async function OperatorPage(
                   label: "Prepare working drafts",
                   detail:
                     "Create missing platform variants and AI draft suggestions.",
-                  checked:
-                    settings?.automation_create_working_drafts ?? true,
+                  checked: settings?.automation_create_working_drafts ?? true,
                 },
                 {
                   name: "automation_prepare_video_drafts",
                   label: "Prepare video structure",
                   detail:
                     "Create a draft project and safe scene structure after a script revision exists.",
-                  checked:
-                    settings?.automation_prepare_video_drafts ?? true,
+                  checked: settings?.automation_prepare_video_drafts ?? true,
                 },
                 {
                   name: "automation_submit_for_review",
@@ -319,7 +320,8 @@ export default async function OperatorPage(
                   Run control
                 </h3>
                 <p className="mt-1 text-xs leading-5 text-ink-muted">
-                  Last run: {formatDate(settings?.automation_last_run_at ?? null)}
+                  Last run:{" "}
+                  {formatDate(settings?.automation_last_run_at ?? null)}
                 </p>
               </div>
             </div>
