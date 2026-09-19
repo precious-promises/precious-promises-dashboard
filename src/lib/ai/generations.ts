@@ -157,7 +157,7 @@ export async function markGenerationDecision(
     .update(update)
     .eq("id", generationId)
     .eq("owner_id", ownerId)
-    .eq("status", "drafted")
+    .in("status", ["drafted", "prepared"])
     .select("id");
 
   const changed = (data ?? []).length > 0;
