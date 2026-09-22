@@ -16,6 +16,7 @@ const EXPECTED_LABELS = [
   "Content Planner",
   "Operator Mode",
   "Scripture Studio",
+  "Bible Study",
   "Script Studio",
   "Caption Studio",
   "Video Creation Studio",
@@ -85,7 +86,7 @@ describe("navigation configuration", () => {
   it("does not expose a generic AI-assistant destination", () => {
     // AI drafting still lives inside the studios that use it. Operator Mode is
     // an automation control centre, not a generic AI-chat destination.
-    expect(allNavItems()).toHaveLength(20);
+    expect(allNavItems()).toHaveLength(21);
     for (const item of allNavItems()) {
       expect(item.label.toLowerCase()).not.toContain("ai");
       expect(item.label.toLowerCase()).not.toContain("assistant");
@@ -130,6 +131,7 @@ describe("navigation configuration", () => {
     const expectations: Record<string, string> = {
       "content-planner": "/dashboard/planner",
       "operator-mode": "/dashboard/operator",
+      "bible-study": "/dashboard/bible-study",
       "youtube-playlists": "/dashboard/youtube",
       "rights-licences": "/dashboard/rights",
       settings: "/dashboard/settings",
