@@ -18,6 +18,29 @@ function spokenText(study: CanonicalBibleStudy): string {
     study.literary_context,
     study.situational_context,
     ...study.verse_breakdown.flatMap((item) => [item.phrase, item.explanation]),
+    ...study.original_language.flatMap((item) => [
+      item.transliteration
+        ? `Original language: ${item.transliteration}. ${item.contextual_meaning || item.grounding_note}`
+        : item.grounding_note,
+      item.why_it_matters,
+    ]),
+    ...study.direct_cross_references.flatMap((item) => [
+      `${item.reference}. ${item.text}`,
+      `Context: ${item.immediate_context}`,
+      `Why it matters: ${item.relevance}`,
+    ]),
+    ...study.supporting_cross_references.flatMap((item) => [
+      `${item.reference}. ${item.text}`,
+      `Context: ${item.immediate_context}`,
+      `Why it matters: ${item.relevance}`,
+    ]),
+    ...study.biblical_examples.flatMap((item) => [
+      `${item.reference}. ${item.text}`,
+      `Context: ${item.immediate_context}`,
+      `Why it matters: ${item.relevance}`,
+    ]),
+    ...study.major_themes.flatMap((item) => [item.label, item.explanation]),
+    ...study.what_this_passage_does_not_mean,
     study.why_this_matters,
     ...study.practical_application,
     ...study.key_takeaways,
