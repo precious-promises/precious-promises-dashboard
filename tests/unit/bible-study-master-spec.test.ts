@@ -37,7 +37,9 @@ const study: CanonicalBibleStudy = {
   historical_context: "Historical context ".repeat(20),
   literary_context: "Literary context ".repeat(20),
   situational_context: "Situational context ".repeat(20),
-  verse_breakdown: [{ phrase: "Be transformed", explanation: "Explanation ".repeat(20) }],
+  verse_breakdown: [
+    { phrase: "Be transformed", explanation: "Explanation ".repeat(20) },
+  ],
   original_language: [
     {
       status: "grounded",
@@ -70,7 +72,10 @@ const study: CanonicalBibleStudy = {
   key_takeaways: ["Mercy comes before response."],
   final_summary: "Summary ".repeat(20),
   classifications: [
-    { type: "doctrinal_teaching", explanation: "The passage teaches transformation." },
+    {
+      type: "doctrinal_teaching",
+      explanation: "The passage teaches transformation.",
+    },
   ],
   source_translation_notes: ["BSB selected."],
   apologetics: [],
@@ -115,9 +120,7 @@ describe("Precious Promises Bible Study Master Specification", () => {
   it("blocks silent translation mixing", () => {
     const report = validateBibleStudy(request, {
       ...study,
-      supporting_cross_references: [
-        { ...scripture, translation: "KJV" },
-      ],
+      supporting_cross_references: [{ ...scripture, translation: "KJV" }],
     });
     expect(report.valid).toBe(false);
     expect(report.blockers.join(" ")).toMatch(/selected BSB translation/);

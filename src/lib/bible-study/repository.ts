@@ -7,10 +7,7 @@ import {
 } from "./spec";
 import { getBibleStudyProvider } from "./provider";
 import { validateBibleStudy } from "./quality";
-import type {
-  BibleStudyRequest,
-  BibleStudyRevisionRecord,
-} from "./types";
+import type { BibleStudyRequest, BibleStudyRevisionRecord } from "./types";
 
 function stableRequest(request: BibleStudyRequest): string {
   return JSON.stringify({
@@ -28,7 +25,9 @@ function stableRequest(request: BibleStudyRequest): string {
 export function bibleStudyRequestFingerprint(
   request: BibleStudyRequest,
 ): string {
-  return createHash("sha256").update(stableRequest(request), "utf8").digest("hex");
+  return createHash("sha256")
+    .update(stableRequest(request), "utf8")
+    .digest("hex");
 }
 
 export function bibleStudyContentHash(value: unknown): string {

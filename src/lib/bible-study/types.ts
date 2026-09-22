@@ -122,7 +122,9 @@ const apologeticsItemSchema = z
     claim: z.string().trim().max(4000),
     biblical_response: z.string().trim().min(1).max(8000),
     supporting_scripture: z.array(scriptureEvidenceSchema).max(8),
-    historical_textual_evidence: z.array(z.string().trim().min(1).max(5000)).max(8),
+    historical_textual_evidence: z
+      .array(z.string().trim().min(1).max(5000))
+      .max(8),
     alternative_interpretation: z.string().trim().max(5000),
     response_to_alternative: z.string().trim().max(5000),
     practical_takeaway: z.string().trim().min(1).max(4000),
@@ -144,14 +146,26 @@ export const canonicalBibleStudySchema = z
     supporting_cross_references: z.array(scriptureEvidenceSchema).max(16),
     biblical_examples: z.array(scriptureEvidenceSchema).max(12),
     major_themes: z.array(themeSchema).min(1).max(16),
-    what_this_passage_does_not_mean: z.array(z.string().trim().min(1).max(5000)).min(1).max(16),
+    what_this_passage_does_not_mean: z
+      .array(z.string().trim().min(1).max(5000))
+      .min(1)
+      .max(16),
     why_this_matters: z.string().trim().min(1).max(10000),
-    practical_application: z.array(z.string().trim().min(1).max(5000)).min(1).max(20),
-    study_reflection_questions: z.array(z.string().trim().min(1).max(2000)).min(1).max(24),
+    practical_application: z
+      .array(z.string().trim().min(1).max(5000))
+      .min(1)
+      .max(20),
+    study_reflection_questions: z
+      .array(z.string().trim().min(1).max(2000))
+      .min(1)
+      .max(24),
     key_takeaways: z.array(z.string().trim().min(1).max(2000)).min(1).max(16),
     final_summary: z.string().trim().min(1).max(10000),
     classifications: z.array(classificationSchema).min(1).max(12),
-    source_translation_notes: z.array(z.string().trim().min(1).max(5000)).min(1).max(16),
+    source_translation_notes: z
+      .array(z.string().trim().min(1).max(5000))
+      .min(1)
+      .max(16),
     apologetics: z.array(apologeticsItemSchema).max(10),
   })
   .strict();
@@ -177,8 +191,7 @@ export const BIBLE_STUDY_REVIEW_STATES = [
   "approved",
   "rejected",
 ] as const;
-export type BibleStudyReviewState =
-  (typeof BIBLE_STUDY_REVIEW_STATES)[number];
+export type BibleStudyReviewState = (typeof BIBLE_STUDY_REVIEW_STATES)[number];
 
 export interface BibleStudyRevisionRecord {
   id: string;

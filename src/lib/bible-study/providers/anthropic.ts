@@ -1,9 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 
-import {
-  BIBLE_STUDY_SYSTEM_PROMPT,
-  buildBibleStudyPrompt,
-} from "../spec";
+import { BIBLE_STUDY_SYSTEM_PROMPT, buildBibleStudyPrompt } from "../spec";
 import {
   bibleStudyJsonSchema,
   canonicalBibleStudySchema,

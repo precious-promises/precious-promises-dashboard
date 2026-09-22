@@ -1,9 +1,7 @@
 import type { CanonicalBibleStudy, ScriptureEvidence } from "./types";
 
 export type WhatsAppBibleStudyFormat =
-  | "whatsapp_short"
-  | "whatsapp_study"
-  | "whatsapp_teaching";
+  "whatsapp_short" | "whatsapp_study" | "whatsapp_teaching";
 
 function scripture(block: ScriptureEvidence): string {
   return [

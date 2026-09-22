@@ -33,7 +33,10 @@ export function StudyTools({
   revisionId: string;
 }) {
   const segments = useMemo(
-    () => spokenText(study).split(/\n{2,}/).filter(Boolean),
+    () =>
+      spokenText(study)
+        .split(/\n{2,}/)
+        .filter(Boolean),
     [study],
   );
   const storageKey = `pp-bible-study-listen-${revisionId}`;
@@ -125,7 +128,11 @@ export function StudyTools({
           onClick={pauseResume}
           className="rounded-lg bg-white px-3 py-2 text-xs font-semibold text-[#080b12]"
         >
-          {speaking ? "Pause / Resume" : segment > 0 ? "Resume listening" : "Listen"}
+          {speaking
+            ? "Pause / Resume"
+            : segment > 0
+              ? "Resume listening"
+              : "Listen"}
         </button>
         <button
           type="button"
@@ -194,7 +201,8 @@ export function StudyTools({
       </div>
       <p className="text-[11px] leading-5 text-ink-muted">
         Listening progress is kept on this device. WhatsApp versions are
-        compressed from this saved canonical study, so they do not spend more AI tokens.
+        compressed from this saved canonical study, so they do not spend more AI
+        tokens.
       </p>
     </div>
   );

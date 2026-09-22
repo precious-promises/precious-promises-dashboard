@@ -4,9 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { LOGIN_PATH } from "@/lib/auth/routes";
-import {
-  generateBibleStudy,
-} from "@/lib/bible-study/repository";
+import { generateBibleStudy } from "@/lib/bible-study/repository";
 import {
   bibleStudyRequestSchema,
   type BibleStudyReviewState,
@@ -42,7 +40,10 @@ export async function createBibleStudy(
     emphasis: formData.get("emphasis") ?? "",
   });
   if (!parsed.success) {
-    return { error: "Check the provider, passage/topic, translation, depth and audience." };
+    return {
+      error:
+        "Check the provider, passage/topic, translation, depth and audience.",
+    };
   }
 
   const { user } = await owner();

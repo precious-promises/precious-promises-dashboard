@@ -2,10 +2,11 @@ import { getServerEnv } from "@/lib/env/server";
 
 import type { BibleStudyProviderId } from "./types";
 
-export const DEFAULT_BIBLE_STUDY_MODELS: Record<BibleStudyProviderId, string> = {
-  anthropic: "claude-opus-5",
-  openai: "gpt-5.6",
-};
+export const DEFAULT_BIBLE_STUDY_MODELS: Record<BibleStudyProviderId, string> =
+  {
+    anthropic: "claude-opus-5",
+    openai: "gpt-5.6",
+  };
 
 export interface BibleStudyProviderConfig {
   provider: BibleStudyProviderId;

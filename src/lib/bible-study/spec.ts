@@ -6,7 +6,8 @@ export const BIBLE_STUDY_PROMPT_VERSION = "bible-study-master-v1";
 
 export const DEPTH_GUIDANCE = {
   short: "Aim for about 800-1,200 words. Do not pad.",
-  standard: "Aim for about 2,500-3,500 words. Prefer completeness without repetition.",
+  standard:
+    "Aim for about 2,500-3,500 words. Prefer completeness without repetition.",
   deep: "Aim for about 4,000-6,000+ words only when the passage warrants it. Do not pad.",
 } as const;
 

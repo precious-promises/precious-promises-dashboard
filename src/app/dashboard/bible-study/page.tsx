@@ -68,7 +68,10 @@ export default async function BibleStudyPage(
     >
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-5">
         <section className="relative overflow-hidden rounded-[24px] border border-edge/80 bg-[#090e1b] px-5 py-6 shadow-[0_30px_90px_rgba(0,0,0,0.34)] sm:px-7">
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(112,55,221,0.28),transparent_34%),radial-gradient(circle_at_88%_5%,rgba(201,169,97,0.12),transparent_30%)]" />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_12%_0%,rgba(112,55,221,0.28),transparent_34%),radial-gradient(circle_at_88%_5%,rgba(201,169,97,0.12),transparent_30%)]"
+          />
           <div className="relative">
             <div className="mb-3 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.19em] text-gold">
               <BookOpen className="size-4" aria-hidden="true" />
@@ -78,9 +81,10 @@ export default async function BibleStudyPage(
               Create one canonical Bible Study
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-ink-secondary">
-              Claude and OpenAI use the same provider-independent study standard.
-              Generated Scripture, context and lexical claims remain review material:
-              nothing becomes approved until you verify the Scripture and approve the study.
+              Claude and OpenAI use the same provider-independent study
+              standard. Generated Scripture, context and lexical claims remain
+              review material: nothing becomes approved until you verify the
+              Scripture and approve the study.
             </p>
           </div>
         </section>
@@ -94,28 +98,37 @@ export default async function BibleStudyPage(
 
         <section className="grid gap-5 xl:grid-cols-[260px_minmax(0,1fr)]">
           <aside className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/90 p-4 print:hidden">
-            <h3 className="text-sm font-semibold text-ink-primary">Saved studies</h3>
-            <p className="mt-1 text-xs text-ink-muted">Reopen without spending tokens.</p>
+            <h3 className="text-sm font-semibold text-ink-primary">
+              Saved studies
+            </h3>
+            <p className="mt-1 text-xs text-ink-muted">
+              Reopen without spending tokens.
+            </p>
             <div className="mt-4 space-y-2">
               {revisions.length === 0 ? (
                 <p className="rounded-lg border border-dashed border-edge p-3 text-xs text-ink-muted">
                   No generated studies saved yet.
                 </p>
-              ) : revisions.map((revision) => (
-                <Link
-                  key={revision.id}
-                  href={`/dashboard/bible-study?revision=${revision.id}`}
-                  className={`block rounded-xl border px-3 py-3 text-xs transition ${selected?.id === revision.id ? "border-[#7d39e6] bg-[#7d39e6]/10" : "border-edge/70 hover:border-edge-strong"}`}
-                >
-                  <span className="block font-semibold text-ink-primary">
-                    {revision.canonical_study.title}
-                  </span>
-                  <span className="mt-1 block text-ink-muted">
-                    {revision.canonical_study.main_passage.reference} · {revision.provider}
-                  </span>
-                  <span className="mt-1 block text-ink-muted">{formatDate(revision.created_at)}</span>
-                </Link>
-              ))}
+              ) : (
+                revisions.map((revision) => (
+                  <Link
+                    key={revision.id}
+                    href={`/dashboard/bible-study?revision=${revision.id}`}
+                    className={`block rounded-xl border px-3 py-3 text-xs transition ${selected?.id === revision.id ? "border-[#7d39e6] bg-[#7d39e6]/10" : "border-edge/70 hover:border-edge-strong"}`}
+                  >
+                    <span className="block font-semibold text-ink-primary">
+                      {revision.canonical_study.title}
+                    </span>
+                    <span className="mt-1 block text-ink-muted">
+                      {revision.canonical_study.main_passage.reference} ·{" "}
+                      {revision.provider}
+                    </span>
+                    <span className="mt-1 block text-ink-muted">
+                      {formatDate(revision.created_at)}
+                    </span>
+                  </Link>
+                ))
+              )}
             </div>
           </aside>
 
@@ -125,19 +138,41 @@ export default async function BibleStudyPage(
                 <section className="rounded-2xl border border-edge/80 bg-[#0a0f1d]/90 p-4 print:border-0 print:bg-white print:text-black">
                   <div className="mb-4 flex flex-wrap items-center justify-between gap-3 print:hidden">
                     <div className="flex flex-wrap gap-2">
-                      <StatusBadge tone={selected.scripture_verification_status === "manually_verified" ? "configured" : "inactive"}>
-                        {selected.scripture_verification_status === "manually_verified" ? "SCRIPTURE VERIFIED" : "SCRIPTURE REVIEW REQUIRED"}
+                      <StatusBadge
+                        tone={
+                          selected.scripture_verification_status ===
+                          "manually_verified"
+                            ? "configured"
+                            : "inactive"
+                        }
+                      >
+                        {selected.scripture_verification_status ===
+                        "manually_verified"
+                          ? "SCRIPTURE VERIFIED"
+                          : "SCRIPTURE REVIEW REQUIRED"}
                       </StatusBadge>
-                      <StatusBadge tone={selected.review_state === "approved" ? "configured" : "accent"}>
-                        {selected.review_state.replaceAll("_", " ").toUpperCase()}
+                      <StatusBadge
+                        tone={
+                          selected.review_state === "approved"
+                            ? "configured"
+                            : "accent"
+                        }
+                      >
+                        {selected.review_state
+                          .replaceAll("_", " ")
+                          .toUpperCase()}
                       </StatusBadge>
                     </div>
                     <p className="text-[11px] text-ink-muted">
-                      {selected.provider} · {selected.model} · revision {selected.revision_number}
+                      {selected.provider} · {selected.model} · revision{" "}
+                      {selected.revision_number}
                     </p>
                   </div>
 
-                  <StudyTools study={selected.canonical_study} revisionId={selected.id} />
+                  <StudyTools
+                    study={selected.canonical_study}
+                    revisionId={selected.id}
+                  />
 
                   <div className="mt-5">
                     <BibleStudyRenderer study={selected.canonical_study} />
@@ -145,41 +180,78 @@ export default async function BibleStudyPage(
 
                   <div className="mt-6 rounded-xl border border-edge/70 p-4 print:hidden">
                     <div className="flex items-start gap-3">
-                      <ShieldCheck className="mt-0.5 size-5 text-gold" aria-hidden="true" />
+                      <ShieldCheck
+                        className="mt-0.5 size-5 text-gold"
+                        aria-hidden="true"
+                      />
                       <div>
-                        <h3 className="text-sm font-semibold text-ink-primary">Human review gate</h3>
+                        <h3 className="text-sm font-semibold text-ink-primary">
+                          Human review gate
+                        </h3>
                         <p className="mt-1 text-xs leading-5 text-ink-muted">
-                          Quality control can detect missing structure, but it cannot certify AI-quoted Scripture or lexical/historical claims. Verify them before approval.
+                          Quality control can detect missing structure, but it
+                          cannot certify AI-quoted Scripture or
+                          lexical/historical claims. Verify them before
+                          approval.
                         </p>
                       </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {selected.scripture_verification_status !== "manually_verified" ? (
+                      {selected.scripture_verification_status !==
+                      "manually_verified" ? (
                         <form action={markBibleStudyScriptureVerified}>
-                          <input type="hidden" name="revision_id" value={selected.id} />
-                          <button type="submit" className="rounded-lg border border-edge px-3 py-2 text-xs font-semibold text-ink-primary">
+                          <input
+                            type="hidden"
+                            name="revision_id"
+                            value={selected.id}
+                          />
+                          <button
+                            type="submit"
+                            className="rounded-lg border border-edge px-3 py-2 text-xs font-semibold text-ink-primary"
+                          >
                             I verified the Scripture
                           </button>
                         </form>
                       ) : null}
                       {selected.review_state !== "approved" ? (
                         <form action={approveBibleStudy}>
-                          <input type="hidden" name="revision_id" value={selected.id} />
+                          <input
+                            type="hidden"
+                            name="revision_id"
+                            value={selected.id}
+                          />
                           <button
                             type="submit"
-                            disabled={selected.scripture_verification_status !== "manually_verified"}
+                            disabled={
+                              selected.scripture_verification_status !==
+                              "manually_verified"
+                            }
                             className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-[#080b12] disabled:cursor-not-allowed disabled:opacity-40"
                           >
-                            <CheckCircle2 className="size-4" aria-hidden="true" />
+                            <CheckCircle2
+                              className="size-4"
+                              aria-hidden="true"
+                            />
                             Approve study
                           </button>
                         </form>
                       ) : null}
                       {selected.review_state !== "approved" ? (
                         <form action={rejectBibleStudy} className="flex gap-2">
-                          <input type="hidden" name="revision_id" value={selected.id} />
-                          <input name="reason" placeholder="Reason / requested change" className="min-w-[220px] rounded-lg border border-edge bg-[#070b14] px-3 py-2 text-xs text-ink-primary" />
-                          <button type="submit" className="rounded-lg border border-red-900/60 px-3 py-2 text-xs font-semibold text-red-200">
+                          <input
+                            type="hidden"
+                            name="revision_id"
+                            value={selected.id}
+                          />
+                          <input
+                            name="reason"
+                            placeholder="Reason / requested change"
+                            className="min-w-[220px] rounded-lg border border-edge bg-[#070b14] px-3 py-2 text-xs text-ink-primary"
+                          />
+                          <button
+                            type="submit"
+                            className="rounded-lg border border-red-900/60 px-3 py-2 text-xs font-semibold text-red-200"
+                          >
                             Reject
                           </button>
                         </form>
@@ -188,8 +260,19 @@ export default async function BibleStudyPage(
                   </div>
 
                   <div className="mt-4 rounded-xl border border-edge/70 p-4 text-xs leading-5 text-ink-muted print:hidden">
-                    <p><strong className="text-ink-secondary">QC:</strong> {selected.validation_report.wordCount} words · {selected.validation_report.scriptureBlocks} Scripture evidence blocks.</p>
-                    {selected.validation_report.warnings.map((warning, index) => <p key={index} className="mt-1">• {warning}</p>)}
+                    <p>
+                      <strong className="text-ink-secondary">QC:</strong>{" "}
+                      {selected.validation_report.wordCount} words ·{" "}
+                      {selected.validation_report.scriptureBlocks} Scripture
+                      evidence blocks.
+                    </p>
+                    {selected.validation_report.warnings.map(
+                      (warning, index) => (
+                        <p key={index} className="mt-1">
+                          • {warning}
+                        </p>
+                      ),
+                    )}
                   </div>
                 </section>
               </div>

@@ -1,7 +1,4 @@
-import {
-  BIBLE_STUDY_SYSTEM_PROMPT,
-  buildBibleStudyPrompt,
-} from "../spec";
+import { BIBLE_STUDY_SYSTEM_PROMPT, buildBibleStudyPrompt } from "../spec";
 import {
   bibleStudyJsonSchema,
   canonicalBibleStudySchema,
@@ -95,7 +92,9 @@ export class OpenAIBibleStudyProvider implements BibleStudyProvider {
       };
     }
 
-    const body = (await response.json().catch(() => null)) as OpenAIResponse | null;
+    const body = (await response
+      .json()
+      .catch(() => null)) as OpenAIResponse | null;
     if (!response.ok || !body) {
       return {
         ok: false,

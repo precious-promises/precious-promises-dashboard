@@ -3,9 +3,10 @@ import { OpenAIBibleStudyProvider } from "./providers/openai";
 import { resolveBibleStudyProviderConfig } from "./server-config";
 import type { BibleStudyProvider, BibleStudyProviderId } from "./types";
 
-export function getBibleStudyProvider(
-  id: BibleStudyProviderId,
-): { provider: BibleStudyProvider | null; problems: string[] } {
+export function getBibleStudyProvider(id: BibleStudyProviderId): {
+  provider: BibleStudyProvider | null;
+  problems: string[];
+} {
   const { config, problems } = resolveBibleStudyProviderConfig(id);
   if (!config) return { provider: null, problems };
 

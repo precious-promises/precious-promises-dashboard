@@ -100,10 +100,7 @@ export function validateBibleStudy(
     }
   }
 
-  if (
-    request.audience === "apologetics" &&
-    study.apologetics.length === 0
-  ) {
+  if (request.audience === "apologetics" && study.apologetics.length === 0) {
     blockers.push(
       "Apologetics audience was selected but no apologetics material was returned.",
     );
