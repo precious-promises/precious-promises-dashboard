@@ -129,6 +129,7 @@ describe("navigation after Operator Mode", () => {
       "Content Planner",
       "Operator Mode",
       "Scripture Studio",
+      "Bible Study",
       "Script Studio",
       "Caption Studio",
       "Video Creation Studio",
@@ -160,6 +161,10 @@ describe("navigation after Operator Mode", () => {
     expect(
       screen.getByRole("link", { name: "Scripture Studio" }),
     ).toHaveAttribute("href", "/dashboard/scripture");
+    expect(screen.getByRole("link", { name: "Bible Study" })).toHaveAttribute(
+      "href",
+      "/dashboard/bible-study",
+    );
     expect(screen.getByRole("link", { name: "Script Studio" })).toHaveAttribute(
       "href",
       "/dashboard/scripts",
