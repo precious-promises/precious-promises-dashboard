@@ -93,6 +93,30 @@ export function StudyTools({
   const whatsapp = buildWhatsAppTransform(study, format);
   const whatsappHref = `https://wa.me/?text=${encodeURIComponent(whatsapp)}`;
 
+  function listenWhatsApp() {
+    if (!("speechSynthesis" in window)) return;
+    window.speechSynthesis.cancel();
+    const next = new SpeechSynthesisUtterance(whatsapp);
+    next.onend = () => setSpeaking(false);
+    setSpeaking(true);
+    window.speechSynthesis.speak(next);
+  }
+
+  function printWhatsApp() {
+    const popup = window.open("", "_blank", "noopener,noreferrer");
+    if (!popup) return;
+    const safe = whatsapp
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;");
+    popup.document.write(
+      `<!doctype html><html><head><title>${study.title}</title><style>body{font-family:Arial,sans-serif;max-width:760px;margin:40px auto;padding:0 24px;white-space:pre-wrap;line-height:1.55}h1{font-size:22px}</style></head><body><h1>${study.title}</h1>${safe}</body></html>`,
+    );
+    popup.document.close();
+    popup.focus();
+    popup.print();
+  }
+
   return (
     <div className="space-y-3 rounded-2xl border border-edge/80 bg-[#0a0f1d]/90 p-4 print:hidden">
       <div className="flex flex-wrap gap-2">
@@ -143,6 +167,20 @@ export function StudyTools({
             className="rounded-lg border border-edge px-3 py-2 text-xs font-semibold text-ink-primary"
           >
             Copy
+          </button>
+          <button
+            type="button"
+            onClick={listenWhatsApp}
+            className="rounded-lg border border-edge px-3 py-2 text-xs font-semibold text-ink-primary"
+          >
+            Listen to WhatsApp
+          </button>
+          <button
+            type="button"
+            onClick={printWhatsApp}
+            className="rounded-lg border border-edge px-3 py-2 text-xs font-semibold text-ink-primary"
+          >
+            WhatsApp PDF / Print
           </button>
           <a
             href={whatsappHref}
