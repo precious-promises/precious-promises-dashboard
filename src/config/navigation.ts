@@ -7,6 +7,7 @@ import {
   FolderOpen,
   Gauge,
   Bot,
+  BookOpen,
   Images,
   LayoutDashboard,
   Library,
@@ -30,6 +31,7 @@ export const MEDIA_ASSETS_PATH = "/dashboard/media";
 
 /** Routes activated in Stage 3. */
 export const SCRIPTURE_STUDIO_PATH = "/dashboard/scripture";
+export const BIBLE_STUDY_PATH = "/dashboard/bible-study";
 export const SCRIPT_STUDIO_PATH = "/dashboard/scripts";
 export const CAPTION_STUDIO_PATH = "/dashboard/captions";
 
@@ -144,6 +146,13 @@ export const NAVIGATION: NavGroup[] = [
         icon: ScrollText,
         status: "available",
         href: SCRIPTURE_STUDIO_PATH,
+      },
+      {
+        id: "bible-study",
+        label: "Bible Study",
+        icon: BookOpen,
+        status: "available",
+        href: BIBLE_STUDY_PATH,
       },
       {
         id: "script-studio",
