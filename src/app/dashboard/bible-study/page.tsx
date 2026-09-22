@@ -169,6 +169,13 @@ export default async function BibleStudyPage(
                     </p>
                   </div>
 
+                  <p className="mb-4 hidden text-xs text-black print:block">
+                    Provider: {selected.provider} · Model: {selected.model} ·
+                    Specification: {selected.specification_version} · Revision:{" "}
+                    {selected.revision_number} · Review state:{" "}
+                    {selected.review_state.replaceAll("_", " ")}
+                  </p>
+
                   <StudyTools
                     study={selected.canonical_study}
                     revisionId={selected.id}
