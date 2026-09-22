@@ -46,6 +46,7 @@ describe("SidebarNav", () => {
       "/dashboard/planner",
       "/dashboard/operator",
       "/dashboard/scripture",
+      "/dashboard/bible-study",
       "/dashboard/scripts",
       "/dashboard/captions",
       "/dashboard/video",
@@ -69,6 +70,7 @@ describe("SidebarNav", () => {
     for (const label of [
       "Content Planner",
       "Operator Mode",
+      "Bible Study",
       "YouTube & Playlists",
       "Rights & Licences",
       "Settings",
