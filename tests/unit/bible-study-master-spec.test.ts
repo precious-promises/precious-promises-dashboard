@@ -76,6 +76,7 @@ const study: CanonicalBibleStudy = {
   apologetics: [],
 };
 
+// Regression coverage for the provider-independent Bible Study contract.
 describe("Precious Promises Bible Study Master Specification", () => {
   it("keeps the master standard provider-independent", () => {
     expect(BIBLE_STUDY_SYSTEM_PROMPT).toContain(
