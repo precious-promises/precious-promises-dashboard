@@ -48,10 +48,14 @@ export function StudyTools({
 
   useEffect(() => {
     const saved = Number(window.localStorage.getItem(storageKey) ?? "0");
-    if (Number.isFinite(saved) && saved >= 0 && saved < segments.length) {
-      setSegment(saved);
-    }
-    return () => window.speechSynthesis?.cancel();
+    const timer =
+      Number.isFinite(saved) && saved >= 0 && saved < segments.length
+        ? window.setTimeout(() => setSegment(saved), 0)
+        : null;
+    return () => {
+      if (timer !== null) window.clearTimeout(timer);
+      window.speechSynthesis?.cancel();
+    };
   }, [segments.length, storageKey]);
 
   function speakFrom(index: number) {
