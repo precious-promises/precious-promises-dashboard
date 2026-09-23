@@ -1,6 +1,7 @@
 import { getServerEnv } from "@/lib/env/server";
 
-export const SUPPORTED_AI_PROVIDERS = ["anthropic", "openai"] as const;
+export const SUPPORTED_AI_PROVIDER = "anthropic";
+export const SUPPORTED_AI_PROVIDERS = [SUPPORTED_AI_PROVIDER, "openai"] as const;
 export type SupportedAiProvider = (typeof SUPPORTED_AI_PROVIDERS)[number];
 
 export const DEFAULT_AI_MODELS: Record<SupportedAiProvider, string> = {
@@ -28,9 +29,11 @@ export interface AiConfigResult {
  */
 export function resolveAiConfig(): AiConfigResult {
   const env = getServerEnv();
-  const provider = (env.AI_PROVIDER ?? "anthropic") as string;
+  const requestedProvider = env.AI_PROVIDER ?? SUPPORTED_AI_PROVIDER;
 
-  if (!SUPPORTED_AI_PROVIDERS.includes(provider as SupportedAiProvider)) {
+  if (
+    !SUPPORTED_AI_PROVIDERS.includes(requestedProvider as SupportedAiProvider)
+  ) {
     return {
       config: null,
       problems: [
@@ -38,6 +41,8 @@ export function resolveAiConfig(): AiConfigResult {
       ],
     };
   }
+
+  const provider = requestedProvider as SupportedAiProvider;
 
   if (provider === "openai") {
     const apiKey = env.OPENAI_API_KEY ?? env.AI_API_KEY;
