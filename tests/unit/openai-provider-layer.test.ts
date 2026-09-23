@@ -12,6 +12,7 @@ const config: OpenAIMultimodalConfig = {
   speechVoice: "marin",
 };
 
+// Final integration regression coverage.
 describe("OpenAI provider layer", () => {
   it("uses the closed dashboard schema for ordinary drafting", async () => {
     const fetchImpl = vi.fn().mockResolvedValue(
