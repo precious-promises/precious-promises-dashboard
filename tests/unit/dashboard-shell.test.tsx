@@ -8,6 +8,7 @@ import { PlatformStatus } from "@/components/dashboard/platform-status";
 import { QuickAction } from "@/components/dashboard/quick-action";
 import { WorkflowPipeline } from "@/components/dashboard/workflow-pipeline";
 import { MetricCard } from "@/components/dashboard/metric-card";
+import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { ScripturePanel } from "@/components/dashboard/scripture-panel";
 import { allNavItems } from "@/config/navigation";
 import { DASHBOARD_PATH } from "@/lib/auth/routes";
@@ -273,5 +274,21 @@ describe("ScripturePanel", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("2 Peter 1:4 KJV")).toBeInTheDocument();
+  });
+});
+
+
+describe("MobileSidebar", () => {
+  it("keeps decorative Scripture out of the mobile drawer", async () => {
+    render(<MobileSidebar pathname={DASHBOARD_PATH} />);
+
+    screen.getByRole("button", { name: "Open navigation menu" }).click();
+
+    expect(
+      await screen.findByRole("dialog", { name: "Dashboard navigation" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Whereby are given unto us exceeding great and precious promises/),
+    ).toBeNull();
   });
 });
