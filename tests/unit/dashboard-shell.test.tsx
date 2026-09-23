@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Circle } from "lucide-react";
 import { describe, expect, it } from "vitest";
 
@@ -277,12 +277,13 @@ describe("ScripturePanel", () => {
   });
 });
 
-
 describe("MobileSidebar", () => {
   it("keeps decorative Scripture out of the mobile drawer", async () => {
     render(<MobileSidebar pathname={DASHBOARD_PATH} />);
 
-    screen.getByRole("button", { name: "Open navigation menu" }).click();
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open navigation menu" }),
+    );
 
     expect(
       await screen.findByRole("dialog", { name: "Dashboard navigation" }),
