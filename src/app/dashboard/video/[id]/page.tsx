@@ -291,7 +291,29 @@ export default async function VideoProjectPage(
                 Mobile keeps the project controls readable and touch-friendly.
               </p>
             </div>
-            <div className="px-4 py-4">
+            <div className="space-y-4 px-4 py-4">
+              <section className="rounded-xl border border-edge/80 bg-[#050811] p-3">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-gold">
+                      Play preview
+                    </p>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      Layout and scene timing preview.
+                    </p>
+                  </div>
+                  <StatusBadge tone="inactive">Preview</StatusBadge>
+                </div>
+                <div className="mx-auto w-full max-w-[360px]">
+                  <PreviewPlayer
+                    scenes={preview}
+                    aspectRatio={project.aspect_ratio}
+                    backgroundSceneIds={backgroundSceneIds}
+                    initialIndex={selectedIndex}
+                  />
+                </div>
+              </section>
+
               <MobileProjectView
                 project={project}
                 scenes={scenes}
