@@ -127,7 +127,7 @@ export class OpenAIMultimodalProvider implements MultimodalProvider {
     form.append("model", this.transcriptionModel);
     form.append(
       "file",
-      new Blob([request.bytes], { type: request.mimeType }),
+      new Blob([request.bytes.slice().buffer], { type: request.mimeType }),
       request.filename,
     );
     if (request.prompt?.trim()) form.append("prompt", request.prompt.trim());
