@@ -277,7 +277,7 @@ describe("ScripturePanel", () => {
   });
 });
 
-// Mobile shell regression: the drawer must remain navigation-only.
+// Mobile shell regression: the drawer stays navigation-only at phone widths.
 describe("MobileSidebar", () => {
   it("keeps decorative Scripture out of the mobile drawer", async () => {
     render(<MobileSidebar pathname={DASHBOARD_PATH} />);
