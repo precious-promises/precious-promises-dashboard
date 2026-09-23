@@ -92,6 +92,10 @@ export const serverEnvSchema = z.object({
   ANTHROPIC_MODEL: optionalText,
   OPENAI_API_KEY: optionalText,
   OPENAI_MODEL: optionalText,
+  OPENAI_IMAGE_MODEL: optionalText,
+  OPENAI_TRANSCRIPTION_MODEL: optionalText,
+  OPENAI_SPEECH_MODEL: optionalText,
+  OPENAI_SPEECH_VOICE: optionalText,
 
   TRIGGER_SECRET_KEY: optionalText,
   TRIGGER_PROJECT_REF: optionalText,
