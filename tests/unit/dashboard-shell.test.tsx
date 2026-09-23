@@ -290,7 +290,9 @@ describe("MobileSidebar", () => {
       await screen.findByRole("dialog", { name: "Dashboard navigation" }),
     ).toBeInTheDocument();
     expect(
-      screen.queryByText(/Whereby are given unto us exceeding great and precious promises/),
+      screen.queryByText(
+        /Whereby are given unto us exceeding great and precious promises/,
+      ),
     ).toBeNull();
   });
 });

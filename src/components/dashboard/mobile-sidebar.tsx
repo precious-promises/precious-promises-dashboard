@@ -132,7 +132,6 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] [&_nav_a]:min-h-10 [&_nav_a]:text-[13px]">
                   <SidebarNav pathname={pathname} onNavigate={close} />
                 </div>
-
               </div>
             </div>,
             document.body,
