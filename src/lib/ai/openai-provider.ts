@@ -90,9 +90,9 @@ export class OpenAIProvider implements AIProvider {
       };
     }
 
-    const body = (await response.json().catch(() => null)) as
-      | OpenAIResponse
-      | null;
+    const body = (await response
+      .json()
+      .catch(() => null)) as OpenAIResponse | null;
     if (!body) {
       return {
         ok: false,

@@ -92,7 +92,9 @@ describe("OpenAI provider layer", () => {
       ),
     );
     const provider = new OpenAIMultimodalProvider(config, fetchImpl);
-    const result = await provider.generateImage({ prompt: "Bible study cover" });
+    const result = await provider.generateImage({
+      prompt: "Bible study cover",
+    });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.bytes.byteLength).toBeGreaterThan(0);
   });
@@ -122,7 +124,9 @@ describe("OpenAI provider layer", () => {
       }),
     );
     const provider = new OpenAIMultimodalProvider(config, fetchImpl);
-    const result = await provider.generateSpeech({ text: "Approved narration" });
+    const result = await provider.generateSpeech({
+      text: "Approved narration",
+    });
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.value.voice).toBe("marin");
   });

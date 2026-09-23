@@ -89,9 +89,9 @@ export class OpenAIMultimodalProvider implements MultimodalProvider {
       };
     }
 
-    const body = (await response.json().catch(() => null)) as
-      | { data?: { b64_json?: string }[] }
-      | null;
+    const body = (await response.json().catch(() => null)) as {
+      data?: { b64_json?: string }[];
+    } | null;
     const encoded = body?.data?.[0]?.b64_json;
     const bytes = encoded ? base64Bytes(encoded) : null;
     if (!bytes || bytes.byteLength === 0) {
@@ -160,9 +160,9 @@ export class OpenAIMultimodalProvider implements MultimodalProvider {
       };
     }
 
-    const body = (await response.json().catch(() => null)) as
-      | { text?: string }
-      | null;
+    const body = (await response.json().catch(() => null)) as {
+      text?: string;
+    } | null;
     if (!body?.text?.trim()) {
       return {
         ok: false,
@@ -201,20 +201,23 @@ export class OpenAIMultimodalProvider implements MultimodalProvider {
 
     let response: Response;
     try {
-      response = await this.fetchImpl("https://api.openai.com/v1/audio/speech", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.config.apiKey}`,
-          "Content-Type": "application/json",
+      response = await this.fetchImpl(
+        "https://api.openai.com/v1/audio/speech",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${this.config.apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: this.speechModel,
+            input: text,
+            voice,
+            instructions: request.instructions?.trim() || undefined,
+            response_format: "mp3",
+          }),
         },
-        body: JSON.stringify({
-          model: this.speechModel,
-          input: text,
-          voice,
-          instructions: request.instructions?.trim() || undefined,
-          response_format: "mp3",
-        }),
-      });
+      );
     } catch {
       return {
         ok: false,
