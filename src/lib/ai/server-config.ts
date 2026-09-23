@@ -1,7 +1,10 @@
 import { getServerEnv } from "@/lib/env/server";
 
 export const SUPPORTED_AI_PROVIDER = "anthropic";
-export const SUPPORTED_AI_PROVIDERS = [SUPPORTED_AI_PROVIDER, "openai"] as const;
+export const SUPPORTED_AI_PROVIDERS = [
+  SUPPORTED_AI_PROVIDER,
+  "openai",
+] as const;
 export type SupportedAiProvider = (typeof SUPPORTED_AI_PROVIDERS)[number];
 
 export const DEFAULT_AI_MODELS: Record<SupportedAiProvider, string> = {
