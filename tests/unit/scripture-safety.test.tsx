@@ -116,8 +116,8 @@ describe("declarations and prayers are never presented as Scripture", () => {
   });
 });
 
-describe("navigation after Stage 11", () => {
-  it("activates all nineteen areas, each genuinely built", () => {
+describe("navigation after Operator Mode", () => {
+  it("activates every genuinely built area", () => {
     const available = allNavItems().filter(
       (item) => item.status === "available",
     );
@@ -127,7 +127,9 @@ describe("navigation after Stage 11", () => {
       "Production Board",
       "Content Library",
       "Content Planner",
+      "Operator Mode",
       "Scripture Studio",
+      "Bible Study",
       "Script Studio",
       "Caption Studio",
       "Video Creation Studio",
@@ -159,6 +161,10 @@ describe("navigation after Stage 11", () => {
     expect(
       screen.getByRole("link", { name: "Scripture Studio" }),
     ).toHaveAttribute("href", "/dashboard/scripture");
+    expect(screen.getByRole("link", { name: "Bible Study" })).toHaveAttribute(
+      "href",
+      "/dashboard/bible-study",
+    );
     expect(screen.getByRole("link", { name: "Script Studio" })).toHaveAttribute(
       "href",
       "/dashboard/scripts",
@@ -179,6 +185,7 @@ describe("navigation after Stage 11", () => {
     const expectations: Record<string, string> = {
       "YouTube & Playlists": "/dashboard/youtube",
       "Content Planner": "/dashboard/planner",
+      "Operator Mode": "/dashboard/operator",
       "Rights & Licences": "/dashboard/rights",
       Settings: "/dashboard/settings",
     };

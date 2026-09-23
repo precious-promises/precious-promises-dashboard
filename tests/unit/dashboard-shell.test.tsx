@@ -1,6 +1,6 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Circle } from "lucide-react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { OwnerBadge } from "@/components/dashboard/owner-badge";
@@ -8,6 +8,7 @@ import { PlatformStatus } from "@/components/dashboard/platform-status";
 import { QuickAction } from "@/components/dashboard/quick-action";
 import { WorkflowPipeline } from "@/components/dashboard/workflow-pipeline";
 import { MetricCard } from "@/components/dashboard/metric-card";
+import { MobileSidebar } from "@/components/dashboard/mobile-sidebar";
 import { ScripturePanel } from "@/components/dashboard/scripture-panel";
 import { allNavItems } from "@/config/navigation";
 import { DASHBOARD_PATH } from "@/lib/auth/routes";
@@ -34,7 +35,7 @@ describe("SidebarNav", () => {
     }
   });
 
-  it("links to every area, because all 19 now exist", () => {
+  it("links to every built area", () => {
     render(<SidebarNav pathname={DASHBOARD_PATH} />);
 
     // One link per built route, and no others — the count is the guard.
@@ -44,7 +45,9 @@ describe("SidebarNav", () => {
       "/dashboard/production",
       "/dashboard/content",
       "/dashboard/planner",
+      "/dashboard/operator",
       "/dashboard/scripture",
+      "/dashboard/bible-study",
       "/dashboard/scripts",
       "/dashboard/captions",
       "/dashboard/video",
@@ -67,6 +70,8 @@ describe("SidebarNav", () => {
 
     for (const label of [
       "Content Planner",
+      "Operator Mode",
+      "Bible Study",
       "YouTube & Playlists",
       "Rights & Licences",
       "Settings",
@@ -269,5 +274,39 @@ describe("ScripturePanel", () => {
       ),
     ).toBeInTheDocument();
     expect(screen.getByText("2 Peter 1:4 KJV")).toBeInTheDocument();
+  });
+});
+
+// Mobile shell regression: the drawer stays navigation-only at phone widths.
+describe("MobileSidebar", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+  });
+
+  it("keeps decorative Scripture out of the mobile drawer", async () => {
+    render(<MobileSidebar pathname={DASHBOARD_PATH} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Open navigation menu" }),
+    );
+
+    expect(
+      await screen.findByRole("dialog", { name: "Dashboard navigation" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText(
+        /Whereby are given unto us exceeding great and precious promises/,
+      ),
+    ).toBeNull();
   });
 });

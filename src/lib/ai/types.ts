@@ -285,6 +285,7 @@ export interface AIProvider {
 
 export const AI_GENERATION_STATUSES = [
   "drafted",
+  "prepared",
   "accepted",
   "rejected",
 ] as const;
