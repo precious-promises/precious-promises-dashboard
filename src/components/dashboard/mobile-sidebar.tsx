@@ -76,6 +76,8 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
   }, [isOpen]);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+
     const query = window.matchMedia("(min-width: 1024px)");
     const onChange = () => {
       if (query.matches) close();
