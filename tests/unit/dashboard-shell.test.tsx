@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { Circle } from "lucide-react";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SidebarNav } from "@/components/dashboard/sidebar-nav";
 import { OwnerBadge } from "@/components/dashboard/owner-badge";
@@ -279,6 +279,20 @@ describe("ScripturePanel", () => {
 
 // Mobile shell regression: the drawer stays navigation-only at phone widths.
 describe("MobileSidebar", () => {
+  beforeEach(() => {
+    Object.defineProperty(window, "matchMedia", {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+  });
+
   it("keeps decorative Scripture out of the mobile drawer", async () => {
     render(<MobileSidebar pathname={DASHBOARD_PATH} />);
 
