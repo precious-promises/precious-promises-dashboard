@@ -8,7 +8,8 @@ export const SUPPORTED_AI_PROVIDERS = [
 export type SupportedAiProvider = (typeof SUPPORTED_AI_PROVIDERS)[number];
 
 export const DEFAULT_AI_MODELS: Record<SupportedAiProvider, string> = {
-  anthropic: "claude-opus-5",
+  // Economy-first default for routine drafts. Explicit ANTHROPIC_MODEL/AI_MODEL overrides remain supported.
+  anthropic: "claude-haiku-4-5-20251001",
   openai: "gpt-5.6",
 };
 
