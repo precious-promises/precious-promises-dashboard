@@ -39,6 +39,20 @@ export async function runAiGeneration(
   client: SupabaseClient,
   input: RunGenerationInput,
 ): Promise<RunGenerationOutcome> {
+  // Fail closed until the owner explicitly enables billable draft generation.
+  // This is an activation safeguard, not a substitute for a monthly budget
+  // enforced through the provider account and a durable usage ledger.
+  if (process.env.AI_GENERATION_ENABLED !== "true") {
+    return {
+      ok: false,
+      generationId: null,
+      result: null,
+      problems: [
+        "AI draft generation is disabled. Configure AI_GENERATION_ENABLED=true only after approving a spending budget.",
+      ],
+    };
+  }
+
   const { provider, problems } = getAiProvider();
   if (provider === null) {
     return { ok: false, generationId: null, result: null, problems };
