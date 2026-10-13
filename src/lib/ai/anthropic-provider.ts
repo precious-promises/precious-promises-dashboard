@@ -36,7 +36,12 @@ export class AnthropicProvider implements AIProvider {
     try {
       response = await client.messages.create({
         model: this.model,
-        max_tokens: 4096,
+        // Bound output tokens by task: short metadata must not consume a full script budget.
+        max_tokens: ["title", "hashtags", "cta", "plan_note"].includes(request.type)
+          ? 512
+          : ["caption", "description"].includes(request.type)
+            ? 1536
+            : 4096,
         system: AI_SYSTEM_PROMPT,
         messages: [{ role: "user", content: buildPrompt(request) }],
         output_config: {
