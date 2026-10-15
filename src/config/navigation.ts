@@ -6,6 +6,8 @@ import {
   FileText,
   FolderOpen,
   Gauge,
+  Bot,
+  BookOpen,
   Images,
   LayoutDashboard,
   Library,
@@ -29,6 +31,7 @@ export const MEDIA_ASSETS_PATH = "/dashboard/media";
 
 /** Routes activated in Stage 3. */
 export const SCRIPTURE_STUDIO_PATH = "/dashboard/scripture";
+export const BIBLE_STUDY_PATH = "/dashboard/bible-study";
 export const SCRIPT_STUDIO_PATH = "/dashboard/scripts";
 export const CAPTION_STUDIO_PATH = "/dashboard/captions";
 
@@ -53,8 +56,9 @@ export const DRIVE_BROWSER_PATH = "/dashboard/drive";
 export const ANALYTICS_PATH = "/dashboard/analytics";
 export const GROWTH_CENTRE_PATH = "/dashboard/growth";
 
-/** Routes activated in Stage 11. All 19 modules are now genuinely built. */
+/** Routes activated in Stage 11, plus the Operator Mode automation control centre. */
 export const CONTENT_PLANNER_PATH = "/dashboard/planner";
+export const OPERATOR_MODE_PATH = "/dashboard/operator";
 export const YOUTUBE_WORKSPACE_PATH = "/dashboard/youtube";
 export const RIGHTS_LICENCES_PATH = "/dashboard/rights";
 export const SETTINGS_PATH = "/dashboard/settings";
@@ -124,6 +128,13 @@ export const NAVIGATION: NavGroup[] = [
         status: "available",
         href: CONTENT_PLANNER_PATH,
       },
+      {
+        id: "operator-mode",
+        label: "Operator Mode",
+        icon: Bot,
+        status: "available",
+        href: OPERATOR_MODE_PATH,
+      },
     ],
   },
   {
@@ -135,6 +146,13 @@ export const NAVIGATION: NavGroup[] = [
         icon: ScrollText,
         status: "available",
         href: SCRIPTURE_STUDIO_PATH,
+      },
+      {
+        id: "bible-study",
+        label: "Bible Study",
+        icon: BookOpen,
+        status: "available",
+        href: BIBLE_STUDY_PATH,
       },
       {
         id: "script-studio",

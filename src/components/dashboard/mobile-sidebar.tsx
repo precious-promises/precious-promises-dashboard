@@ -5,7 +5,6 @@ import { Menu, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { BrandMark } from "./brand-mark";
-import { ScripturePanel } from "./scripture-panel";
 import { SidebarNav } from "./sidebar-nav";
 
 export function MobileSidebar({ pathname }: { pathname: string }) {
@@ -77,6 +76,8 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
   }, [isOpen]);
 
   useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+
     const query = window.matchMedia("(min-width: 1024px)");
     const onChange = () => {
       if (query.matches) close();
@@ -102,7 +103,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
 
       {isOpen
         ? createPortal(
-            <div className="fixed inset-0 z-[100] lg:hidden">
+            <div className="fixed inset-0 z-[100] h-[100dvh] w-screen overflow-hidden lg:hidden">
               <button
                 type="button"
                 aria-label="Dismiss navigation menu"
@@ -116,7 +117,7 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
                 aria-modal="true"
                 aria-label="Dashboard navigation"
                 tabIndex={-1}
-                className="absolute inset-y-0 left-0 flex w-[18rem] max-w-[88vw] flex-col border-r border-edge/80 bg-[#060a15] shadow-[30px_0_90px_rgba(0,0,0,0.62)] focus:outline-none"
+                className="absolute inset-y-0 left-0 flex h-[100dvh] max-h-[100dvh] min-h-0 w-[18rem] max-w-[88vw] flex-col overflow-hidden border-r border-edge/80 bg-[#060a15] shadow-[30px_0_90px_rgba(0,0,0,0.62)] focus:outline-none"
               >
                 <div className="flex items-center justify-between gap-3 border-b border-edge/70 px-4 py-4">
                   <BrandMark />
@@ -130,12 +131,8 @@ export function MobileSidebar({ pathname }: { pathname: string }) {
                   </button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-3 py-4 [&_nav_a]:min-h-10 [&_nav_a]:text-[13px]">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] [&_nav_a]:min-h-10 [&_nav_a]:text-[13px]">
                   <SidebarNav pathname={pathname} onNavigate={close} />
-                </div>
-
-                <div className="px-3 pb-4">
-                  <ScripturePanel />
                 </div>
               </div>
             </div>,

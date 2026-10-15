@@ -30,13 +30,24 @@ export class AnthropicProvider implements AIProvider {
   ) {}
 
   async generateDraft(request: AiDraftRequest): Promise<AiDraftResult> {
+    const shortMetadataTypes = ["title", "hashtags", "cta", "plan_note"];
+    const longTextTypes = ["caption", "description"];
+    let maxTokens = 4096;
+
+    if (shortMetadataTypes.includes(request.type)) {
+      maxTokens = 512;
+    } else if (longTextTypes.includes(request.type)) {
+      maxTokens = 1536;
+    }
+
     const client = new Anthropic({ apiKey: this.apiKey });
 
     let response: Anthropic.Message;
     try {
       response = await client.messages.create({
         model: this.model,
-        max_tokens: 4096,
+        // Bound output tokens by task: short metadata must not consume a full script budget.
+        max_tokens: maxTokens,
         system: AI_SYSTEM_PROMPT,
         messages: [{ role: "user", content: buildPrompt(request) }],
         output_config: {

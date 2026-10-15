@@ -18,6 +18,7 @@ import { SectionCard } from "@/components/ui/section-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { isAiConfigured, resolveAiConfig } from "@/lib/ai/server-config";
 import { LOGIN_PATH } from "@/lib/auth/routes";
+import { isOpenAIMultimodalConfigured } from "@/lib/multimodal/server-config";
 import { isRenderConfigured } from "@/lib/render/server-config";
 import { effectiveSettings, loadAppSettings } from "@/lib/settings/repository";
 import type { ReadinessEntry } from "@/lib/settings/types";
@@ -86,6 +87,7 @@ export default async function SettingsPage() {
 
   const aiConfig = resolveAiConfig();
   const aiConfigured = isAiConfigured();
+  const openAiMultimodalConfigured = isOpenAIMultimodalConfigured();
   const renderConfigured = isRenderConfigured();
   const triggerConnected = analyticsSchedulingConnected();
   const workerConfigured = isWorkerConfigured();
@@ -93,12 +95,21 @@ export default async function SettingsPage() {
   const readiness: ReadinessEntry[] = [
     {
       id: "ai",
-      label: "AI assistance (Anthropic)",
+      label: `AI assistance (${aiConfig.config?.provider ?? "provider not configured"})`,
       configured: aiConfigured,
       status: aiConfigured ? "CONFIGURED" : "NOT CONFIGURED",
       detail: aiConfigured
         ? `Implemented and configured (model ${aiConfig.config?.model}). Drafts only — nothing AI produces is approved or published by it.`
-        : "Implemented, not configured. Drafting needs AI_API_KEY in the server environment.",
+        : "Implemented, not configured. Drafting needs the selected provider's server-side API key.",
+    },
+    {
+      id: "openai-multimodal",
+      label: "OpenAI multimodal",
+      configured: openAiMultimodalConfigured,
+      status: openAiMultimodalConfigured ? "CONFIGURED" : "NOT CONFIGURED",
+      detail: openAiMultimodalConfigured
+        ? "Provider seam is configured for image generation, speech-to-text and optional text-to-speech. Generated media still requires the normal review and approval workflow."
+        : "Implemented, not configured. Add OPENAI_API_KEY server-side to enable image, transcription and optional speech capabilities.",
     },
     {
       id: "voice",

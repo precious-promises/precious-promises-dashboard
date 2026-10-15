@@ -86,6 +86,17 @@ export const serverEnvSchema = z.object({
   AI_MODEL: optionalText,
   AI_API_KEY: optionalText,
 
+  // Bible Study providers. Separate keys allow provider selection without
+  // changing the provider-independent Precious Promises study specification.
+  ANTHROPIC_API_KEY: optionalText,
+  ANTHROPIC_MODEL: optionalText,
+  OPENAI_API_KEY: optionalText,
+  OPENAI_MODEL: optionalText,
+  OPENAI_IMAGE_MODEL: optionalText,
+  OPENAI_TRANSCRIPTION_MODEL: optionalText,
+  OPENAI_SPEECH_MODEL: optionalText,
+  OPENAI_SPEECH_VOICE: optionalText,
+
   TRIGGER_SECRET_KEY: optionalText,
   TRIGGER_PROJECT_REF: optionalText,
 
